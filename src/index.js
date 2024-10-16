@@ -23,25 +23,10 @@ const terminales = [
   }
 ];
 
-let getRegistrosPy = new Promise(function(success, nosuccess) {
-  const { spawn } = require('child_process');
-  const pyFile = 'src/registros.py';
-  const args = ['Envio argumento'];
-  args.unshift(pyFile);
-  const pyprog = spawn('python3', args);
-  pyprog.stdout.on('data', function(data) {
-      success(data);
-  });
-  pyprog.stderr.on('data', (data) => {
-      nosuccess(data);
-  });
-});
+
 
 app.get('/', (req, res) => {
-  getRegistrosPy.then(function(fromRunpy) {
-    res.setHeader('Content-Type', 'application/json');
-    res.send(fromRunpy);
-  });
+  res.send("Inicio Server")
 })
 
 app.get("/terminales", (req, res) => {
@@ -73,29 +58,27 @@ app.get("/usuarios/:ip/:puerto", (req, res) => {
   });
 })
 
-app.get("/registros/:gestion/:mes", (req, res) => {
-  let gestion = req.params.gestion;
-  let mes = req.params.mes;
-  //let aux = []
-  const getRegistros = async () => {
-    let zkInstance = new ZKLib("192.168.70.200", 4370, 30000);
-    try {
-      await zkInstance.createSocket()
-      const registros = await zkInstance.getAttendances((percent, total)=>{
-        // this callbacks take params is the percent of data downloaded and total data need to download
-        //console.log(percent);
-        //console.log(total);
-    
-    })
-      //await zkInstance.disconnect()
-      res.send(registros.data)
-    } catch (e) {
-      console.log(e)
-      if (e.code === 'EADDRINUSE') {
-      }
-    }
-  }
-  getRegistros()
+app.get("/marcaciones/:ip/:puerto", (req, res) => {
+  let ip = req.params.ip;
+  let puerto = req.params.puero;
+  res.send(ip)
+  /*let getRegistrosPy = new Promise(function(success, nosuccess) {
+    const { spawn } = require('child_process');
+    const pyFile = 'src/registros.py';
+    const args = ['Envio argumento'];
+    args.unshift(pyFile);
+    const pyprog = spawn('python3', args);
+    pyprog.stdout.on('data', function(data) {
+        success(data);
+    });
+    pyprog.stderr.on('data', (data) => {
+        nosuccess(data);
+    });
+  });
+  getRegistrosPy.then(function(fromRunpy) {
+    res.setHeader('Content-Type', 'application/json');
+    res.send(fromRunpy);
+  });*/
 })
 
 app.listen(4000, () => {
