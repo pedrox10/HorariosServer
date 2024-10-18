@@ -1,6 +1,7 @@
 const express = require("express");
 const cors = require('cors');
 const ZKLib = require('qr-zklib')
+const spawn = require('await-spawn')
 
 const app = express();
 app.use(cors()); // Enable CORS
@@ -23,8 +24,6 @@ const terminales = [
   }
 ];
 
-
-
 app.get('/', (req, res) => {
   res.send("Inicio Server")
 })
@@ -33,52 +32,38 @@ app.get("/terminales", (req, res) => {
   res.send(terminales)
 })
 
-
 app.get("/usuarios/:ip/:puerto", (req, res) => {
   let ip = req.params.ip;
-  let getUsuariosPy = new Promise(function(success, nosuccess) {
-    const { spawn } = require('child_process');
-    const pyFile = 'src/usuarios.py';
-    const args = [ip];
-    args.unshift(pyFile);
-    const pyprog = spawn('python3', args);
-    pyprog.stdout.on('data', function(data) {
-        success(data);
-    });
-    pyprog.stderr.on('data', (data) => {
-        nosuccess(data);
-    });
-  });
-  
-  //let puerto = req.params.puerto;
-  
-  getUsuariosPy.then(function(fromRunpy) {
-    res.setHeader('Content-Type', 'application/json');
-    res.send(fromRunpy);
-  });
+  let puerto = req.params.puerto; 
+  const getUsuariosPy = async () => {
+    try {
+      const pyFile = 'src/usuarios.py';
+      const args = [ip];
+      args.unshift(pyFile);
+      const pyprog = await spawn('python3', args);
+      res.send(pyprog.toString())
+    } catch (e) {
+      console.log(e.stderr.toString())
+    }
+  }
+  getUsuariosPy()
 })
 
 app.get("/marcaciones/:ip/:puerto", (req, res) => {
   let ip = req.params.ip;
-  let puerto = req.params.puero;
-  res.send(ip)
-  /*let getRegistrosPy = new Promise(function(success, nosuccess) {
-    const { spawn } = require('child_process');
-    const pyFile = 'src/registros.py';
-    const args = ['Envio argumento'];
-    args.unshift(pyFile);
-    const pyprog = spawn('python3', args);
-    pyprog.stdout.on('data', function(data) {
-        success(data);
-    });
-    pyprog.stderr.on('data', (data) => {
-        nosuccess(data);
-    });
-  });
-  getRegistrosPy.then(function(fromRunpy) {
-    res.setHeader('Content-Type', 'application/json');
-    res.send(fromRunpy);
-  });*/
+  let puerto = req.params.puerto; 
+  const getRegistrosPy = async () => {
+    try {
+      const pyFile = 'src/registros.py';
+      const args = [ip];
+      args.unshift(pyFile);
+      const pyprog = await spawn('python3', args);
+      res.send(pyprog.toString())
+    } catch (e) {
+      console.log(e.stderr.toString())
+    }
+  }
+  getRegistrosPy()
 })
 
 app.listen(4000, () => {

@@ -12,10 +12,7 @@ def serialize_datetime(obj):
         return obj.isoformat() 
     raise TypeError("Type not serializable") 
 try:
-    # Conectar al dispositivo
     conn = zk.connect()
-
-    # Obtener y mostrar los registros de asistencia
     attendance_records = conn.get_attendance()
     aux = []
     for record in attendance_records:
@@ -25,10 +22,7 @@ try:
         }
         aux.append(data)
     print(json.dumps(aux))
-
-    # Cerrar la conexión
     conn.disconnect()
-
 except Exception as e:
     print(f"Error: {e}")
 
