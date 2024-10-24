@@ -5,7 +5,7 @@
   "main": "src/index.js",
   "scripts": {
     "test": "test",
-    "dev": "nodemon ."
+    "dev": "ts-node-dev --respawn src/index.ts"
   },
   "author": "Pedro Barco Carrasco",
   "license": "ISC",
@@ -13,7 +13,16 @@
     "await-spawn": "^4.0.2",
     "cors": "^2.8.5",
     "express": "^4.21.0",
+    "morgan": "^1.10.0",
     "nodemon": "^3.1.7",
-    "qr-zklib": "^1.0.3"
+    "qr-zklib": "^1.0.3",
+    "sass": "^1.55.0"
+  },
+  "devDependencies": {
+    "@types/cors": "^2.8.17",
+    "@types/express": "^5.0.0",
+    "@types/morgan": "^1.9.9",
+    "ts-node-dev": "^2.0.0",
+    "typescript": "^5.6.3"
   }
 }

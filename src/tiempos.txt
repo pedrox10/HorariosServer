@@ -1,6 +1,0 @@
-                                Tiempo      Num de Registros
-python salida a archivo         60 seg      84628
-Node,llamada a python           57 seg      84628
-
-python salida a archivo         45 seg      69166
-Node,llamada a python           44 seg      69166
