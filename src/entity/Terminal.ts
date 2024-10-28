@@ -3,7 +3,7 @@ import { Entity, Column, PrimaryGeneratedColumn, ObjectIdColumn, ObjectId } from
 @Entity()
 export class Terminal {
     @ObjectIdColumn() 
-    id: ObjectId; 
+    _id: ObjectId; 
 
     @Column()
     nombre: string
