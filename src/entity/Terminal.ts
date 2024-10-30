@@ -1,16 +1,13 @@
-import { Entity, Column, PrimaryGeneratedColumn, ObjectIdColumn, ObjectId } from "typeorm"
+import {Entity, Column, PrimaryGeneratedColumn} from "typeorm"
 
 @Entity()
 export class Terminal {
-    @ObjectIdColumn() 
-    _id: ObjectId; 
-
+    @PrimaryGeneratedColumn()
+    id:number;
     @Column()
-    nombre: string
-
+    nombre:string
     @Column()
-    ip: string
-
+    ip:string
     @Column()
     puerto: number
 }

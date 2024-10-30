@@ -3,10 +3,10 @@ import { DataSource } from "typeorm"
 import { Terminal } from "./entity/Terminal"
 
 export const AppDataSource = new DataSource({
-    type: "mongodb",
+    type: "mysql",
     host: "localhost",
-    port: 27017,
-    username: "",
+    port: 3306,
+    username: "root",
     password: "",
     database: "horarios",
     synchronize: true,
