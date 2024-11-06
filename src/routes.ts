@@ -1,5 +1,6 @@
 import {Router} from "express";
 import {crearUsuario} from "./controllers/usuario.controller";
+import {crearTerminal} from "./controllers/terminal.controller";
 
 const router = Router();
 
@@ -7,7 +8,7 @@ const router = Router();
 router.post('/usuario', crearUsuario);
 
 // Rutas para operaciones con Terminales
-//router.post('/terminal', crearTerminal);
+router.post('/terminal/agregar', crearTerminal);
 
 // Rutas para operaciones con Horarios
 //router.post('/horario', crearUsuario);
