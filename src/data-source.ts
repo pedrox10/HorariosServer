@@ -1,6 +1,6 @@
 import "reflect-metadata"
-import { DataSource } from "typeorm"
-import { Terminal } from "./entity/Terminal"
+import {DataSource} from "typeorm"
+import {Terminal} from "./entity/Terminal"
 
 export const AppDataSource = new DataSource({
     type: "mysql",

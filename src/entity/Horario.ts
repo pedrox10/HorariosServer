@@ -4,13 +4,13 @@ import {Turno} from "./Turno";
 @Entity()
 export class Horario {
     @PrimaryGeneratedColumn()
-    id:number;
+    id: number;
     @Column()
-    nombre:string
+    nombre: string
     @Column()
-    descripcion:string
+    descripcion: string
     @Column()
-    color:string
+    color: string
     @Column()
     tolerancia: number
     @OneToMany(() => Turno, (turno) => turno.horario)
