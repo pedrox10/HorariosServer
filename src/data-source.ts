@@ -10,7 +10,7 @@ export const AppDataSource = new DataSource({
     password: "",
     database: "horarios",
     synchronize: true,
-    logging: true,
+    logging: false,
     entities: [Terminal],
     subscribers: [],
     migrations: [],
