@@ -5,8 +5,9 @@ import  morgan from "morgan"
 import { Terminal } from "./entity/Terminal"
 import { AppDataSource } from "./data-source"
 import routes from "./routes"
-import fs from "fs"
 
+const path = require("path");
+const envPython = path.join(__dirname, "scriptpy/envpy", "bin", "python3");
 const spawn = require('await-spawn')
 const app = express()
 app.use(express.json())
@@ -53,10 +54,10 @@ app.get("/usuarios/:ip/:puerto", (req, res) => {
     let puerto = req.params.puerto;
     const getUsuariosPy = async () => {
         try {
-            const pyFile = 'src/usuarios.py';
+            const pyFile = 'src/scriptpy/usuarios.py';
             const args = [ip];
             args.unshift(pyFile);
-            const pyprog = await spawn('python3', args);
+            const pyprog = await spawn(envPython, args);
             res.send(pyprog.toString())
         } catch (e:any) {
             console.log(e.stderr.toString())
@@ -72,10 +73,10 @@ app.get("/marcaciones/:ip/:puerto", (req, res) => {
     let puerto = req.params.puerto;
     const getRegistrosPy = async () => {
         try {
-            const pyFile = 'src/registros.py';
+            const pyFile = 'src/scriptpy/registros.py';
             const args = [ip];
             args.unshift(pyFile);
-            const pyprog = await spawn('python3', args);
+            const pyprog = await spawn(envPython, args);
             res.send(pyprog.toString())
         } catch (e:any) {
             console.log(e.stderr.toString())

@@ -1,7 +1,7 @@
 {
   "name": "horariosserver",
   "version": "1.0.0",
-  "description": "",
+  "description": "Servidor para el Sistema de Control de Horarios",
   "main": "src/index.js",
   "scripts": {
     "test": "test",
@@ -29,5 +29,18 @@
     "morgan": "^1.10.0",
     "ts-node-dev": "^2.0.0",
     "typescript": "^5.6.3"
-  }
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/pedrox10/HorariosServer.git"
+  },
+  "keywords": [
+    "horarios",
+    "nodejs",
+    "express"
+  ],
+  "bugs": {
+    "url": "https://github.com/pedrox10/HorariosServer/issues"
+  },
+  "homepage": "https://github.com/pedrox10/HorariosServer#readme"
 }
