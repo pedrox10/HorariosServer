@@ -8,4 +8,8 @@ export class Usuario {
     ci: number
     @Column()
     nombre:string
+    @Column()
+    cargo:string
+    @Column()
+    genero:string
 }
