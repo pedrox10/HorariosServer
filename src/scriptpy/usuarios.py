@@ -2,8 +2,8 @@ from zk import ZK, const
 import sys, getopt, json, datetime
 # Parámetros de conexión
 zk_ip = sys.argv[1] # Dirección IP de tu dispositivo ZKTeco +1 por piso
-zk_port = 4370            # Puerto por defecto de los dispositivos ZKTeco
-timeout = 60          # Ti1
+zk_port = 4370      # Puerto por defecto de los dispositivos ZKTeco
+timeout = 60        # Ti1
 
 zk = ZK(zk_ip, port=zk_port, timeout=timeout)
 

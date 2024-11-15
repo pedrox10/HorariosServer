@@ -17,6 +17,6 @@ router.get("/terminales",async (req, res) => {
 })
 
 // Rutas para operaciones con Horarios
-//router.post('/horario', crearUsuario);
+// router.post('/horario', crearUsuario);
 
 export default router
