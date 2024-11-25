@@ -13,6 +13,4 @@ export class Horario {
     color: string
     @Column()
     tolerancia: number
-    @OneToMany(() => Turno, (turno) => turno.horario)
-    turnos: Turno[]
 }

@@ -1,15 +1,16 @@
-import {Entity, Column, PrimaryGeneratedColumn} from "typeorm"
+import {Entity, Column, PrimaryGeneratedColumn, OneToMany, BaseEntity} from "typeorm"
+import {Turno} from "./Turno";
 
 @Entity()
-export class Usuario {
+export class Usuario extends BaseEntity{
     @PrimaryGeneratedColumn()
     id:number;
     @Column()
     ci: number
     @Column()
     nombre:string
-    @Column()
-    cargo:string
+    @OneToMany(() => Turno, (turno) => turno.usuario)
+    turnos: Turno[]
     @Column()
     genero:string
 }
