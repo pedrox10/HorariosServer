@@ -6,20 +6,17 @@ import {Terminal} from "./entity/Terminal"
 import {AppDataSource} from "./data-source"
 import routes from "./routes"
 
-
 const path = require("path");
-
 const app = express()
+
 app.use(express.json())
 app.use(cors());
 app.use(morgan("dev"))
 app.use(routes)
 
-
 app.get('/', (req, res) => {
     res.send("Inicio Server")
 })
-
 
 async function main() {
     await AppDataSource.initialize();

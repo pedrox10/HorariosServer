@@ -10,10 +10,10 @@ export class Turno {
     dia:string
     @Column()
     numero:number
-    @Column()
-    horaEntrada: number
-    @Column()
-    horaSalida: number
+    @Column({type: 'datetime', nullable: true})
+    fechaEntrada: Date;
+    @Column({type: 'datetime', nullable: true})
+    fechaSalida: Date;
     @OneToOne(() => Horario)
     @JoinColumn()
     horario: Horario

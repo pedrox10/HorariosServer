@@ -1,22 +1,27 @@
 import {Router} from "express";
 import {agregarUsuario, getMarcaciones, getUsuarios} from "./controllers/usuario.controller";
-import {crearTerminal, editarTerminal, eliminarTerminal} from "./controllers/terminal.controller";
+import {
+    crearTerminal,
+    editarTerminal,
+    eliminarTerminal,
+    getTerminales,
+    sincronizarTerminal, verTerminal
+} from "./controllers/terminal.controller";
 import {AppDataSource} from "./data-source";
 import {Terminal} from "./entity/Terminal";
 
 const router = Router();
 
 // Rutas para operaciones con Terminales
+router.get("/terminal/:id",verTerminal);
 router.post('/terminal/agregar', crearTerminal);
 router.put('/terminal/editar/:id', editarTerminal);
 router.delete('/terminal/eliminar/:id', eliminarTerminal);
-router.get("/terminales",async (req, res) => {
-    let terminales = await AppDataSource.manager.find(Terminal)
-    res.send(terminales)
-})
+router.get("/terminales",getTerminales);
+router.get("/terminal/sincronizar/:id",sincronizarTerminal);
 
 // Rutas para operaciones con Usuarios
-router.get("/usuarios/:ip/:puerto", getUsuarios)
+router.get("/terminal/:id/usuarios", getUsuarios)
 router.get("/marcaciones/:ip/:puerto", getMarcaciones)
 router.post('/usuario', agregarUsuario);
 
