@@ -1,5 +1,6 @@
-    import {Entity, Column, PrimaryGeneratedColumn, ManyToOne} from "typeorm"
+    import {Entity, Column, PrimaryGeneratedColumn, ManyToOne, OneToOne, JoinColumn} from "typeorm"
 import {Horario} from "./Horario";
+    import {Usuario} from "./Usuario";
 
 @Entity()
 export class Turno {
@@ -13,6 +14,9 @@ export class Turno {
     horaEntrada: number
     @Column()
     horaSalida: number
-    @ManyToOne(() => Horario, (horario) => horario.turnos)
+    @OneToOne(() => Horario)
+    @JoinColumn()
     horario: Horario
+    @ManyToOne(() => Usuario, (usuario) => usuario.turnos)
+    usuario: Usuario
 }
