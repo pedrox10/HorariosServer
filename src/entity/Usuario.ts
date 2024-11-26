@@ -11,6 +11,4 @@ export class Usuario extends BaseEntity{
     nombre:string
     @OneToMany(() => Turno, (turno) => turno.usuario)
     turnos: Turno[]
-    @Column()
-    genero:string
 }

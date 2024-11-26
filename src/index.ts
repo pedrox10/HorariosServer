@@ -5,7 +5,7 @@ import morgan from "morgan"
 import {Terminal} from "./entity/Terminal"
 import {AppDataSource} from "./data-source"
 import routes from "./routes"
-import fs from "fs";
+
 
 const path = require("path");
 

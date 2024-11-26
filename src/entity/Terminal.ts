@@ -10,4 +10,9 @@ export class Terminal extends BaseEntity {
     ip:string
     @Column()
     puerto: number
+    @Column({
+        type: 'datetime',
+        nullable: true
+    })
+    ult_sincronizacion: Date;
 }
