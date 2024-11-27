@@ -1,15 +1,15 @@
-    import {Entity, Column, PrimaryGeneratedColumn, ManyToOne, OneToOne, JoinColumn} from "typeorm"
+import {Entity, Column, PrimaryGeneratedColumn, ManyToOne, OneToOne, JoinColumn, BaseEntity} from "typeorm"
 import {Horario} from "./Horario";
-    import {Usuario} from "./Usuario";
+import {Usuario} from "./Usuario";
 
 @Entity()
-export class Turno {
+export class Turno extends BaseEntity{
     @PrimaryGeneratedColumn()
-    id:number;
+    id: number;
     @Column()
-    dia:string
+    dia: string
     @Column()
-    numero:number
+    numero: number
     @Column({type: 'datetime', nullable: true})
     fechaEntrada: Date;
     @Column({type: 'datetime', nullable: true})

@@ -3,7 +3,7 @@ import {agregarUsuario, getMarcaciones, getUsuarios} from "./controllers/usuario
 import {
     crearTerminal,
     editarTerminal,
-    eliminarTerminal,
+    eliminarTerminal, finalizarSincronizacion,
     getTerminales,
     sincronizarTerminal, verTerminal
 } from "./controllers/terminal.controller";
@@ -19,6 +19,7 @@ router.put('/terminal/editar/:id', editarTerminal);
 router.delete('/terminal/eliminar/:id', eliminarTerminal);
 router.get("/terminales",getTerminales);
 router.get("/terminal/sincronizar/:id",sincronizarTerminal);
+router.get("/terminal/sincronizar/fin/:id",finalizarSincronizacion);
 
 // Rutas para operaciones con Usuarios
 router.get("/terminal/:id/usuarios", getUsuarios)

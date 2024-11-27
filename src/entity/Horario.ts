@@ -1,8 +1,8 @@
-import {Entity, Column, PrimaryGeneratedColumn, OneToMany} from "typeorm"
+import {Entity, Column, PrimaryGeneratedColumn, OneToMany, BaseEntity} from "typeorm"
 import {Turno} from "./Turno";
 
 @Entity()
-export class Horario {
+export class Horario extends BaseEntity{
     @PrimaryGeneratedColumn()
     id: number;
     @Column()

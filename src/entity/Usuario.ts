@@ -1,8 +1,13 @@
-import {Entity, Column, PrimaryGeneratedColumn, OneToMany, BaseEntity, OneToOne, JoinColumn} from "typeorm"
+import {Entity, Column, PrimaryGeneratedColumn, OneToMany, BaseEntity, OneToOne, JoinColumn, ManyToOne} from "typeorm"
 import {Turno} from "./Turno";
 import {Marcacion} from "./Marcacion";
 import {Horario} from "./Horario";
 import {Terminal} from "./Terminal";
+
+enum EstadoUsuario {
+    inactivo,
+    activo,
+}
 
 @Entity()
 export class Usuario extends BaseEntity{
@@ -12,19 +17,12 @@ export class Usuario extends BaseEntity{
     ci: number
     @Column()
     nombre:string
-    @Column()
+    @Column({ default: EstadoUsuario.inactivo })
     estado:EstadoUsuario
-    @OneToOne(() => Terminal)
-    @JoinColumn()
-    terminal: Terminal
     @OneToMany(() => Turno, (turno) => turno.usuario)
     turnos: Turno[]
     @OneToMany(() => Marcacion, (marcacion) => marcacion.usuario)
     marcaciones: Marcacion[]
-}
-
-
-enum EstadoUsuario {
-    inactivo,
-    activo,
+    @ManyToOne(() => Terminal, (terminal) => terminal.usuarios)
+    terminal: Terminal
 }

@@ -1,5 +1,6 @@
 import {BaseEntity, Column, Entity, ManyToOne, PrimaryGeneratedColumn} from "typeorm";
 import {Usuario} from "./Usuario";
+import {Terminal} from "./Terminal";
 
 @Entity()
 export class Marcacion extends BaseEntity {
@@ -9,6 +10,8 @@ export class Marcacion extends BaseEntity {
     ci: number
     @Column({type: 'datetime', nullable: true})
     fechaMarcaje: Date;
+    @ManyToOne(() => Terminal, (terminal) => terminal.marcaciones)
+    terminal: Terminal
     @ManyToOne(() => Usuario, (usuario) => usuario.marcaciones)
     usuario: Usuario
 }
