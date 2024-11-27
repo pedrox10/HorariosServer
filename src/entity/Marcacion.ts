@@ -1,8 +1,8 @@
-import {Column, Entity, ManyToOne, PrimaryGeneratedColumn} from "typeorm";
+import {BaseEntity, Column, Entity, ManyToOne, PrimaryGeneratedColumn} from "typeorm";
 import {Usuario} from "./Usuario";
 
 @Entity()
-export class Marcacion {
+export class Marcacion extends BaseEntity {
     @PrimaryGeneratedColumn()
     id: number;
     @Column()

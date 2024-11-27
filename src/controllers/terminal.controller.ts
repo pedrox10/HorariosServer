@@ -1,6 +1,8 @@
 import {Request, Response} from "express"
 import {Terminal} from "../entity/Terminal";
 import {AppDataSource} from "../data-source";
+import fs from "fs";
+import {Marcacion} from "../entity/Marcacion";
 
 export const crearTerminal = async (req: Request, res: Response) => {
     const terminal = new Terminal()
@@ -44,7 +46,7 @@ export const sincronizarTerminal = async (req: Request, res: Response) => {
     const {id} = req.params;
     const terminal = await Terminal.findOne({where: {id: parseInt(id)},});
     if(terminal?.ult_sincronizacion === null) {
-        res.send({"res":"No fue sync"})
+        res.send(sincronizarMarcaciones());
     } else {
         res.send({"res":changeTimezone(terminal?.ult_sincronizacion, "America/La_Paz").toString()})
     }
@@ -54,6 +56,29 @@ export const verTerminal = async (req: Request, res: Response) => {
     const {id} = req.params;
     const terminal = await Terminal.findOne({where: {id: parseInt(id)},});
     res.send(terminal)
+}
+
+async function nuevaMarcacion(value:any) {
+    const marcacion = new Marcacion();
+    marcacion.ci = value.user_id;
+    marcacion.fechaMarcaje = value.timestamp;
+    await marcacion.save();
+}
+
+function sincronizarMarcaciones(fechaDesde?: Date) {
+    if(fechaDesde == null || fechaDesde == undefined) {
+        try {
+            const jsonString = fs.readFileSync("./src/registros.json");
+            let data = JSON.parse(jsonString.toString());
+            data.forEach((value: any) => {
+                nuevaMarcacion(value)
+            });
+            return data;
+        } catch (err) {
+            console.log(err);
+            return;
+        }
+    }
 }
 
 function changeTimezone(date:any, ianatz: string) {
