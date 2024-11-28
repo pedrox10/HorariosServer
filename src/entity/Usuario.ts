@@ -21,8 +21,6 @@ export class Usuario extends BaseEntity{
     estado:EstadoUsuario
     @OneToMany(() => Turno, (turno) => turno.usuario)
     turnos: Turno[]
-    @OneToMany(() => Marcacion, (marcacion) => marcacion.usuario)
-    marcaciones: Marcacion[]
     @ManyToOne(() => Terminal, (terminal) => terminal.usuarios)
     terminal: Terminal
 }

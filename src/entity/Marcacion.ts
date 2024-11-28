@@ -12,6 +12,4 @@ export class Marcacion extends BaseEntity {
     fechaMarcaje: Date;
     @ManyToOne(() => Terminal, (terminal) => terminal.marcaciones)
     terminal: Terminal
-    @ManyToOne(() => Usuario, (usuario) => usuario.marcaciones)
-    usuario: Usuario
 }
