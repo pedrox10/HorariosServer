@@ -5,6 +5,7 @@ import fs from "fs";
 import {Marcacion} from "../entity/Marcacion";
 import path from "path";
 import {Usuario} from "../entity/Usuario";
+import moment from 'moment';
 
 const envPython = path.join(__dirname, "../scriptpy/envpy", "bin", "python3");
 const spawn = require('await-spawn');
@@ -62,7 +63,7 @@ export const sincronizarTerminal = async (req: Request, res: Response) => {
                 JSON.parse(pyprog.toString()).forEach((value: any) => {
                     let marcacion = new Marcacion();
                     marcacion.ci = value.user_id;
-                    marcacion.fechaMarcaje = value.timestamp;
+                    marcacion.fechaMarcaje = value.timestamp
                     marcacion.terminal = terminal;
                     marcaciones.push(marcacion)
                 });
@@ -85,6 +86,7 @@ export const sincronizarTerminal = async (req: Request, res: Response) => {
                 let usuarios: Usuario[]= [];
                 JSON.parse(pyprog.toString()).forEach((value: any) => {
                     let usuario = new Usuario();
+                    usuario.uid = value.uid;
                     usuario.ci = value.user_id;
                     usuario.nombre = value.name;
                     usuario.terminal = terminal;

@@ -13,6 +13,7 @@ try:
     aux = []
     for user in users:
         data = {
+        "uid": user.uid,
         "user_id": user.user_id,
         "name": user.name,
         "privilege": user.privilege,

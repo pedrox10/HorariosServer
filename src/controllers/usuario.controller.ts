@@ -3,6 +3,7 @@ import {Usuario} from "../entity/Usuario";
 import path from "path";
 import {Terminal} from "../entity/Terminal";
 import {Marcacion} from "../entity/Marcacion";
+import moment from 'moment';
 
 const envPython = path.join(__dirname, "../scriptpy/envpy", "bin", "python3");
 const spawn = require('await-spawn');
@@ -19,6 +20,7 @@ export const getMarcaciones = async (req: Request, res: Response) => {
     const {id} = req.params;
     const usuario = await Usuario.findOne({where: {id: parseInt(id)},});
     const marcaciones = await Marcacion.find({where: {ci: usuario?.ci}})
+    //console.log(moment(marcaciones.at(marcaciones.length-1)?.fechaMarcaje).utc(true).toDate())
     res.send(marcaciones)
 }
 

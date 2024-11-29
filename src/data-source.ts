@@ -18,4 +18,5 @@ export const AppDataSource = new DataSource({
     entities: [Terminal, Usuario, Marcacion, Turno, Horario],
     subscribers: [],
     migrations: [],
+
 })

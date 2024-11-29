@@ -14,6 +14,8 @@ export class Usuario extends BaseEntity{
     @PrimaryGeneratedColumn()
     id:number;
     @Column()
+    uid: number
+    @Column()
     ci: number
     @Column()
     nombre:string
