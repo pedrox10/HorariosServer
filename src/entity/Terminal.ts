@@ -3,7 +3,7 @@ import {Marcacion} from "./Marcacion";
 import {Usuario} from "./Usuario";
 
 @Entity()
-export class Terminal extends BaseEntity {
+export class  Terminal extends BaseEntity {
     @PrimaryGeneratedColumn()
     id: number;
     @Column()
