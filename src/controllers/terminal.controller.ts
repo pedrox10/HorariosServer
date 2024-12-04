@@ -1,4 +1,3 @@
-
 import {Request, Response} from "express"
 import {Terminal} from "../entity/Terminal";
 import {AppDataSource} from "../data-source";
@@ -63,10 +62,10 @@ export const sincronizarTerminal = async (req: Request, res: Response) => {
                     args.push(moment(terminal.ult_sincronizacion).format('MM/DD/YY hh:mm:ss'))
                 }
                 args.unshift(pyFile);
-                //const pyprog = await spawn(envPython, args);
+                const pyprog = await spawn(envPython, args);
                 console.log(envPython + " " + args)
                 let marcaciones: Marcacion[] = [];
-                const pyprog = fs.readFileSync("./src/registros.json");
+                //const pyprog = fs.readFileSync("./src/registros.json");
                 JSON.parse(pyprog.toString()).forEach((value: any) => {
                     let marcacion = new Marcacion();
                     marcacion.ci = value.user_id;
@@ -85,19 +84,19 @@ export const sincronizarTerminal = async (req: Request, res: Response) => {
 
         const getUsuariosPy = async () => {
             try {
-                /*const pyFile = 'src/scriptpy/usuarios.py';
+                const pyFile = 'src/scriptpy/usuarios.py';
                 const args = [terminal?.ip, terminal?.puerto];
                 args.unshift(pyFile);
                 const pyprog = await spawn(envPython, args);
-                let usuariosT = JSON.parse(pyprog.toString());*/
+                let usuariosT = JSON.parse(pyprog.toString());
 
-                let usuariosT = [{"uid":1,"role":0,"password":"","name":"PEDRO DINO","cardno":0,"user_id":"5907490"},{"uid":4,"role":0,"password":"","name":"MARIA TELLEZ","cardno":0,"user_id":"5907492"},{"uid":3,"role":0,"password":"","name":"Noelia","cardno":0,"user_id":"5907492"},{"uid":2,"role":0,"password":"","name":"Jose","cardno":0,"user_id":"5907492"}]
-                let usuariosBD = await Usuario.find({where: { terminal: terminal}});
+                //let usuariosT = [{"uid":1,"role":0,"password":"","name":"PEDRO DINO","cardno":0,"user_id":"5907490"},{"uid":4,"role":0,"password":"","name":"MARIA TELLEZ","cardno":0,"user_id":"5907492"},{"uid":3,"role":0,"password":"","name":"Noelia","cardno":0,"user_id":"5907492"},{"uid":2,"role":0,"password":"","name":"Jose","cardno":0,"user_id":"5907492"}]
+                let usuariosBD = await Usuario.find({where: {terminal: terminal}});
                 if (fueSincronizado) {
                     await usuariosT.forEach(async (usuarioT: any) => {
                         let usuarioBD = await Usuario.findOneBy({uid: usuarioT.uid})
-                        if(usuarioBD) {
-                            if(usuarioT.name !== usuarioBD.nombre){
+                        if (usuarioBD) {
+                            if (usuarioT.name !== usuarioBD.nombre) {
                                 usuarioBD.nombre = usuarioT.name;
                                 await usuarioBD.save()
                             }
@@ -112,13 +111,13 @@ export const sincronizarTerminal = async (req: Request, res: Response) => {
                     });
 
                     await usuariosBD.forEach(async (usuario: Usuario) => {
-                        if(buscarUsuarioEn(usuario, usuariosT) == false) {
+                        if (buscarUsuarioEn(usuario, usuariosT) == false) {
                             await Usuario.delete({id: usuario.id});
                         }
                     });
 
                 } else {
-                    let usuarios:Usuario[] = [];
+                    let usuarios: Usuario[] = [];
                     await usuariosT.forEach(async (usuarioT: any) => {
                         let usuario = new Usuario();
                         usuario.uid = usuarioT.uid;
@@ -138,10 +137,11 @@ export const sincronizarTerminal = async (req: Request, res: Response) => {
             }
         }
         await getUsuariosPy();
-        await res.send(await Terminal.findOne({where: {id: terminal.id}, relations: {
+        await res.send(await Terminal.findOne({
+            where: {id: terminal.id}, relations: {
                 usuarios: true,
-            }}));
-        //console.log(usuarios)
+            }
+        }));
     }
 }
 
@@ -151,11 +151,11 @@ export const verTerminal = async (req: Request, res: Response) => {
     res.send(terminal)
 }
 
-function buscarUsuarioEn(usuario:Usuario, datos: any[]) {
+function buscarUsuarioEn(usuario: Usuario, datos: any[]) {
     let res = false;
     datos.forEach(value => {
-        if(usuario.uid === value.uid) {
-            res=true;
+        if (usuario.uid === value.uid) {
+            res = true;
             return
         }
     })

@@ -7,6 +7,7 @@ import {
     getTerminales,
     sincronizarTerminal, verTerminal
 } from "./controllers/terminal.controller";
+import {getHorario, getHorarios} from "./controllers/horario.controller";
 
 const router = Router();
 
@@ -24,6 +25,7 @@ router.get("/marcaciones/:id", getMarcaciones)
 router.post('/usuario', agregarUsuario);
 
 // Rutas para operaciones con Horarios
-// router.post('/horario', crearUsuario);
+router.get('/horario/:id', getHorario);
+router.get('/horarios/', getHorarios);
 
 export default router

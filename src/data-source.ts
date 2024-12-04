@@ -3,8 +3,9 @@ import {DataSource} from "typeorm"
 import {Terminal} from "./entity/Terminal"
 import {Marcacion} from "./entity/Marcacion";
 import {Usuario} from "./entity/Usuario";
-import {Turno} from "./entity/Turno";
+import {TurnoDia} from "./entity/TurnoDia";
 import {Horario} from "./entity/Horario";
+import {Turno} from "./entity/Turno";
 
 export const AppDataSource = new DataSource({
     type: "mysql",
@@ -15,7 +16,7 @@ export const AppDataSource = new DataSource({
     database: "horarios",
     synchronize: true,
     logging: false,
-    entities: [Terminal, Usuario, Marcacion, Turno, Horario],
+    entities: [Terminal, Usuario, Marcacion, TurnoDia, Horario, Turno],
     subscribers: [],
     migrations: [],
 

@@ -1,8 +1,9 @@
 import {Entity, Column, PrimaryGeneratedColumn, OneToMany, BaseEntity, OneToOne, JoinColumn, ManyToOne} from "typeorm"
-import {Turno} from "./Turno";
+import {TurnoDia} from "./TurnoDia";
 import {Marcacion} from "./Marcacion";
 import {Horario} from "./Horario";
 import {Terminal} from "./Terminal";
+import {Turno} from "./Turno";
 
 enum EstadoUsuario {
     inactivo,

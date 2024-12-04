@@ -1,5 +1,5 @@
 import {Entity, Column, PrimaryGeneratedColumn, OneToMany, BaseEntity} from "typeorm"
-import {Turno} from "./Turno";
+import {TurnoDia} from "./TurnoDia";
 
 @Entity()
 export class Horario extends BaseEntity{
@@ -8,9 +8,11 @@ export class Horario extends BaseEntity{
     @Column()
     nombre: string
     @Column()
-    descripcion: string
+    tolerancia: number
     @Column()
     color: string
     @Column()
-    tolerancia: number
+    descripcion: string
+    @OneToMany(() => TurnoDia, (turnoDia) => turnoDia.horario)
+    turnosDia: TurnoDia[]
 }
