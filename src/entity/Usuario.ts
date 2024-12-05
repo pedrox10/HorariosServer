@@ -5,10 +5,10 @@ import {Horario} from "./Horario";
 import {Terminal} from "./Terminal";
 import {Turno} from "./Turno";
 
-enum EstadoUsuario {
-    inactivo,
-    activo,
-}
+    enum EstadoUsuario {
+        inactivo,
+        activo,
+    }
 
 @Entity()
 export class Usuario extends BaseEntity{
