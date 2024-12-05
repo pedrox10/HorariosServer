@@ -19,8 +19,8 @@ export const getUsuarios = async (req: Request, res: Response) => {
 export const getMarcaciones = async (req: Request, res: Response) => {
     const {id} = req.params;
     const usuario = await Usuario.findOne({where: {id: parseInt(id)},});
-    const marcaciones = await Marcacion.find({where: {ci: usuario?.ci}})
-    //console.log(moment(marcaciones.at(marcaciones.length-1)?.fechaMarcaje).utc(true).toDate())
+    const marcaciones = await Marcacion.findBy( {ci: usuario?.ci, terminal: usuario?.terminal})
+    console.log(moment(marcaciones.at(marcaciones.length-1)?.fechaMarcaje).utc(true).toDate())
     res.send(marcaciones)
 }
 

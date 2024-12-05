@@ -9,11 +9,15 @@ export class TurnoDia extends BaseEntity{
     @Column()
     dia: string
     @Column()
-    num_turno: number
+    num_turnos: number
     @Column({type: 'time', nullable: true})
-    horaEntrada: Date;
+    priEntrada: Date;
     @Column({type: 'time', nullable: true})
-    horaSalida: Date;
+    priSalida: Date;
+    @Column({type: 'time', nullable: true})
+    segEntrada: Date;
+    @Column({type: 'time', nullable: true})
+    segSalida: Date;
     @ManyToOne(() => Horario, (horario) => horario.turnosDia)
     horario: Horario
 }

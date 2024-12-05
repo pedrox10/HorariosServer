@@ -58,14 +58,14 @@ export const sincronizarTerminal = async (req: Request, res: Response) => {
                 const pyFile = 'src/scriptpy/marcaciones.py';
                 const args = [terminal.ip, terminal.puerto];
                 if (fueSincronizado) {
-                    console.log(moment(terminal.ult_sincronizacion).format('MM/DD/YY hh:mm:ss'))
-                    args.push(moment(terminal.ult_sincronizacion).format('MM/DD/YY hh:mm:ss'))
+                    console.log(moment(terminal.ult_sincronizacion).format('MM/DD/YY HH:mm:ss'))
+                    args.push(moment(terminal.ult_sincronizacion).format('MM/DD/YY HH:mm:ss'))
                 }
                 args.unshift(pyFile);
-                //const pyprog = await spawn(envPython, args);
+                const pyprog = await spawn(envPython, args);
                 console.log(envPython + " " + args)
                 let marcaciones: Marcacion[] = [];
-                const pyprog = fs.readFileSync("./src/registros.json");
+                //const pyprog = fs.readFileSync("./src/registros.json");
                 JSON.parse(pyprog.toString()).forEach((value: any) => {
                     let marcacion = new Marcacion();
                     marcacion.ci = value.user_id;
@@ -84,17 +84,17 @@ export const sincronizarTerminal = async (req: Request, res: Response) => {
 
         const getUsuariosPy = async () => {
             try {
-                /*const pyFile = 'src/scriptpy/usuarios.py';
+                const pyFile = 'src/scriptpy/usuarios.py';
                 const args = [terminal?.ip, terminal?.puerto];
                 args.unshift(pyFile);
                 const pyprog = await spawn(envPython, args);
-                let usuariosT = JSON.parse(pyprog.toString());*/
+                let usuariosT = JSON.parse(pyprog.toString());
 
-                let usuariosT = [{"uid":1,"role":0,"password":"","name":"PEDRO DINO","cardno":0,"user_id":"5907490"},{"uid":4,"role":0,"password":"","name":"MARIA TELLEZ","cardno":0,"user_id":"5907492"},{"uid":3,"role":0,"password":"","name":"Noelia","cardno":0,"user_id":"5907492"},{"uid":2,"role":0,"password":"","name":"Jose","cardno":0,"user_id":"5907492"}]
+                //let usuariosT = [{"uid":1,"role":0,"password":"","name":"PEDRO DINO","cardno":0,"user_id":"5907490"},{"uid":4,"role":0,"password":"","name":"MARIA TELLEZ","cardno":0,"user_id":"5907492"},{"uid":3,"role":0,"password":"","name":"Noelia","cardno":0,"user_id":"5907492"},{"uid":2,"role":0,"password":"","name":"Jose","cardno":0,"user_id":"5907492"}]
                 let usuariosBD = await Usuario.find({where: {terminal: terminal}});
                 if (fueSincronizado) {
                     await usuariosT.forEach(async (usuarioT: any) => {
-                        let usuarioBD = await Usuario.findOneBy({uid: usuarioT.uid})
+                        let usuarioBD = await Usuario.findOneBy({ uid: usuarioT.uid, terminal: terminal })
                         if (usuarioBD) {
                             if (usuarioT.name !== usuarioBD.nombre) {
                                 usuarioBD.nombre = usuarioT.name;
