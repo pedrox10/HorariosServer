@@ -1,14 +1,15 @@
 import {Entity, Column, PrimaryGeneratedColumn, ManyToOne, OneToOne, JoinColumn, BaseEntity, OneToMany} from "typeorm"
 import {Horario} from "./Horario";
-import {Turno} from "./Turno";
 
 @Entity()
 export class TurnoDia extends BaseEntity{
     @PrimaryGeneratedColumn()
     id: number;
     @Column()
-    dia: string
+    habilitado: boolean = false;
     @Column()
+    dia: string
+    @Column({nullable: true})
     num_turnos: number
     @Column({type: 'time', nullable: true})
     priEntrada: Date;

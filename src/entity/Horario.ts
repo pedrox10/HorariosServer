@@ -1,5 +1,6 @@
 import {Entity, Column, PrimaryGeneratedColumn, OneToMany, BaseEntity} from "typeorm"
 import {TurnoDia} from "./TurnoDia";
+import {Turno} from "./Turno";
 
 @Entity()
 export class Horario extends BaseEntity{

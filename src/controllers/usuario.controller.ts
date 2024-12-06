@@ -4,9 +4,7 @@ import path from "path";
 import {Terminal} from "../entity/Terminal";
 import {Marcacion} from "../entity/Marcacion";
 import moment from 'moment';
-
-const envPython = path.join(__dirname, "../scriptpy/envpy", "bin", "python3");
-const spawn = require('await-spawn');
+import {Turno} from "../entity/Turno";
 
 export const getUsuarios = async (req: Request, res: Response) => {
     const {id} = req.params;
@@ -24,6 +22,14 @@ export const getMarcaciones = async (req: Request, res: Response) => {
     res.send(marcaciones)
 }
 
+export const getTurnos = async (req: Request, res: Response) => {
+    const {id,fecha} = req.params;
+    const usuario = await Usuario.findOne({where: {id: parseInt(id)},});
+    //const turnos = await Turno.findBy( {usuario: usuario?, fecha: fecha})
+    //console.log(moment(turnos.at(turnos.length-1)?.fechaMarcaje).utc(true).toDate())
+    //res.send(turnos)
+}
+
 export const agregarUsuario = async (req: Request, res: Response) => {
     const usuario = new Usuario()
     usuario.ci = req.body.ci
@@ -33,23 +39,3 @@ export const agregarUsuario = async (req: Request, res: Response) => {
     res.send(usuario)
 }
 
-export const actualizarUsuario = async (req: Request, res: Response) => {
-    const {id} = req.params;
-    const {ci, nombre} = req.body
-    const usuario = await Usuario.findOne({where: {id: parseInt(id)},});
-    if(!usuario) {
-
-    } else {
-        usuario.ci = ci;
-        usuario.nombre = nombre;
-        usuario.save()
-        res.send(usuario)
-    }
-}
-
-export const eliminarUsuario = async (req: Request, res: Response) => {
-    const {id} = req.params;
-    const aux = await Usuario.delete({id: parseInt(id)});
-    console.log(aux)
-    res.send(aux)
-}

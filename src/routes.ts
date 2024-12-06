@@ -1,5 +1,5 @@
 import {Router} from "express";
-import {agregarUsuario, getMarcaciones, getUsuarios} from "./controllers/usuario.controller";
+import {agregarUsuario, getMarcaciones, getTurnos, getUsuarios} from "./controllers/usuario.controller";
 import {
     crearTerminal,
     editarTerminal,
@@ -23,6 +23,7 @@ router.get("/terminal/sincronizar/:id",sincronizarTerminal);
 router.get("/terminal/:id/usuarios", getUsuarios)
 router.get("/marcaciones/:id", getMarcaciones)
 router.post('/usuario', agregarUsuario);
+router.post("/usuario/:id/turnos/:fecha", getTurnos)
 
 // Rutas para operaciones con Horarios
 router.get('/horario/:id', getHorario);
