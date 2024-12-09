@@ -5,6 +5,7 @@ import {Terminal} from "../entity/Terminal";
 import {Marcacion} from "../entity/Marcacion";
 import moment from 'moment';
 import {Turno} from "../entity/Turno";
+import {AppDataSource} from "../data-source";
 
 export const getUsuarios = async (req: Request, res: Response) => {
     const {id} = req.params;
@@ -14,9 +15,17 @@ export const getUsuarios = async (req: Request, res: Response) => {
     res.send(terminal?.usuarios)
 }
 
-export const getMarcaciones = async (req: Request, res: Response) => {
+export const getUsuario = async (req: Request, res: Response) => {
     const {id} = req.params;
     const usuario = await Usuario.findOne({where: {id: parseInt(id)},});
+    res.send(usuario)
+}
+
+export const getMarcaciones = async (req: Request, res: Response) => {
+    const {id} = req.params;
+    const usuario = await Usuario.findOne({where: {id: parseInt(id)}, relations: {
+            terminal: true,
+        }});
     const marcaciones = await Marcacion.findBy( {ci: usuario?.ci, terminal: usuario?.terminal})
     console.log(moment(marcaciones.at(marcaciones.length-1)?.fechaMarcaje).utc(true).toDate())
     res.send(marcaciones)
@@ -24,10 +33,21 @@ export const getMarcaciones = async (req: Request, res: Response) => {
 
 export const getTurnos = async (req: Request, res: Response) => {
     const {id,fecha} = req.params;
-    const usuario = await Usuario.findOne({where: {id: parseInt(id)},});
-    //const turnos = await Turno.findBy( {usuario: usuario?, fecha: fecha})
-    //console.log(moment(turnos.at(turnos.length-1)?.fechaMarcaje).utc(true).toDate())
-    //res.send(turnos)
+    let usuario = await Usuario.findOne({where: {id: parseInt(id)},});
+    let aux = moment(fecha).format('yyyy-MM-DD')
+    console.log(aux)
+    console.log(moment(aux).utc(true).toDate())
+    if(usuario){
+        /*const queryRunner = await AppDataSource.createQueryRunner();
+        var result = await queryRunner.manager.query(
+            "select * from turno t WHERE t.usuarioId = 82 AND t.fecha = '2024-12-09'"
+        );
+        await console.log(result)*/
+
+        const turnos = await Turno.findBy( {usuario: usuario, fecha: moment(aux).toDate()})
+        console.log(turnos.at(0)?.horaEntrada)
+        res.send(turnos)
+    }
 }
 
 export const agregarUsuario = async (req: Request, res: Response) => {

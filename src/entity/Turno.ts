@@ -6,7 +6,7 @@ import {Usuario} from "./Usuario";
 export class Turno extends BaseEntity{
     @PrimaryGeneratedColumn()
     id: number;
-    @Column()
+    @Column({type: 'date'})
     fecha: Date
     @Column({type: 'time', nullable: true})
     horaEntrada: Date;
@@ -14,6 +14,6 @@ export class Turno extends BaseEntity{
     horaSalida: Date;
     @ManyToOne(() => Usuario, (usuario) => usuario.turnos)
     usuario: Usuario
-    @Column()
-    horario: number
+    @ManyToOne(() => Horario)
+    horario: Horario
 }
