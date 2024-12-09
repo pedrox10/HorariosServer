@@ -45,7 +45,7 @@ export const getTurnos = async (req: Request, res: Response) => {
         await console.log(result)*/
 
         const turnos = await Turno.findBy( {usuario: usuario, fecha: moment(aux).toDate()})
-        console.log(turnos.at(0)?.horaEntrada)
+        console.log(turnos.at(1)?.horaEntrada)
         res.send(turnos)
     }
 }
