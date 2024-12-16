@@ -1,18 +1,23 @@
 import {Router} from "express";
-import {agregarUsuario, getMarcaciones, getTurnos, getUsuario, getUsuarios} from "./controllers/usuario.controller";
+import {
+    getInfoMarcaciones,
+    getMarcaciones,
+    getUsuario,
+    getUsuarios
+} from "./controllers/usuario.controller";
 import {
     crearTerminal,
     editarTerminal,
-    eliminarTerminal,
+    eliminarTerminal, getTerminal,
     getTerminales,
-    sincronizarTerminal, verTerminal
+    sincronizarTerminal
 } from "./controllers/terminal.controller";
 import {getHorario, getHorarios} from "./controllers/horario.controller";
 
 const router = Router();
 
 // Rutas para operaciones con Terminales
-router.get("/terminal/:id",verTerminal);
+router.get("/terminal/:id",getTerminal);
 router.post('/terminal/agregar', crearTerminal);
 router.put('/terminal/editar/:id', editarTerminal);
 router.delete('/terminal/eliminar/:id', eliminarTerminal);
@@ -23,8 +28,8 @@ router.get("/terminal/sincronizar/:id",sincronizarTerminal);
 router.get("/terminal/:id/usuarios", getUsuarios)
 router.get("/usuario/:id", getUsuario)
 router.get("/marcaciones/:id", getMarcaciones)
-router.post('/usuario', agregarUsuario);
-router.get("/usuario/:id/turnos/:fecha", getTurnos)
+router.get("/usuario/:id/ini/:fechaIni/fin/:fechaFin", getInfoMarcaciones)
+//router.post('/usuario', agregarUsuario);
 
 // Rutas para operaciones con Horarios
 router.get('/horario/:id', getHorario);

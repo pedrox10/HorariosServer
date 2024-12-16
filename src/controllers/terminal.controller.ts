@@ -4,7 +4,7 @@ import {AppDataSource} from "../data-source";
 import fs from "fs";
 import {Marcacion} from "../entity/Marcacion";
 import path from "path";
-import {Usuario} from "../entity/Usuario";
+import {EstadoUsuario, Usuario} from "../entity/Usuario";
 import moment from 'moment';
 
 const envPython = path.join(__dirname, "../scriptpy/envpy", "bin", "python3");
@@ -30,7 +30,6 @@ export const editarTerminal = async (req: Request, res: Response) => {
         terminal.nombre = nombre;
         terminal.ip = ip;
         terminal.puerto = puerto
-        terminal.ult_sincronizacion = new Date();
         terminal.save()
         res.send(terminal)
     }
@@ -62,14 +61,18 @@ export const sincronizarTerminal = async (req: Request, res: Response) => {
                     args.push(moment(terminal.ult_sincronizacion).format('MM/DD/YY HH:mm:ss'))
                 }
                 args.unshift(pyFile);
-                const pyprog = await spawn(envPython, args);
+                //const pyprog = await spawn(envPython, args);
                 console.log(envPython + " " + args)
                 let marcaciones: Marcacion[] = [];
-                //const pyprog = fs.readFileSync("./src/registros.json");
+                const pyprog = fs.readFileSync("./src/registros.json");
                 JSON.parse(pyprog.toString()).forEach((value: any) => {
                     let marcacion = new Marcacion();
                     marcacion.ci = value.user_id;
                     marcacion.fechaMarcaje = value.timestamp
+                    let fecha = moment(value.timestamp, "YYYY-MM-DD")
+                    let hora = moment(value.timestamp, "YYYY-MM-DD HH-mm-ss")
+                    marcacion.fecha = moment(fecha).toDate()
+                    marcacion.hora = moment(hora).toDate()
                     marcacion.terminal = terminal;
                     marcaciones.push(marcacion)
                 });
@@ -87,10 +90,10 @@ export const sincronizarTerminal = async (req: Request, res: Response) => {
                 const pyFile = 'src/scriptpy/usuarios.py';
                 const args = [terminal?.ip, terminal?.puerto];
                 args.unshift(pyFile);
-                const pyprog = await spawn(envPython, args);
-                let usuariosT = JSON.parse(pyprog.toString());
+                /*const pyprog = await spawn(envPython, args);
+                let usuariosT = JSON.parse(pyprog.toString());*/
 
-                //let usuariosT = [{"uid":1,"role":0,"password":"","name":"PEDRO DINO","cardno":0,"user_id":"5907490"},{"uid":4,"role":0,"password":"","name":"MARIA TELLEZ","cardno":0,"user_id":"5907491"},{"uid":3,"role":0,"password":"","name":"Noelia","cardno":0,"user_id":"5907492"},{"uid":2,"role":0,"password":"","name":"Jose","cardno":0,"user_id":"5907493"}]
+                let usuariosT = [{"uid":1,"role":0,"password":"","name":"PEDRO DINO","cardno":0,"user_id":"5907490"},{"uid":2,"role":0,"password":"","name":"MARIA COSTA","cardno":0,"user_id":"5907491"}]
                 let usuariosBD = await Usuario.find({where: {terminal: terminal}});
                 if (fueSincronizado) {
                     await usuariosT.forEach(async (usuarioT: any) => {
@@ -128,8 +131,19 @@ export const sincronizarTerminal = async (req: Request, res: Response) => {
                     });
                     const userRepo = AppDataSource.getRepository(Usuario);
                     await userRepo.insert(usuarios);
+                    let nuevosUsuarios = await Usuario.findBy({terminal: terminal})
+                    let usuariosInactivos: Usuario[] = []
+                    for(let usuario of nuevosUsuarios) {
+                        let numMarcaciones = await getNumMarcaciones(usuario.id, terminal)
+                        if( numMarcaciones == 0){
+                            usuario.estado = EstadoUsuario.inactivo
+                            usuariosInactivos.push(usuario)
+                        }
+                    }
+                    await userRepo.save(usuariosInactivos)
                 }
                 terminal.ult_sincronizacion = moment().toDate()
+                console.log(moment(terminal.ult_sincronizacion))
                 await terminal.save()
 
             } catch (e: any) {
@@ -137,15 +151,15 @@ export const sincronizarTerminal = async (req: Request, res: Response) => {
             }
         }
         await getUsuariosPy();
-        await res.send(await Terminal.findOne({
+        res.send(await Terminal.findOne({
             where: {id: terminal.id}, relations: {
                 usuarios: true,
-            }
+            },
         }));
     }
 }
 
-export const verTerminal = async (req: Request, res: Response) => {
+export const getTerminal = async (req: Request, res: Response) => {
     const {id} = req.params;
     const terminal = await Terminal.findOne({where: {id: parseInt(id)},});
     res.send(terminal)
@@ -160,4 +174,8 @@ function buscarUsuarioEn(usuario: Usuario, datos: any[]) {
         }
     })
     return res;
+}
+async function getNumMarcaciones(ci:number, terminal:Terminal) {
+    let marcaciones = await Marcacion.findBy({ci: ci, terminal: terminal});
+    return marcaciones.length;
 }

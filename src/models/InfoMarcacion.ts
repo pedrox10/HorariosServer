@@ -1,26 +1,19 @@
 export class InfoMarcacion{
-  fecha:Date;
-  priEntradas: Date[]
-  priSalidas: Date[]
-  segEntradas: Date[]
-  segSalidas: Date[]
+  dia:string;
+  horario: string;
+  priEntradas: string[]
+  priSalidas: string[]
+  segEntradas: string[]
+  segSalidas: string[]
   cantRetrasos: number
   minRetrasos: number
   noMarcados: number
+  hayPriRetraso: boolean
+  haySegRetraso: boolean
+  activo:boolean
+  mensaje:string
+  numTurnos: number
 
-  getPriEntrada() {
-
-  }
-
-  getPriSalida() {
-
-  }
-
-  getSegEntrada() {
-
-  }
-
-  getSegSalida() {
-
+  constructor() {
   }
 }
