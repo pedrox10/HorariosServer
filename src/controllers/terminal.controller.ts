@@ -61,10 +61,10 @@ export const sincronizarTerminal = async (req: Request, res: Response) => {
                     args.push(moment(terminal.ult_sincronizacion).format('MM/DD/YY HH:mm:ss'))
                 }
                 args.unshift(pyFile);
-                //const pyprog = await spawn(envPython, args);
+                const pyprog = await spawn(envPython, args);
                 console.log(envPython + " " + args)
                 let marcaciones: Marcacion[] = [];
-                const pyprog = fs.readFileSync("./src/registros.json");
+                //const pyprog = fs.readFileSync("./src/registros.json");
                 JSON.parse(pyprog.toString()).forEach((value: any) => {
                     let marcacion = new Marcacion();
                     marcacion.ci = value.user_id;
@@ -90,10 +90,10 @@ export const sincronizarTerminal = async (req: Request, res: Response) => {
                 const pyFile = 'src/scriptpy/usuarios.py';
                 const args = [terminal?.ip, terminal?.puerto];
                 args.unshift(pyFile);
-                /*const pyprog = await spawn(envPython, args);
-                let usuariosT = JSON.parse(pyprog.toString());*/
+                const pyprog = await spawn(envPython, args);
+                let usuariosT = JSON.parse(pyprog.toString());
 
-                let usuariosT = [{"uid":1,"role":0,"password":"","name":"PEDRO DINO","cardno":0,"user_id":"5907490"},{"uid":2,"role":0,"password":"","name":"MARIA COSTA","cardno":0,"user_id":"5907491"}]
+                //let usuariosT = [{"uid":1,"role":0,"password":"","name":"PEDRO DINO","cardno":0,"user_id":"5907490"},{"uid":2,"role":0,"password":"","name":"MARIA COSTA","cardno":0,"user_id":"5907491"}]
                 let usuariosBD = await Usuario.find({where: {terminal: terminal}});
                 if (fueSincronizado) {
                     await usuariosT.forEach(async (usuarioT: any) => {
@@ -134,7 +134,7 @@ export const sincronizarTerminal = async (req: Request, res: Response) => {
                     let nuevosUsuarios = await Usuario.findBy({terminal: terminal})
                     let usuariosInactivos: Usuario[] = []
                     for(let usuario of nuevosUsuarios) {
-                        let numMarcaciones = await getNumMarcaciones(usuario.id, terminal)
+                        let numMarcaciones = await getNumMarcaciones(usuario.ci, terminal)
                         if( numMarcaciones == 0){
                             usuario.estado = EstadoUsuario.inactivo
                             usuariosInactivos.push(usuario)
@@ -175,6 +175,7 @@ function buscarUsuarioEn(usuario: Usuario, datos: any[]) {
     })
     return res;
 }
+
 async function getNumMarcaciones(ci:number, terminal:Terminal) {
     let marcaciones = await Marcacion.findBy({ci: ci, terminal: terminal});
     return marcaciones.length;
