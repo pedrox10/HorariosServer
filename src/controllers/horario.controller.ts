@@ -14,6 +14,6 @@ export const getHorario = async (req: Request, res: Response) => {
 }
 
 export const getHorarios= async (req: Request, res: Response) => {
-    let horarios = await AppDataSource.manager.find(Horario)
+    let horarios = await AppDataSource.manager.find(Horario, {relations: {jornadaDias: true}})
     res.send(horarios)
 }

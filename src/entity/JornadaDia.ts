@@ -17,6 +17,6 @@ export class JornadaDia extends BaseEntity{
     segEntrada: Date;
     @Column({type: 'time', nullable: true})
     segSalida: Date;
-    @ManyToOne(() => Horario, (horario) => horario.turnosDia)
+    @ManyToOne(() => Horario, (horario) => horario.jornadaDias)
     horario: Horario
 }
