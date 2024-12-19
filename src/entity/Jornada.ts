@@ -4,8 +4,8 @@ import {EstadoUsuario, Usuario} from "./Usuario";
 import {Turno} from "./Turno";
 
 export enum EstadoJornada {
-    activa,
     dia_libre,
+    activa,
     vacacion,
     baja_medica,
     permiso,
