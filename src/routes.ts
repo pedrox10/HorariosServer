@@ -28,6 +28,7 @@ router.get("/terminal/sincronizar/:id",sincronizarTerminal);
 router.get("/terminal/:id/usuarios", getUsuarios)
 router.get("/usuario/:id", getUsuario)
 router.get("/marcaciones/:id", getMarcaciones)
+router.get("/usuario/:id/ini/:ini/fin/:fin", getInfoMarcaciones)
 //router.post('/usuario', agregarUsuario);
 
 // Rutas para operaciones con Horarios

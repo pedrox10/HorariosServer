@@ -11,6 +11,6 @@ export class Turno extends BaseEntity{
     horaEntrada: Date;
     @Column({type: 'time', nullable: true})
     horaSalida: Date;
-    @ManyToOne(() => Jornada)
+    @OneToOne(() => Jornada)
     jornada: Jornada
 }

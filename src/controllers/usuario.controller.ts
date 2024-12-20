@@ -40,15 +40,15 @@ export const getMarcaciones = async (req: Request, res: Response) => {
 }
 
 export const getInfoMarcaciones = async (req: Request, res: Response) => {
-    const {id, fechaIni, fechaFin} = req.params;
+    const {id, ini, fin} = req.params;
     let usuario = await Usuario.findOne({
         where: {id: parseInt(id)}, relations: {
             terminal: true,
         }
     });
     if (usuario) {
-        let fecha_ini = moment(fechaIni).format('yyyy-MM-DD')
-        let fecha_fin = moment(fechaFin).format('yyyy-MM-DD')
+        let fecha_ini = moment(ini).format('yyyy-MM-DD')
+        let fecha_fin = moment(fin).format('yyyy-MM-DD')
         console.log("Ini: " + fecha_ini + " Fin: " + fecha_fin)
         let range = momentExt.range(moment(fecha_ini).toDate(), moment(fecha_fin).toDate())
         let resumenMarcacion: ResumenMarcacion = new ResumenMarcacion();
