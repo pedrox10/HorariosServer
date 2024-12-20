@@ -9,7 +9,6 @@ import {extendMoment} from "moment-range";
 import {env} from "../environments/environments";
 import {EstadoJornada, Jornada} from "../entity/Jornada";
 import {Turno} from "../entity/Turno";
-import {Marcacion} from "../entity/Marcacion";
 
 const momentExt = extendMoment(MomentExt);
 
@@ -41,6 +40,7 @@ export const asignarHorario = async (req: Request, res: Response) => {
     let rango = momentExt.range(moment(fechaIni).toDate(), moment(fechaFin).toDate())
     let listaJornadas: JornadaDia[] = [];
     listaJornadas = JSON.parse(jornadas) ;
+    let jornadasGuardar: Jornada[] = [];
 
     for (let usuario of usuarios) {
         for (let fecha of rango.by("day")) {
@@ -75,10 +75,10 @@ export const asignarHorario = async (req: Request, res: Response) => {
             } else {
                 jornada.estado = EstadoJornada.dia_libre
             }
-            await jornada.save();
+            await jornada.save()
         }
     }
-    res.send(true)
+    res.send({"res": true})
 }
 
 function getNumTurnos(jornadaDia: JornadaDia) {
