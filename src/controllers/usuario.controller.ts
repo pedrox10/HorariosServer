@@ -24,7 +24,7 @@ export const getUsuarios = async (req: Request, res: Response) => {
 
 export const getUsuario = async (req: Request, res: Response) => {
     const {id} = req.params;
-    const usuario = await Usuario.findOne({where: {id: parseInt(id)},});
+    const usuario = await Usuario.findOne({where: {id: parseInt(id)}, relations:{terminal: true}});
     res.send(usuario)
 }
 

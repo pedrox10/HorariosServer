@@ -9,6 +9,7 @@ import {extendMoment} from "moment-range";
 import {env} from "../environments/environments";
 import {EstadoJornada, Jornada} from "../entity/Jornada";
 import {Turno} from "../entity/Turno";
+import {Terminal} from "../entity/Terminal";
 
 const momentExt = extendMoment(MomentExt);
 
@@ -41,6 +42,7 @@ export const asignarHorario = async (req: Request, res: Response) => {
     let listaJornadas: JornadaDia[] = [];
     listaJornadas = JSON.parse(jornadas) ;
     let jornadasGuardar: Jornada[] = [];
+    let turnosGuardar: Turno[] = [];
 
     for (let usuario of usuarios) {
         for (let fecha of rango.by("day")) {
@@ -50,36 +52,57 @@ export const asignarHorario = async (req: Request, res: Response) => {
             jornada.fecha = moment(fecha.format("YYYY-MM-DD")).toDate();
             jornada.usuario = usuario
             jornada.horario = horario!;
-            await jornada.save();
             if(jornadaDia.habilitado) {
                 if(getNumTurnos(jornadaDia) == 2) {
                     let priTurno = new Turno()
-                    priTurno.jornada = jornada;
                     priTurno.horaEntrada = jornadaDia.priEntrada;
                     priTurno.horaSalida = jornadaDia.priSalida;
+                    jornada.priTurno = priTurno;
 
                     let segTurno = new Turno()
-                    segTurno.jornada = jornada;
                     segTurno.horaEntrada = jornadaDia.segEntrada;
                     segTurno.horaSalida = jornadaDia.segSalida;
+                    jornada.segTurno = segTurno;
 
-                    jornada.priTurno = priTurno
-                    jornada.segTurno = segTurno
+                    turnosGuardar.push(priTurno, segTurno);
                 } else {
                     let priTurno = new Turno()
-                    priTurno.jornada = jornada;
                     priTurno.horaEntrada = jornadaDia.priEntrada;
                     priTurno.horaSalida = jornadaDia.priSalida;
                     jornada.priTurno = priTurno
+                    turnosGuardar.push(priTurno)
                 }
             } else {
                 jornada.estado = EstadoJornada.dia_libre
             }
-            await jornada.save()
+            jornadasGuardar.push(jornada)
         }
     }
+    const turnoRepo = AppDataSource.getRepository(Turno);
+    await turnoRepo.insert(turnosGuardar).then(() => {
+        console.log("termino turnos")
+    })
+    const jornadaRepo = AppDataSource.getRepository(Jornada);
+    await jornadaRepo.insert(jornadasGuardar)
     res.send({"res": true})
+
 }
+
+export const eliminarJornada = async (req: Request, res: Response) => {
+    const {id} = req.params;
+    const jornada = await Jornada.findOne({where: {id: parseInt(id)}, relations: {
+        priTurno: true, segTurno: true,
+    }});
+    if(jornada){
+        let pri = jornada.priTurno
+        let seg = jornada.segTurno
+        await jornada.remove()
+        await pri.remove()
+        await seg.remove()
+    }
+    res.send("true")
+}
+
 
 function getNumTurnos(jornadaDia: JornadaDia) {
     let res: number = 0;

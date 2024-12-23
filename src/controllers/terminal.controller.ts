@@ -60,11 +60,11 @@ export const sincronizarTerminal = async (req: Request, res: Response) => {
                     console.log(moment(terminal.ult_sincronizacion).format('MM/DD/YY HH:mm:ss'))
                     args.push(moment(terminal.ult_sincronizacion).format('MM/DD/YY HH:mm:ss'))
                 }
-                args.unshift(pyFile);
-                const pyprog = await spawn(envPython, args);
+                /*args.unshift(pyFile);
+                const pyprog = await spawn(envPython, args);*/
                 console.log(envPython + " " + args)
                 let marcaciones: Marcacion[] = [];
-                //const pyprog = fs.readFileSync("./src/registros.json");
+                const pyprog = fs.readFileSync("./src/registros.json");
                 JSON.parse(pyprog.toString()).forEach((value: any) => {
                     let marcacion = new Marcacion();
                     marcacion.ci = value.user_id;
@@ -80,6 +80,7 @@ export const sincronizarTerminal = async (req: Request, res: Response) => {
                 await marcacionRepo.insert(marcaciones);
                 console.log("Agregados: " + marcaciones.length + " nuevas marcaciones")
             } catch (e: any) {
+                res.send("Error")
                 console.log(e.stderr.toString())
             }
         }
@@ -90,10 +91,10 @@ export const sincronizarTerminal = async (req: Request, res: Response) => {
                 const pyFile = 'src/scriptpy/usuarios.py';
                 const args = [terminal?.ip, terminal?.puerto];
                 args.unshift(pyFile);
-                const pyprog = await spawn(envPython, args);
-                let usuariosT = JSON.parse(pyprog.toString());
+                /*const pyprog = await spawn(envPython, args);
+                let usuariosT = JSON.parse(pyprog.toString());*/
 
-                //let usuariosT = [{"uid":1,"role":0,"password":"","name":"PEDRO DINO","cardno":0,"user_id":"5907490"},{"uid":2,"role":0,"password":"","name":"MARIA COSTA","cardno":0,"user_id":"5907491"}]
+                let usuariosT = [{"uid":1,"role":0,"password":"","name":"PEDRO DINO","cardno":0,"user_id":"5907490"},{"uid":2,"role":0,"password":"","name":"MARIA COSTA","cardno":0,"user_id":"5907491"}]
                 let usuariosBD = await Usuario.find({where: {terminal: terminal}});
                 if (fueSincronizado) {
                     await usuariosT.forEach(async (usuarioT: any) => {
@@ -147,6 +148,7 @@ export const sincronizarTerminal = async (req: Request, res: Response) => {
                 await terminal.save()
 
             } catch (e: any) {
+                res.send("Error")
                 console.log(e.stderr.toString())
             }
         }
