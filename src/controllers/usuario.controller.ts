@@ -9,6 +9,7 @@ import {InfoMarcacion} from "../models/InfoMarcacion";
 import {extendMoment} from "moment-range";
 import {Jornada} from "../entity/Jornada";
 import {ResumenMarcacion} from "../models/ResumenMarcacion";
+import {UsuarioM} from "../models/UsuarioM";
 
 const momentExt = extendMoment(MomentExt);
 
@@ -19,13 +20,32 @@ export const getUsuarios = async (req: Request, res: Response) => {
             usuarios: true,
         }
     });
-    res.send(terminal?.usuarios)
+    let usuarios: UsuarioM[] = []
+    for (let usuario of terminal!.usuarios) {
+        let usuarioM: UsuarioM = new UsuarioM();
+        usuarioM = usuario;
+        let jornada = await getJornadaPor(usuario, moment().format("YYYY-MM-DD"))
+        if (jornada)
+            usuarioM.horarioActual = jornada.horario.nombre
+        else
+            usuarioM.horarioActual = "Sin Asignar"
+        usuarios.push(usuarioM)
+    }
+    console.log(usuarios)
+    res.send(usuarios)
 }
 
 export const getUsuario = async (req: Request, res: Response) => {
     const {id} = req.params;
     const usuario = await Usuario.findOne({where: {id: parseInt(id)}, relations:{terminal: true}});
     res.send(usuario)
+}
+
+export const getJornada = async (req: Request, res: Response) => {
+    const {id, fecha} = req.params;
+    let usuario = await Usuario.findOne({where: {id: parseInt(id)},});
+    let jornada = await getJornadaPor(usuario!, moment(fecha).format('YYYY-MM-DD'))
+    res.send(jornada)
 }
 
 export const getMarcaciones = async (req: Request, res: Response) => {

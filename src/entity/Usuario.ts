@@ -1,4 +1,14 @@
-import {Entity, Column, PrimaryGeneratedColumn, OneToMany, BaseEntity, OneToOne, JoinColumn, ManyToOne} from "typeorm"
+import {
+    Entity,
+    Column,
+    PrimaryGeneratedColumn,
+    OneToMany,
+    BaseEntity,
+    OneToOne,
+    JoinColumn,
+    ManyToOne,
+    VirtualColumn
+} from "typeorm"
 import {Terminal} from "./Terminal";
 import {Jornada} from "./Jornada";
 

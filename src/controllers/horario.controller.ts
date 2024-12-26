@@ -36,6 +36,7 @@ export const asignarHorario = async (req: Request, res: Response) => {
     let usuarios = await Usuario.find({
         where: { id: In(listaIds) },
     });
+    //let jornadasBorrar = await  Jornada.findBy({usuario: In(usuarios)})
     let fechaIni = moment(ini).format("YYYY-MM-DD");
     let fechaFin = moment(fin).format("YYYY-MM-DD");
     let rango = momentExt.range(moment(fechaIni).toDate(), moment(fechaFin).toDate())

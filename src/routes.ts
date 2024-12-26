@@ -1,6 +1,6 @@
 import {Router} from "express";
 import {
-    getInfoMarcaciones,
+    getInfoMarcaciones, getJornada,
     getMarcaciones,
     getUsuario,
     getUsuarios
@@ -27,6 +27,7 @@ router.get("/terminal/sincronizar/:id",sincronizarTerminal);
 // Rutas para operaciones con Usuarios
 router.get("/terminal/:id/usuarios", getUsuarios)
 router.get("/usuario/:id", getUsuario)
+router.get('/usuario/:id/fecha/:fecha', getJornada);
 router.get("/marcaciones/:id", getMarcaciones)
 router.get("/usuario/:id/ini/:ini/fin/:fin", getInfoMarcaciones)
 //router.post('/usuario', agregarUsuario);
