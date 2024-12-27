@@ -8,7 +8,7 @@ import {
 import {
     crearTerminal,
     editarTerminal,
-    eliminarTerminal, getTerminal,
+    eliminarTerminal, getFechaPriMarcacion, getTerminal,
     getTerminales,
     sincronizarTerminal
 } from "./controllers/terminal.controller";
@@ -23,6 +23,7 @@ router.put('/terminal/editar/:id', editarTerminal);
 router.delete('/terminal/eliminar/:id', eliminarTerminal);
 router.get("/terminales",getTerminales);
 router.get("/terminal/sincronizar/:id",sincronizarTerminal);
+router.get("/terminal/:id/pri-marcacion",getFechaPriMarcacion);
 
 // Rutas para operaciones con Usuarios
 router.get("/terminal/:id/usuarios", getUsuarios)

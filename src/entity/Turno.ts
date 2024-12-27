@@ -1,6 +1,4 @@
 import {Entity, Column, PrimaryGeneratedColumn, ManyToOne, OneToOne, JoinColumn, BaseEntity} from "typeorm"
-import {Horario} from "./Horario";
-import {Usuario} from "./Usuario";
 import {Jornada} from "./Jornada";
 
 @Entity()

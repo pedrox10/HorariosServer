@@ -2,7 +2,7 @@ import {Request, Response} from "express"
 import {AppDataSource} from "../data-source";
 import {Horario} from "../entity/Horario";
 import {Usuario} from "../entity/Usuario";
-import {In} from "typeorm";
+import {Between, In} from "typeorm";
 import moment, * as MomentExt from "moment";
 import {JornadaDia} from "../entity/JornadaDia";
 import {extendMoment} from "moment-range";
@@ -36,9 +36,28 @@ export const asignarHorario = async (req: Request, res: Response) => {
     let usuarios = await Usuario.find({
         where: { id: In(listaIds) },
     });
-    //let jornadasBorrar = await  Jornada.findBy({usuario: In(usuarios)})
     let fechaIni = moment(ini).format("YYYY-MM-DD");
     let fechaFin = moment(fin).format("YYYY-MM-DD");
+    let jornadasBorrar: Jornada[] = [];
+    let turnosBorrar: Turno[] = [];
+    let jornadasSuperpuestas = await Jornada.find({ where: {usuario: In(listaIds), fecha: Between(moment(fechaIni).toDate(),moment(fechaFin).toDate())}, relations: {priTurno:true, segTurno: true}},)
+    for(let jornada of jornadasSuperpuestas) {
+        if(jornada.getNumTurnos() == 2) {
+            turnosBorrar.push(jornada.priTurno);
+            turnosBorrar.push(jornada.segTurno);
+        } else if (jornada.getNumTurnos() == 1) {
+            turnosBorrar.push(jornada.priTurno)
+        } else
+            jornadasBorrar.push(jornada);
+    }
+
+    console.log(turnosBorrar)
+    console.log(jornadasBorrar)
+    const turnoRepo = AppDataSource.getRepository(Turno);
+    await turnoRepo.remove(turnosBorrar)
+    const jornadaRepo = AppDataSource.getRepository(Jornada);
+    await jornadaRepo.remove(jornadasBorrar)
+
     let rango = momentExt.range(moment(fechaIni).toDate(), moment(fechaFin).toDate())
     let listaJornadas: JornadaDia[] = [];
     listaJornadas = JSON.parse(jornadas) ;
@@ -58,11 +77,13 @@ export const asignarHorario = async (req: Request, res: Response) => {
                     let priTurno = new Turno()
                     priTurno.horaEntrada = jornadaDia.priEntrada;
                     priTurno.horaSalida = jornadaDia.priSalida;
+                    priTurno.jornada = jornada
                     jornada.priTurno = priTurno;
 
                     let segTurno = new Turno()
                     segTurno.horaEntrada = jornadaDia.segEntrada;
                     segTurno.horaSalida = jornadaDia.segSalida;
+                    segTurno.jornada = jornada
                     jornada.segTurno = segTurno;
 
                     turnosGuardar.push(priTurno, segTurno);
@@ -70,6 +91,7 @@ export const asignarHorario = async (req: Request, res: Response) => {
                     let priTurno = new Turno()
                     priTurno.horaEntrada = jornadaDia.priEntrada;
                     priTurno.horaSalida = jornadaDia.priSalida;
+                    priTurno.jornada = jornada
                     jornada.priTurno = priTurno
                     turnosGuardar.push(priTurno)
                 }
@@ -79,13 +101,12 @@ export const asignarHorario = async (req: Request, res: Response) => {
             jornadasGuardar.push(jornada)
         }
     }
-    const turnoRepo = AppDataSource.getRepository(Turno);
     await turnoRepo.insert(turnosGuardar).then(() => {
         console.log("termino turnos")
     })
-    const jornadaRepo = AppDataSource.getRepository(Jornada);
     await jornadaRepo.insert(jornadasGuardar)
     res.send({"res": true})
+
 
 }
 

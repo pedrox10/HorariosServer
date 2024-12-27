@@ -8,8 +8,6 @@ export class Marcacion extends BaseEntity {
     id: number;
     @Column()
     ci: number
-    @Column({type: 'datetime', nullable: true})
-    fechaMarcaje: Date;
     @Column({type: 'date', nullable: true})
     fecha: Date;
     @Column({type: 'time', nullable: true})
