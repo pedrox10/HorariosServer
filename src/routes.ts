@@ -1,6 +1,6 @@
 import {Router} from "express";
 import {
-    getInfoMarcaciones, getJornada,
+    getResumenMarcaciones, getJornada,
     getMarcaciones,
     getUsuario,
     getUsuarios
@@ -30,7 +30,7 @@ router.get("/terminal/:id/usuarios", getUsuarios)
 router.get("/usuario/:id", getUsuario)
 router.get('/usuario/:id/fecha/:fecha', getJornada);
 router.get("/marcaciones/:id", getMarcaciones)
-router.get("/usuario/:id/ini/:ini/fin/:fin", getInfoMarcaciones)
+router.get("/usuario/:id/ini/:ini/fin/:fin", getResumenMarcaciones)
 //router.post('/usuario', agregarUsuario);
 
 // Rutas para operaciones con Horarios

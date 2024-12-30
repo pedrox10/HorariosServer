@@ -28,7 +28,7 @@ export const getUsuarios = async (req: Request, res: Response) => {
         if (jornada)
             usuarioM.horarioActual = jornada.horario.nombre
         else
-            usuarioM.horarioActual = "Sin Asignar"
+            usuarioM.horarioActual = "Ninguno"
         usuarios.push(usuarioM)
     }
     console.log(usuarios)
@@ -59,7 +59,7 @@ export const getMarcaciones = async (req: Request, res: Response) => {
     res.send(marcaciones)
 }
 
-export const getInfoMarcaciones = async (req: Request, res: Response) => {
+export const getResumenMarcaciones = async (req: Request, res: Response) => {
     const {id, ini, fin} = req.params;
     let usuario = await Usuario.findOne({
         where: {id: parseInt(id)}, relations: {
@@ -107,7 +107,7 @@ export const getInfoMarcaciones = async (req: Request, res: Response) => {
                     let segEntRango = momentExt.range(moment(priSalFin).toDate(), moment(segEntFin).toDate())
                     let segSalFin = moment(jornada.fecha + " " + "23:59").format('YYYY-MM-DD HH:mm')
                     let segSalRango = momentExt.range(moment(segEntFin).toDate(), moment(segSalFin).toDate())
-                    //Ontengo las marcaciones segun fecha y clasifico segun rangos
+                    //Obtengo las marcaciones segun fecha y clasifico segun rangos
                     let marcaciones = await getMarcacionesPor(usuario, fecha.format("YYYY-MM-DD"))
                     marcaciones.forEach(marcacion => {
                         let horaMarcaje = moment(marcacion.fecha + " " + marcacion.hora).format('YYYY-MM-DD HH:mm')

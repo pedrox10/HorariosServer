@@ -6,6 +6,8 @@ import {Marcacion} from "../entity/Marcacion";
 import path from "path";
 import {EstadoUsuario, Usuario} from "../entity/Usuario";
 import moment from 'moment';
+import {UsuarioM} from "../models/UsuarioM";
+import {Jornada} from "../entity/Jornada";
 
 const envPython = path.join(__dirname, "../scriptpy/envpy", "bin", "python3");
 const spawn = require('await-spawn');
@@ -74,10 +76,10 @@ export const sincronizarTerminal = async (req: Request, res: Response) => {
                     args.push(moment(terminal.ult_sincronizacion).format('MM/DD/YY HH:mm:ss'))
                 }
                 args.unshift(pyFile);
-                const pyprog = await spawn(envPython, args);
+                //const pyprog = await spawn(envPython, args);
                 console.log(envPython + " " + args)
                 let marcaciones: Marcacion[] = [];
-                //const pyprog = fs.readFileSync("./src/registros.json");
+                const pyprog = fs.readFileSync("./src/registros.json");
                 JSON.parse(pyprog.toString()).forEach((value: any) => {
                     let marcacion = new Marcacion();
                     marcacion.ci = value.user_id;
@@ -103,11 +105,11 @@ export const sincronizarTerminal = async (req: Request, res: Response) => {
                 const pyFile = 'src/scriptpy/usuarios.py';
                 const args = [terminal?.ip, terminal?.puerto];
                 args.unshift(pyFile);
-                const pyprog = await spawn(envPython, args);
+                //const pyprog = await spawn(envPython, args);
                 console.log(envPython + " " + args)
-                let usuariosT = JSON.parse(pyprog.toString());
+                //let usuariosT = JSON.parse(pyprog.toString());
 
-                //let usuariosT = [{"uid":1,"role":0,"password":"","name":"PEDRO DINO","cardno":0,"user_id":"5907490"},{"uid":2,"role":0,"password":"","name":"MARIA COSTA","cardno":0,"user_id":"5907491"}]
+                let usuariosT = [{"uid":1,"role":0,"password":"","name":"PEDRO DINO","cardno":0,"user_id":"5907490"},{"uid":2,"role":0,"password":"","name":"MARIA COSTA","cardno":0,"user_id":"5907491"}]
                 let usuariosBD = await Usuario.find({where: {terminal: terminal}});
                 if (fueSincronizado) {
                     await usuariosT.forEach(async (usuarioT: any) => {
@@ -166,15 +168,27 @@ export const sincronizarTerminal = async (req: Request, res: Response) => {
             }
         }
         await getUsuariosPy();
-        res.send(await Terminal.findOne({
+
+        let t = await Terminal.findOne({
             where: {id: terminal.id}, relations: {
                 usuarios: true,
             },
-        }));
+        });
+        let usuariosM: UsuarioM[] = []
+        for (let usuario of t!.usuarios) {
+            let usuarioM: UsuarioM = new UsuarioM();
+            usuarioM = usuario;
+            let jornada = await getJornadaPor(usuario, moment().format("YYYY-MM-DD"))
+            if (jornada)
+                usuarioM.horarioActual = jornada.horario.nombre
+            else
+                usuarioM.horarioActual = "Ninguno"
+            usuariosM.push(usuarioM)
+        }
+        console.log(usuariosM)
+        res.send(usuariosM)
     }
 }
-
-
 
 function buscarUsuarioEn(usuario: Usuario, datos: any[]) {
     let res = false;
@@ -190,4 +204,13 @@ function buscarUsuarioEn(usuario: Usuario, datos: any[]) {
 async function getNumMarcaciones(ci:number, terminal:Terminal) {
     let marcaciones = await Marcacion.findBy({ci: ci, terminal: terminal});
     return marcaciones.length;
+}
+
+async function getJornadaPor(usuario: Usuario, fecha: string) {
+    let jornada = await Jornada.findOne({
+        where: {usuario: usuario, fecha: moment(fecha).toDate()}, relations: {
+            priTurno: true, segTurno: true, horario: true
+        }
+    })
+    return jornada;
 }

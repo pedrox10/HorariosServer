@@ -77,13 +77,11 @@ export const asignarHorario = async (req: Request, res: Response) => {
                     let priTurno = new Turno()
                     priTurno.horaEntrada = jornadaDia.priEntrada;
                     priTurno.horaSalida = jornadaDia.priSalida;
-                    priTurno.jornada = jornada
                     jornada.priTurno = priTurno;
 
                     let segTurno = new Turno()
                     segTurno.horaEntrada = jornadaDia.segEntrada;
                     segTurno.horaSalida = jornadaDia.segSalida;
-                    segTurno.jornada = jornada
                     jornada.segTurno = segTurno;
 
                     turnosGuardar.push(priTurno, segTurno);
@@ -91,7 +89,6 @@ export const asignarHorario = async (req: Request, res: Response) => {
                     let priTurno = new Turno()
                     priTurno.horaEntrada = jornadaDia.priEntrada;
                     priTurno.horaSalida = jornadaDia.priSalida;
-                    priTurno.jornada = jornada
                     jornada.priTurno = priTurno
                     turnosGuardar.push(priTurno)
                 }
