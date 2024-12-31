@@ -14,7 +14,8 @@ import {Terminal} from "../entity/Terminal";
 const momentExt = extendMoment(MomentExt);
 
 export const crearHorario = async (req: Request, res: Response) => {
-    const horario = new Horario()
+    const {horario} = req.params;
+    console.log(horario)
     res.send(horario)
 }
 
@@ -40,7 +41,7 @@ export const asignarHorario = async (req: Request, res: Response) => {
     let fechaFin = moment(fin).format("YYYY-MM-DD");
     let jornadasBorrar: Jornada[] = [];
     let turnosBorrar: Turno[] = [];
-    let jornadasSuperpuestas = await    Jornada.find({ where: {usuario: In(listaIds), fecha: Between(moment(fechaIni).toDate(),moment(fechaFin).toDate())}, relations: {priTurno:true, segTurno: true}},)
+    let jornadasSuperpuestas = await Jornada.find({ where: {usuario: In(listaIds), fecha: Between(moment(fechaIni).toDate(),moment(fechaFin).toDate())}, relations: {priTurno:true, segTurno: true}},)
     for(let jornada of jornadasSuperpuestas) {
         if(jornada.getNumTurnos() == 2) {
             turnosBorrar.push(jornada.priTurno);

@@ -12,7 +12,7 @@ import {
     getTerminales,
     sincronizarTerminal
 } from "./controllers/terminal.controller";
-import {asignarHorario, eliminarJornada, getHorario, getHorarios} from "./controllers/horario.controller";
+import {asignarHorario, crearHorario, eliminarJornada, getHorario, getHorarios} from "./controllers/horario.controller";
 
 const router = Router();
 
@@ -37,6 +37,7 @@ router.get("/usuario/:id/ini/:ini/fin/:fin", getResumenMarcaciones)
 router.get('/horario/:id', getHorario);
 router.get('/horarios/', getHorarios);
 router.get("/asignar-horario/:id/usuarios/:ids/ini/:ini/fin/:fin/jornadas/:jornadas", asignarHorario)
+router.get('/horario/crear/:horario', crearHorario);
 router.delete('/eliminar-jornada/:id', eliminarJornada);
 
 export default router
