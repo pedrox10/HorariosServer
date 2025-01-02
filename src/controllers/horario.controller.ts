@@ -14,7 +14,7 @@ import {Terminal} from "../entity/Terminal";
 const momentExt = extendMoment(MomentExt);
 
 export const crearHorario = async (req: Request, res: Response) => {
-    const {horario} = req.params;
+    const {horario, jornadas} = req.params;
     console.log(horario)
     res.send(horario)
 }

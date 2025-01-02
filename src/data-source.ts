@@ -14,7 +14,7 @@ export const AppDataSource = new DataSource({
     port: 3306,
     username: "admin",
     password: "admin",
-    database: "horarios",
+    database: "horariosgams",
     synchronize: true,
     logging: false,
     entities: [Terminal, Usuario, Marcacion, JornadaDia, Horario, Jornada, Turno],

@@ -37,7 +37,7 @@ router.get("/usuario/:id/ini/:ini/fin/:fin", getResumenMarcaciones)
 router.get('/horario/:id', getHorario);
 router.get('/horarios/', getHorarios);
 router.get("/asignar-horario/:id/usuarios/:ids/ini/:ini/fin/:fin/jornadas/:jornadas", asignarHorario)
-router.get('/horario/crear/:horario', crearHorario);
+router.get('/horario/crear/:horario/:jornadas', crearHorario);
 router.delete('/eliminar-jornada/:id', eliminarJornada);
 
 export default router
