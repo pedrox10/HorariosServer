@@ -16,7 +16,12 @@ const momentExt = extendMoment(MomentExt);
 export const crearHorario = async (req: Request, res: Response) => {
     const {horario, jornadas} = req.params;
     console.log(horario)
-    res.send(horario)
+    let jornadasDia = JSON.parse(jornadas)
+    let dias = env.dias.map((dia) => dia.toLowerCase());
+    for(let dia of dias) {
+        console.log(jornadasDia[dia + "_habilitado"])
+    }
+    res.send(jornadasDia)
 }
 
 export const getHorario = async (req: Request, res: Response) => {
