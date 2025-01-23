@@ -2,6 +2,7 @@ export const env = {
     production: false,
     meses: ['Enero','Febrero','Marzo','Abril','Mayo','Junio','Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre'],
     dias: ["Domingo", "Lunes", "Martes", "Miercoles", "Jueves", "Viernes", "Sabado"],
+    dias_laborales: ["Lunes", "Martes", "Miercoles", "Jueves", "Viernes", "Sabado", "Domingo"],
     apiUrl: 'http://localhost:4000',
     colores:[
       {"color" : "Gris", "valor": "#F2F2F2"}, {"color" : "Guindo", "valor": "#E7B9C0"}, {"color" : "Rojo", "valor": "#FBCFD0"},

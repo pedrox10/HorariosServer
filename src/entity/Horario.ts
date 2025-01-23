@@ -14,6 +14,6 @@ export class Horario extends BaseEntity{
     color: string
     @Column()
     descripcion: string
-    @OneToMany(() => JornadaDia, (turnoDia) => turnoDia.horario)
+    @OneToMany(() => JornadaDia, (jornadaDia) => jornadaDia.horario)
     jornadaDias: JornadaDia[]
 }

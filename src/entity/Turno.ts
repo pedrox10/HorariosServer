@@ -5,9 +5,9 @@ import {Jornada} from "./Jornada";
 export class Turno extends BaseEntity{
     @PrimaryGeneratedColumn()
     id: number;
-    @Column({type: 'time', nullable: true})
+    @Column({type: 'time'})
     horaEntrada: Date;
-    @Column({type: 'time', nullable: true})
+    @Column({type: 'time'})
     horaSalida: Date;
     @OneToOne(() => Jornada)
     jornada: Jornada

@@ -1,6 +1,5 @@
 import {Request, Response} from "express"
 import {Usuario} from "../entity/Usuario";
-import path from "path";
 import {Terminal} from "../entity/Terminal";
 import {Marcacion} from "../entity/Marcacion";
 import moment, {Moment} from 'moment';
@@ -9,7 +8,7 @@ import {InfoMarcacion} from "../models/InfoMarcacion";
 import {extendMoment} from "moment-range";
 import {Jornada} from "../entity/Jornada";
 import {ResumenMarcacion} from "../models/ResumenMarcacion";
-import {UsuarioM} from "../models/UsuarioM";
+import {ExcepcionTickeo} from "../entity/ExcepcionTickeo";
 
 const momentExt = extendMoment(MomentExt);
 
@@ -20,19 +19,7 @@ export const getUsuarios = async (req: Request, res: Response) => {
             usuarios: true,
         }
     });
-    let usuarios: UsuarioM[] = []
-    for (let usuario of terminal!.usuarios) {
-        let usuarioM: UsuarioM = new UsuarioM();
-        usuarioM = usuario;
-        let jornada = await getJornadaPor(usuario, moment().format("YYYY-MM-DD"))
-        if (jornada)
-            usuarioM.horarioActual = jornada.horario.nombre
-        else
-            usuarioM.horarioActual = "Ninguno"
-        usuarios.push(usuarioM)
-    }
-    console.log(usuarios)
-    res.send(usuarios)
+    res.send(terminal?.usuarios)
 }
 
 export const getUsuario = async (req: Request, res: Response) => {
@@ -41,11 +28,35 @@ export const getUsuario = async (req: Request, res: Response) => {
     res.send(usuario)
 }
 
+export const editarUsuario = async (req: Request, res: Response) => {
+    const {id} = req.params;
+    const {fechaAlta, fechaBaja, fechaCumpleano, estado} = req.body
+    const usuario = await Usuario.findOne({where: {id: parseInt(id)},});
+    if (usuario) {
+        usuario.fechaAlta = fechaAlta;
+        usuario.fechaBaja = esVacio(fechaBaja) ? null : fechaBaja;
+        usuario.fechaCumpleano = esVacio(fechaCumpleano) ? null : fechaCumpleano;
+        usuario.estado = estado
+        usuario.save()
+        res.send(usuario)
+    }
+}
+
+function esVacio(value: string) {
+    return (value == null || (typeof value === "string" && value.trim().length === 0));
+}
+
 export const getJornada = async (req: Request, res: Response) => {
     const {id, fecha} = req.params;
     let usuario = await Usuario.findOne({where: {id: parseInt(id)},});
     let jornada = await getJornadaPor(usuario!, moment(fecha).format('YYYY-MM-DD'))
     res.send(jornada)
+}
+
+export const getExcepciones = async (req: Request, res: Response) => {
+    const {id, gestion} = req.params;
+    const excepciones = await ExcepcionTickeo.find()
+    res.send(excepciones)
 }
 
 export const getMarcaciones = async (req: Request, res: Response) => {

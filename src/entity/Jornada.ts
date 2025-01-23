@@ -2,6 +2,7 @@ import {Entity, Column, PrimaryGeneratedColumn, ManyToOne, OneToOne, JoinColumn,
 import {Horario} from "./Horario";
 import {EstadoUsuario, Usuario} from "./Usuario";
 import {Turno} from "./Turno";
+import {InfoExtraJornada} from "../models/InfoExtraJornada";
 
 export enum EstadoJornada {
     dia_libre,
@@ -10,6 +11,7 @@ export enum EstadoJornada {
     baja_medica,
     permiso,
     feriado,
+    sin_asignar
 }
 
 @Entity()
@@ -26,10 +28,12 @@ export class Jornada extends BaseEntity {
     segTurno: Turno
     @Column({ default: EstadoJornada.activa })
     estado:EstadoJornada
-    @ManyToOne(() => Usuario, (usuario) => usuario.jornadas)
+    @ManyToOne(() => Usuario, (usuario) => usuario.jornadas, { cascade: true, onDelete: "CASCADE" })
     usuario: Usuario
     @ManyToOne(() => Horario)
     horario: Horario
+
+    infoExtra: InfoExtraJornada
 
     getNumTurnos() {
         let res: number = 0;

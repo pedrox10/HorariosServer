@@ -6,8 +6,6 @@ import {Marcacion} from "../entity/Marcacion";
 import path from "path";
 import {EstadoUsuario, Usuario} from "../entity/Usuario";
 import moment from 'moment';
-import {UsuarioM} from "../models/UsuarioM";
-import {Jornada} from "../entity/Jornada";
 
 const envPython = path.join(__dirname, "../scriptpy/envpy", "bin", "python3");
 const spawn = require('await-spawn');
@@ -26,9 +24,7 @@ export const editarTerminal = async (req: Request, res: Response) => {
     const {id} = req.params;
     const {nombre, ip, puerto} = req.body
     const terminal = await Terminal.findOne({where: {id: parseInt(id)},});
-    if (!terminal) {
-
-    } else {
+    if (terminal) {
         terminal.nombre = nombre;
         terminal.ip = ip;
         terminal.puerto = puerto
@@ -109,15 +105,15 @@ export const sincronizarTerminal = async (req: Request, res: Response) => {
                 console.log(envPython + " " + args)
                 //let usuariosT = JSON.parse(pyprog.toString());
 
-                let usuariosT = [{"uid":1,"role":0,"password":"","name":"PEDRO DINO","cardno":0,"user_id":"5907490"},{"uid":2,"role":0,"password":"","name":"MARIA COSTA","cardno":0,"user_id":"5907491"}]
+                let usuariosT = [{"uid":1,"role":0,"password":"","name":"PEDRO DINO BARCO","cardno":0,"user_id":"5907490"},{"uid":2,"role":0,"password":"","name":"MARIA COSTA","cardno":0,"user_id":"5907491"}]
                 let usuariosBD = await Usuario.find({where: {terminal: terminal}});
                 if (fueSincronizado) {
                     await usuariosT.forEach(async (usuarioT: any) => {
-                        let usuarioBD =                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                  await Usuario.findOneBy({ uid: usuarioT.uid, terminal: terminal })
+                        let usuarioBD = await Usuario.findOneBy({ uid: usuarioT.uid, terminal: terminal })
                         if (usuarioBD) {
-                                if (usuarioT.name !== usuarioBD.nombre) {
-                                usuarioBD.nombre = usuarioT.name;
-                                await usuarioBD.save()
+                            if (usuarioT.name !== usuarioBD.nombre) {
+                            usuarioBD.nombre = usuarioT.name;
+                            await usuarioBD.save()
                             }
                         } else {
                             let usuario = new Usuario();
@@ -174,19 +170,7 @@ export const sincronizarTerminal = async (req: Request, res: Response) => {
                 usuarios: true,
             },
         });
-        let usuariosM: UsuarioM[] = []
-        for (let usuario of t!.usuarios) {
-            let usuarioM: UsuarioM = new UsuarioM();
-            usuarioM = usuario;
-            let jornada = await getJornadaPor(usuario, moment().format("YYYY-MM-DD"))
-            if (jornada)
-                usuarioM.horarioActual = jornada.horario.nombre
-            else
-                usuarioM.horarioActual = "Ninguno"
-            usuariosM.push(usuarioM)
-        }
-        console.log(usuariosM)
-        res.send(usuariosM)
+        res.send(t?.usuarios)
     }
 }
 
@@ -206,11 +190,3 @@ async function getNumMarcaciones(ci:number, terminal:Terminal) {
     return marcaciones.length;
 }
 
-async function getJornadaPor(usuario: Usuario, fecha: string) {
-    let jornada = await Jornada.findOne({
-        where: {usuario: usuario, fecha: moment(fecha).toDate()}, relations: {
-            priTurno: true, segTurno: true, horario: true
-        }
-    })
-    return jornada;
-}

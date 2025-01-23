@@ -3,7 +3,7 @@ import {
     getResumenMarcaciones, getJornada,
     getMarcaciones,
     getUsuario,
-    getUsuarios
+    getUsuarios, getExcepciones, editarUsuario
 } from "./controllers/usuario.controller";
 import {
     crearTerminal,
@@ -12,7 +12,14 @@ import {
     getTerminales,
     sincronizarTerminal
 } from "./controllers/terminal.controller";
-import {asignarHorario, crearHorario, eliminarJornada, getHorario, getHorarios} from "./controllers/horario.controller";
+import {
+    asignarHorario,
+    crearHorario, eliminarHorario,
+    eliminarJornada,
+    getAsuetos,
+    getHorario,
+    getHorarios, getJornadas, getLicencias, getNumJornadas
+} from "./controllers/horario.controller";
 
 const router = Router();
 
@@ -28,8 +35,11 @@ router.get("/terminal/:id/pri-marcacion",getFechaPriMarcacion);
 // Rutas para operaciones con Usuarios
 router.get("/terminal/:id/usuarios", getUsuarios)
 router.get("/usuario/:id", getUsuario)
+router.put('/usuario/editar/:id', editarUsuario);
 router.get('/usuario/:id/fecha/:fecha', getJornada);
+router.get('/usuario/:id/gestion/:gestion/mes/:mes', getJornadas);
 router.get("/marcaciones/:id", getMarcaciones)
+router.get("/excepciones/:id/gestion/:gestion", getExcepciones)
 router.get("/usuario/:id/ini/:ini/fin/:fin", getResumenMarcaciones)
 //router.post('/usuario', agregarUsuario);
 
@@ -38,6 +48,10 @@ router.get('/horario/:id', getHorario);
 router.get('/horarios/', getHorarios);
 router.get("/asignar-horario/:id/usuarios/:ids/ini/:ini/fin/:fin/jornadas/:jornadas", asignarHorario)
 router.get('/horario/crear/:horario/:jornadas', crearHorario);
+router.get('/horario/:id/eliminar', eliminarHorario);
 router.delete('/eliminar-jornada/:id', eliminarJornada);
+router.get('/asuetos/', getAsuetos);
+router.get('/licencias/', getLicencias);
+router.get('/horario/:id/jornadas', getNumJornadas);
 
 export default router
