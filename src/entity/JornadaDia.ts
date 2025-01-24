@@ -17,6 +17,6 @@ export class JornadaDia extends BaseEntity{
     segEntrada: Date;
     @Column({type: 'time', nullable: true})
     segSalida: Date;
-    @ManyToOne(() => Horario, (horario) => horario.jornadaDias, {cascade: true, onDelete: "CASCADE"})
+    @ManyToOne(() => Horario, (horario) => horario.jornadaDias, {cascade: true, onDelete: "CASCADE" })
     horario: Horario
 }
