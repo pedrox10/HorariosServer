@@ -20,7 +20,7 @@ export class ExcepcionTickeo extends BaseEntity{
     horaIni: Date
     @Column({type: 'time', nullable: true})
     horaFin: Date
-    @Column()
+    @Column({nullable: true})
     detalle: string
     @ManyToOne(() => Licencia)
     licencia: Licencia

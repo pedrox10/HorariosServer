@@ -20,6 +20,6 @@ export class Asueto extends BaseEntity{
     nombre:string
     @Column()
     tipo:TipoAsueto
-    @Column()
+    @Column({nullable: true})
     descripcion:string
 }

@@ -5,7 +5,7 @@ import {Marcacion} from "../entity/Marcacion";
 import moment, {Moment} from 'moment';
 import * as MomentExt from 'moment';
 import {InfoMarcacion} from "../models/InfoMarcacion";
-import {extendMoment} from "moment-range";
+import {DateRange, extendMoment} from "moment-range";
 import {Jornada} from "../entity/Jornada";
 import {ResumenMarcacion} from "../models/ResumenMarcacion";
 import {ExcepcionTickeo} from "../entity/ExcepcionTickeo";
@@ -80,29 +80,49 @@ export const getResumenMarcaciones = async (req: Request, res: Response) => {
     if (usuario) {
         let fecha_ini = moment(ini).format('yyyy-MM-DD')
         let fecha_fin = moment(fin).format('yyyy-MM-DD')
-
         let resumenMarcacion: ResumenMarcacion = new ResumenMarcacion();
         let infoMarcaciones: InfoMarcacion[] = [];
+        let rango = momentExt.range(moment(fecha_ini).toDate(), moment(fecha_fin).toDate())
+        console.log(rango)
+
         if(moment(fecha_ini).isBefore(moment(usuario.fechaAlta)) && moment(fecha_fin).isBefore(usuario.fechaAlta)) {
-            let range = momentExt.range(moment(fecha_ini).toDate(), moment(fecha_fin).toDate())
-            for (let fecha of range.by("day")) {
+            let rango_sin_registros = momentExt.range(moment(fecha_ini).toDate(), moment(fecha_fin).toDate())
+            for (let fecha of rango_sin_registros.by("day")) {
                 let infoMarcacion = new InfoMarcacion();
                 let dia = moment(fecha).locale("es").format("ddd DD")
                 dia = dia.charAt(0).toUpperCase() + dia.substring(1)
                 infoMarcacion.dia = dia
                 infoMarcacion.horario = "Sin registros"
-                infoMarcacion.activo=false
+                infoMarcacion.activo = false
                 infoMarcacion.mensaje = "Funcionario no fué registrado"
                 infoMarcaciones.push(infoMarcacion)
             }
             resumenMarcacion.infoMarcaciones = infoMarcaciones
             res.send(resumenMarcacion)
         } else {
-            let range = momentExt.range(moment(fecha_ini).toDate(), moment(fecha_fin).toDate())
+            let rango_valido: DateRange;
+            console.log(usuario.fechaAlta)
+            if(rango.contains(moment(usuario.fechaAlta), {excludeStart: true})) {
+                let rango_sin_registros = momentExt.range(moment(fecha_ini).toDate(), moment(usuario.fechaAlta).subtract("day", 1).toDate())
+                rango_valido = momentExt.range(moment(usuario.fechaAlta).toDate(), moment(fecha_fin).toDate())
+                for (let fecha of rango_sin_registros.by("day")) {
+                    let infoMarcacion = new InfoMarcacion();
+                    let dia = moment(fecha).locale("es").format("ddd DD")
+                    dia = dia.charAt(0).toUpperCase() + dia.substring(1)
+                    infoMarcacion.dia = dia
+                    infoMarcacion.horario = "Sin registros"
+                    infoMarcacion.activo = false
+                    infoMarcacion.mensaje = "Funcionario no fué registrado"
+                    infoMarcaciones.push(infoMarcacion)
+                }
+            } else {
+                rango_valido = momentExt.range(moment(fecha_ini).toDate(), moment(fecha_fin).toDate())
+            }
+
             let totalCantRetrasos: number = 0
             let totalMinRetrasos: number = 0
             let totalSinMarcar: number = 0
-            for (let fecha of range.by("day")) {
+            for (let fecha of rango_valido.by("day")) {
                 let jornada = await getJornadaPor(usuario, fecha.format("YYYY-MM-DD"))
                 let infoMarcacion = new InfoMarcacion();
                 let cantRetrasos: number = 0
