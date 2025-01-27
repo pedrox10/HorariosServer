@@ -2,13 +2,15 @@ import {Request, Response} from "express"
 import {Usuario} from "../entity/Usuario";
 import {Terminal} from "../entity/Terminal";
 import {Marcacion} from "../entity/Marcacion";
-import moment, {Moment} from 'moment';
-import * as MomentExt from 'moment';
+import moment, * as MomentExt from 'moment';
+import {Moment} from 'moment';
 import {InfoMarcacion} from "../models/InfoMarcacion";
 import {DateRange, extendMoment} from "moment-range";
-import {Jornada} from "../entity/Jornada";
+import {EstadoJornada, Jornada} from "../entity/Jornada";
 import {ResumenMarcacion} from "../models/ResumenMarcacion";
-import {ExcepcionTickeo} from "../entity/ExcepcionTickeo";
+import {ExcepcionTickeo, TipoExcepcion} from "../entity/ExcepcionTickeo";
+import {Asueto, TipoAsueto} from "../entity/Asueto";
+import {Between} from "typeorm";
 
 const momentExt = extendMoment(MomentExt);
 
@@ -24,7 +26,7 @@ export const getUsuarios = async (req: Request, res: Response) => {
 
 export const getUsuario = async (req: Request, res: Response) => {
     const {id} = req.params;
-    const usuario = await Usuario.findOne({where: {id: parseInt(id)}, relations:{terminal: true}});
+    const usuario = await Usuario.findOne({where: {id: parseInt(id)}, relations: {terminal: true}});
     res.send(usuario)
 }
 
@@ -78,51 +80,49 @@ export const getResumenMarcaciones = async (req: Request, res: Response) => {
         }
     });
     if (usuario) {
-        let fecha_ini = moment(ini).format('yyyy-MM-DD')
-        let fecha_fin = moment(fin).format('yyyy-MM-DD')
+        let fechaIni = moment(ini).format('yyyy-MM-DD')
+        let fechaFin = moment(fin).format('yyyy-MM-DD')
         let resumenMarcacion: ResumenMarcacion = new ResumenMarcacion();
         let infoMarcaciones: InfoMarcacion[] = [];
-        let rango = momentExt.range(moment(fecha_ini).toDate(), moment(fecha_fin).toDate())
-        console.log(rango)
+        let rango = momentExt.range(moment(fechaIni).toDate(), moment(fechaFin).toDate())
 
-        if(moment(fecha_ini).isBefore(moment(usuario.fechaAlta)) && moment(fecha_fin).isBefore(usuario.fechaAlta)) {
-            let rango_sin_registros = momentExt.range(moment(fecha_ini).toDate(), moment(fecha_fin).toDate())
-            for (let fecha of rango_sin_registros.by("day")) {
-                let infoMarcacion = new InfoMarcacion();
-                let dia = moment(fecha).locale("es").format("ddd DD")
-                dia = dia.charAt(0).toUpperCase() + dia.substring(1)
-                infoMarcacion.dia = dia
-                infoMarcacion.horario = "Sin registros"
-                infoMarcacion.activo = false
-                infoMarcacion.mensaje = "Funcionario no fué registrado"
-                infoMarcaciones.push(infoMarcacion)
-            }
+        if (moment(fechaIni).isBefore(moment(usuario.fechaAlta)) && moment(fechaFin).isBefore(usuario.fechaAlta)) {
+            let rangoSinRegistros = momentExt.range(moment(fechaIni).toDate(), moment(fechaFin).toDate())
+            infoMarcaciones.push(...getSinRegistros(rangoSinRegistros))
             resumenMarcacion.infoMarcaciones = infoMarcaciones
             res.send(resumenMarcacion)
         } else {
-            let rango_valido: DateRange;
-            console.log(usuario.fechaAlta)
-            if(rango.contains(moment(usuario.fechaAlta), {excludeStart: true})) {
-                let rango_sin_registros = momentExt.range(moment(fecha_ini).toDate(), moment(usuario.fechaAlta).subtract("day", 1).toDate())
-                rango_valido = momentExt.range(moment(usuario.fechaAlta).toDate(), moment(fecha_fin).toDate())
-                for (let fecha of rango_sin_registros.by("day")) {
-                    let infoMarcacion = new InfoMarcacion();
-                    let dia = moment(fecha).locale("es").format("ddd DD")
-                    dia = dia.charAt(0).toUpperCase() + dia.substring(1)
-                    infoMarcacion.dia = dia
-                    infoMarcacion.horario = "Sin registros"
-                    infoMarcacion.activo = false
-                    infoMarcacion.mensaje = "Funcionario no fué registrado"
-                    infoMarcaciones.push(infoMarcacion)
-                }
+            let rangoValido: DateRange;
+            let hayFeriados = false;
+            let hayExcepcionesCompletas = false;
+            if (rango.contains(moment(usuario.fechaAlta), {excludeStart: true})) {
+                let rangoSinRegistros = momentExt.range(moment(fechaIni).toDate(), moment(usuario.fechaAlta).subtract("day", 1).toDate())
+                rangoValido = momentExt.range(moment(usuario.fechaAlta).toDate(), moment(fechaFin).toDate())
+                infoMarcaciones.push(...getSinRegistros(rangoSinRegistros))
             } else {
-                rango_valido = momentExt.range(moment(fecha_ini).toDate(), moment(fecha_fin).toDate())
+                rangoValido = momentExt.range(moment(fechaIni).toDate(), moment(fechaFin).toDate())
             }
+            let feriados: Asueto[] = await Asueto.findBy({
+                fecha: Between(rangoValido.start.toDate(), rangoValido.end.toDate()),
+                tipo: TipoAsueto.todos
+            })
+            if (feriados.length > 0)
+                hayFeriados = true
+            let excepcionesCompletas: ExcepcionTickeo[] = await ExcepcionTickeo.find({
+                where: {
+                    fecha: Between(rangoValido.start.toDate(), rangoValido.end.toDate()),
+                    tipo: TipoExcepcion.completa,
+                    usuario: usuario
+                }, relations: {licencia: true}
+            })
+            if (excepcionesCompletas.length > 0)
+                hayExcepcionesCompletas = true
 
             let totalCantRetrasos: number = 0
             let totalMinRetrasos: number = 0
             let totalSinMarcar: number = 0
-            for (let fecha of rango_valido.by("day")) {
+
+            for (let fecha of rangoValido.by("day")) {
                 let jornada = await getJornadaPor(usuario, fecha.format("YYYY-MM-DD"))
                 let infoMarcacion = new InfoMarcacion();
                 let cantRetrasos: number = 0
@@ -135,135 +135,69 @@ export const getResumenMarcaciones = async (req: Request, res: Response) => {
                 dia = dia.charAt(0).toUpperCase() + dia.substring(1)
                 infoMarcacion.dia = dia
                 if (jornada) {
-                    infoMarcacion.horario = jornada.horario.nombre;
-                    infoMarcacion.numTurnos = jornada.getNumTurnos();
-                    if (jornada.getNumTurnos() == 2) {
-                        let priEntradasM: Moment[] = [];
-                        let priSalidasM: Moment[] = [];
-                        let segEntradasM: Moment[] = [];
-                        let segSalidasM: Moment[] = [];
-                        //Genero los rangos para los cuatro posibles casos:
-                        let priEntIni = moment(jornada.fecha + " " + "00:00").format('YYYY-MM-DD HH:mm')
-                        let priEntFin = moment(jornada.fecha + " " + jornada.priTurno.horaSalida).subtract(1, "hours").format('YYYY-MM-DD HH:mm')
-                        let priEntRango = momentExt.range(moment(priEntIni).toDate(), moment(priEntFin).toDate())
-                        let dif = moment(jornada.fecha + " " + jornada.segTurno.horaEntrada).diff(moment(jornada.fecha + " " + jornada.priTurno.horaSalida), "hours")
-                        let priSalFin = moment(jornada.fecha + " " + jornada.priTurno.horaSalida).add(dif / 2, "hours")
-                        let priSalRango = momentExt.range(moment(priEntFin).toDate(), moment(priSalFin).toDate())
-                        let segEntFin = moment(jornada.fecha + " " + jornada.segTurno.horaSalida).subtract(1, "hours").format('YYYY-MM-DD HH:mm')
-                        let segEntRango = momentExt.range(moment(priSalFin).toDate(), moment(segEntFin).toDate())
-                        let segSalFin = moment(jornada.fecha + " " + "23:59").format('YYYY-MM-DD HH:mm')
-                        let segSalRango = momentExt.range(moment(segEntFin).toDate(), moment(segSalFin).toDate())
-                        //Obtengo las marcaciones segun fecha y clasifico segun rangos
-                        let marcaciones = await getMarcacionesPor(usuario, fecha.format("YYYY-MM-DD"))
-                        marcaciones.forEach(marcacion => {
-                            let horaMarcaje = moment(marcacion.fecha + " " + marcacion.hora).format('YYYY-MM-DD HH:mm')
-                            console.log(horaMarcaje)
-                            if (priEntRango.contains(moment(horaMarcaje), {excludeEnd: true}))
-                                priEntradasM.push(moment(horaMarcaje))
-                            else if (priSalRango.contains(moment(horaMarcaje), {excludeEnd: true}))
-                                priSalidasM.push(moment(horaMarcaje))
-                            else if (segEntRango.contains(moment(horaMarcaje), {excludeEnd: true}))
-                                segEntradasM.push(moment(horaMarcaje))
-                            else if (segSalRango.contains(moment(horaMarcaje)))
-                                segSalidasM.push(moment(horaMarcaje))
-                        })
-                        let priEntradas: string[] = [];
-                        let priSalidas: string[] = [];
-                        let segEntradas: string[] = [];
-                        let segSalidas: string[] = [];
-
-                        if (priEntradasM.length > 0) {
-                            priEntradasM.sort((a, b) => a.diff(b));
-                            priEntradasM.map(entrada => {
-                                priEntradas.push(entrada.format("HH:mm"))
-                            })
-                            infoMarcacion.priEntradas = priEntradas
-                            let retraso = priEntradasM.at(0)?.diff(moment(jornada.fecha + " " + jornada.priTurno.horaEntrada), "minutes")
-                            if(retraso){
-                                if (retraso > jornada.horario.tolerancia) {
-                                    cantRetrasos++;
-                                    totalCantRetrasos++;
-                                    minRetrasos = minRetrasos + retraso
-                                    totalMinRetrasos = totalMinRetrasos +retraso;
-                                    hayPriRetraso = true
-                                }
-                            }
-                        } else {
-                            sinMarcar++
-                            totalSinMarcar++
+                    let feriado: Asueto | any;
+                    let excepcionCompleta: ExcepcionTickeo | any;
+                    if (hayFeriados) {
+                        feriado = getFeriado(jornada, feriados);
+                        if (feriado)
+                            jornada.estado = EstadoJornada.feriado;
+                    }
+                    if (hayExcepcionesCompletas) {
+                        excepcionCompleta = getExcepcionCompleta(jornada, excepcionesCompletas)
+                        if (excepcionCompleta)
+                            jornada.estado = EstadoJornada.con_excepcion_completa
+                    }
+                    if (jornada.estado != EstadoJornada.dia_libre && jornada.estado != EstadoJornada.activa) {
+                        switch (jornada.estado) {
+                            case EstadoJornada.feriado:
+                                infoMarcacion.horario = "Feriado";
+                                infoMarcacion.mensaje = feriado.nombre;
+                                infoMarcacion.activo = false
+                                break;
+                            case EstadoJornada.con_excepcion_completa:
+                                infoMarcacion.horario = excepcionCompleta.licencia.nombre;
+                                infoMarcacion.mensaje = excepcionCompleta.detalle;
+                                infoMarcacion.activo = false
+                                break;
                         }
-
-                        if (priSalidasM.length > 0) {
-                            priSalidasM.sort((a, b) => a.diff(b));
-                            priSalidasM.map(salida => {
-                                priSalidas.push(salida.format("HH:mm"))
-                            })
-                            infoMarcacion.priSalidas = priSalidas
-                        } else {
-                            sinMarcar++
-                            totalSinMarcar++
-                        }
-
-                        if (segEntradasM.length > 0) {
-                            segEntradasM.sort((a, b) => a.diff(b));
-                            segEntradasM.map(entrada => {
-                                segEntradas.push(entrada.format("HH:mm"))
-                            })
-                            infoMarcacion.segEntradas = segEntradas
-                            let retraso = segEntradasM.at(0)?.diff(moment(jornada.fecha + " " + jornada.segTurno.horaEntrada), "minutes")
-                            if(retraso){
-                                if (retraso > jornada.horario.tolerancia){
-                                    cantRetrasos++;
-                                    totalCantRetrasos++
-                                    minRetrasos = minRetrasos + retraso
-                                    totalMinRetrasos = totalMinRetrasos + retraso
-                                    haySegRetraso = true
-                                }
-                            }
-                        } else {
-                            sinMarcar++
-                            totalSinMarcar++
-                        }
-
-                        if (segSalidasM.length > 0) {
-                            segSalidasM.sort((a, b) => a.diff(b));
-                            segSalidasM.map(salida => {
-                                segSalidas.push(salida.format("HH:mm"))
-                            })
-                            infoMarcacion.segSalidas = segSalidas
-                        } else {
-                            sinMarcar++
-                            totalSinMarcar++
-                        }
-                        infoMarcacion.activo = true
-                        infoMarcacion.noMarcados = sinMarcar
-                        infoMarcacion.cantRetrasos = cantRetrasos
-                        infoMarcacion.minRetrasos = minRetrasos
-                        infoMarcacion.hayPriRetraso = hayPriRetraso
-                        infoMarcacion.haySegRetraso = haySegRetraso
                     } else {
-                        if (jornada.getNumTurnos() == 1) {
+                        infoMarcacion.horario = jornada.horario.nombre;
+                        infoMarcacion.numTurnos = jornada.getNumTurnos();
+
+                        if (jornada.getNumTurnos() == 2) {
                             let priEntradasM: Moment[] = [];
                             let priSalidasM: Moment[] = [];
-                            //Genero los rangos para entrdas y salidas:
+                            let segEntradasM: Moment[] = [];
+                            let segSalidasM: Moment[] = [];
+                            //Genero los rangos para los cuatro posibles casos:
                             let priEntIni = moment(jornada.fecha + " " + "00:00").format('YYYY-MM-DD HH:mm')
                             let priEntFin = moment(jornada.fecha + " " + jornada.priTurno.horaSalida).subtract(1, "hours").format('YYYY-MM-DD HH:mm')
                             let priEntRango = momentExt.range(moment(priEntIni).toDate(), moment(priEntFin).toDate())
-
-                            let priSalFin = moment(jornada.fecha + " " + "23:59").format('YYYY-MM-DD HH:mm')
+                            let dif = moment(jornada.fecha + " " + jornada.segTurno.horaEntrada).diff(moment(jornada.fecha + " " + jornada.priTurno.horaSalida), "hours")
+                            let priSalFin = moment(jornada.fecha + " " + jornada.priTurno.horaSalida).add(dif / 2, "hours")
                             let priSalRango = momentExt.range(moment(priEntFin).toDate(), moment(priSalFin).toDate())
-                            //Ontengo las marcaciones segun fecha y clasifico segun rangos
+                            let segEntFin = moment(jornada.fecha + " " + jornada.segTurno.horaSalida).subtract(1, "hours").format('YYYY-MM-DD HH:mm')
+                            let segEntRango = momentExt.range(moment(priSalFin).toDate(), moment(segEntFin).toDate())
+                            let segSalFin = moment(jornada.fecha + " " + "23:59").format('YYYY-MM-DD HH:mm')
+                            let segSalRango = momentExt.range(moment(segEntFin).toDate(), moment(segSalFin).toDate())
+                            //Obtengo las marcaciones segun fecha y clasifico segun rangos
                             let marcaciones = await getMarcacionesPor(usuario, fecha.format("YYYY-MM-DD"))
                             marcaciones.forEach(marcacion => {
                                 let horaMarcaje = moment(marcacion.fecha + " " + marcacion.hora).format('YYYY-MM-DD HH:mm')
                                 console.log(horaMarcaje)
                                 if (priEntRango.contains(moment(horaMarcaje), {excludeEnd: true}))
                                     priEntradasM.push(moment(horaMarcaje))
-                                else if (priSalRango.contains(moment(horaMarcaje)))
+                                else if (priSalRango.contains(moment(horaMarcaje), {excludeEnd: true}))
                                     priSalidasM.push(moment(horaMarcaje))
+                                else if (segEntRango.contains(moment(horaMarcaje), {excludeEnd: true}))
+                                    segEntradasM.push(moment(horaMarcaje))
+                                else if (segSalRango.contains(moment(horaMarcaje)))
+                                    segSalidasM.push(moment(horaMarcaje))
                             })
                             let priEntradas: string[] = [];
                             let priSalidas: string[] = [];
+                            let segEntradas: string[] = [];
+                            let segSalidas: string[] = [];
 
                             if (priEntradasM.length > 0) {
                                 priEntradasM.sort((a, b) => a.diff(b));
@@ -272,12 +206,12 @@ export const getResumenMarcaciones = async (req: Request, res: Response) => {
                                 })
                                 infoMarcacion.priEntradas = priEntradas
                                 let retraso = priEntradasM.at(0)?.diff(moment(jornada.fecha + " " + jornada.priTurno.horaEntrada), "minutes")
-                                if(retraso){
+                                if (retraso) {
                                     if (retraso > jornada.horario.tolerancia) {
                                         cantRetrasos++;
-                                        totalCantRetrasos++
+                                        totalCantRetrasos++;
                                         minRetrasos = minRetrasos + retraso
-                                        totalMinRetrasos = totalMinRetrasos + retraso
+                                        totalMinRetrasos = totalMinRetrasos + retraso;
                                         hayPriRetraso = true
                                     }
                                 }
@@ -296,13 +230,107 @@ export const getResumenMarcaciones = async (req: Request, res: Response) => {
                                 sinMarcar++
                                 totalSinMarcar++
                             }
+
+                            if (segEntradasM.length > 0) {
+                                segEntradasM.sort((a, b) => a.diff(b));
+                                segEntradasM.map(entrada => {
+                                    segEntradas.push(entrada.format("HH:mm"))
+                                })
+                                infoMarcacion.segEntradas = segEntradas
+                                let retraso = segEntradasM.at(0)?.diff(moment(jornada.fecha + " " + jornada.segTurno.horaEntrada), "minutes")
+                                if (retraso) {
+                                    if (retraso > jornada.horario.tolerancia) {
+                                        cantRetrasos++;
+                                        totalCantRetrasos++
+                                        minRetrasos = minRetrasos + retraso
+                                        totalMinRetrasos = totalMinRetrasos + retraso
+                                        haySegRetraso = true
+                                    }
+                                }
+                            } else {
+                                sinMarcar++
+                                totalSinMarcar++
+                            }
+
+                            if (segSalidasM.length > 0) {
+                                segSalidasM.sort((a, b) => a.diff(b));
+                                segSalidasM.map(salida => {
+                                    segSalidas.push(salida.format("HH:mm"))
+                                })
+                                infoMarcacion.segSalidas = segSalidas
+                            } else {
+                                sinMarcar++
+                                totalSinMarcar++
+                            }
+                            infoMarcacion.activo = true
                             infoMarcacion.noMarcados = sinMarcar
                             infoMarcacion.cantRetrasos = cantRetrasos
                             infoMarcacion.minRetrasos = minRetrasos
                             infoMarcacion.hayPriRetraso = hayPriRetraso
-                            infoMarcacion.activo = true
+                            infoMarcacion.haySegRetraso = haySegRetraso
                         } else {
-                            infoMarcacion.mensaje = "Dia de descanso"
+                            if (jornada.getNumTurnos() == 1) {
+                                let priEntradasM: Moment[] = [];
+                                let priSalidasM: Moment[] = [];
+                                //Genero los rangos para entrdas y salidas:
+                                let priEntIni = moment(jornada.fecha + " " + "00:00").format('YYYY-MM-DD HH:mm')
+                                let priEntFin = moment(jornada.fecha + " " + jornada.priTurno.horaSalida).subtract(1, "hours").format('YYYY-MM-DD HH:mm')
+                                let priEntRango = momentExt.range(moment(priEntIni).toDate(), moment(priEntFin).toDate())
+
+                                let priSalFin = moment(jornada.fecha + " " + "23:59").format('YYYY-MM-DD HH:mm')
+                                let priSalRango = momentExt.range(moment(priEntFin).toDate(), moment(priSalFin).toDate())
+                                //Ontengo las marcaciones segun fecha y clasifico segun rangos
+                                let marcaciones = await getMarcacionesPor(usuario, fecha.format("YYYY-MM-DD"))
+                                marcaciones.forEach(marcacion => {
+                                    let horaMarcaje = moment(marcacion.fecha + " " + marcacion.hora).format('YYYY-MM-DD HH:mm')
+                                    console.log(horaMarcaje)
+                                    if (priEntRango.contains(moment(horaMarcaje), {excludeEnd: true}))
+                                        priEntradasM.push(moment(horaMarcaje))
+                                    else if (priSalRango.contains(moment(horaMarcaje)))
+                                        priSalidasM.push(moment(horaMarcaje))
+                                })
+                                let priEntradas: string[] = [];
+                                let priSalidas: string[] = [];
+
+                                if (priEntradasM.length > 0) {
+                                    priEntradasM.sort((a, b) => a.diff(b));
+                                    priEntradasM.map(entrada => {
+                                        priEntradas.push(entrada.format("HH:mm"))
+                                    })
+                                    infoMarcacion.priEntradas = priEntradas
+                                    let retraso = priEntradasM.at(0)?.diff(moment(jornada.fecha + " " + jornada.priTurno.horaEntrada), "minutes")
+                                    if (retraso) {
+                                        if (retraso > jornada.horario.tolerancia) {
+                                            cantRetrasos++;
+                                            totalCantRetrasos++
+                                            minRetrasos = minRetrasos + retraso
+                                            totalMinRetrasos = totalMinRetrasos + retraso
+                                            hayPriRetraso = true
+                                        }
+                                    }
+                                } else {
+                                    sinMarcar++
+                                    totalSinMarcar++
+                                }
+
+                                if (priSalidasM.length > 0) {
+                                    priSalidasM.sort((a, b) => a.diff(b));
+                                    priSalidasM.map(salida => {
+                                        priSalidas.push(salida.format("HH:mm"))
+                                    })
+                                    infoMarcacion.priSalidas = priSalidas
+                                } else {
+                                    sinMarcar++
+                                    totalSinMarcar++
+                                }
+                                infoMarcacion.noMarcados = sinMarcar
+                                infoMarcacion.cantRetrasos = cantRetrasos
+                                infoMarcacion.minRetrasos = minRetrasos
+                                infoMarcacion.hayPriRetraso = hayPriRetraso
+                                infoMarcacion.activo = true
+                            } else {
+                                infoMarcacion.mensaje = "Dia de descanso"
+                            }
                         }
                     }
                 } else {
@@ -340,3 +368,39 @@ async function getMarcacionesPor(usuario: Usuario, fecha: string) {
     return marcaciones;
 }
 
+function getFeriado(jornada: Jornada, feriados: Asueto[]) {
+    let res: Asueto | any = null;
+    for (let feriado of feriados) {
+        if (feriado.fecha === jornada.fecha) {
+            res = feriado
+            break;
+        }
+    }
+    return res;
+}
+
+function getExcepcionCompleta(jornada: Jornada, excepcionesCompletas: ExcepcionTickeo[]) {
+    let res: ExcepcionTickeo | any = null;
+    for (let excepcionCompleta of excepcionesCompletas) {
+        if (excepcionCompleta.fecha === jornada.fecha) {
+            res = excepcionCompleta
+            break;
+        }
+    }
+    return res;
+}
+
+function getSinRegistros(rangoSinRegistros: DateRange) {
+    let infoMarcaciones: InfoMarcacion[] = [];
+    for (let fecha of rangoSinRegistros.by("day")) {
+        let infoMarcacion = new InfoMarcacion();
+        let dia = moment(fecha).locale("es").format("ddd DD")
+        dia = dia.charAt(0).toUpperCase() + dia.substring(1)
+        infoMarcacion.dia = dia
+        infoMarcacion.horario = "Sin registros"
+        infoMarcacion.activo = false
+        infoMarcacion.mensaje = "Funcionario no fué registrado"
+        infoMarcaciones.push(infoMarcacion)
+    }
+    return infoMarcaciones;
+}

@@ -13,8 +13,6 @@ import {Asueto} from "../entity/Asueto";
 import {Licencia} from "../entity/Licencia";
 import {InfoExtraJornada} from "../models/InfoExtraJornada";
 import {Moment} from "moment";
-import {Marcacion} from "../entity/Marcacion";
-import {Terminal} from "../entity/Terminal";
 
 const momentExt = extendMoment(MomentExt);
 

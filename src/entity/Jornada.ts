@@ -7,11 +7,10 @@ import {InfoExtraJornada} from "../models/InfoExtraJornada";
 export enum EstadoJornada {
     dia_libre,
     activa,
-    vacacion,
-    baja_medica,
-    permiso,
     feriado,
-    sin_asignar
+    con_excepcion_completa,
+    con_excepcion_horas,
+    sin_asignar,
 }
 
 @Entity()
