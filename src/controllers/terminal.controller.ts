@@ -185,6 +185,11 @@ function buscarUsuarioEn(usuario: Usuario, datos: any[]) {
     return res;
 }
 
+async function getMarcaciones(ci:number, terminal:Terminal) {
+    let marcaciones = await Marcacion.findBy({ci: ci, terminal: terminal});
+    return marcaciones;
+}
+
 async function getNumMarcaciones(ci:number, terminal:Terminal) {
     let marcaciones = await Marcacion.findBy({ci: ci, terminal: terminal});
     return marcaciones.length;
