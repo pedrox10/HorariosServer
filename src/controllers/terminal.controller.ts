@@ -68,12 +68,10 @@ export const sincronizarTerminal = async (req: Request, res: Response) => {
                 const pyFile = 'src/scriptpy/marcaciones.py';
                 const args = [terminal.ip, terminal.puerto];
                 if (fueSincronizado) {
-                    console.log(moment(terminal.ult_sincronizacion).format('MM/DD/YY HH:mm:ss'))
                     args.push(moment(terminal.ult_sincronizacion).format('MM/DD/YY HH:mm:ss'))
                 }
                 args.unshift(pyFile);
                 const pyprog = await spawn(envPython, args);
-                console.log(envPython + " " + args)
                 let marcaciones: Marcacion[] = [];
                 //const pyprog = fs.readFileSync("./src/registros.json");
                 JSON.parse(pyprog.toString()).forEach((value: any) => {
@@ -102,14 +100,15 @@ export const sincronizarTerminal = async (req: Request, res: Response) => {
                 const args = [terminal?.ip, terminal?.puerto];
                 args.unshift(pyFile);
                 const pyprog = await spawn(envPython, args);
-                console.log(envPython + " " + args)
                 let usuariosT = JSON.parse(pyprog.toString());
 
                 //let usuariosT = [{"uid":1,"role":0,"password":"","name":"PEDRO DINO BARCO","cardno":0,"user_id":"5907490"},{"uid":2,"role":0,"password":"","name":"MARIA COSTA","cardno":0,"user_id":"5907491"}]
                 let usuariosBD = await Usuario.find({where: {terminal: terminal}});
                 if (fueSincronizado) {
+                    //Recorro los usuarios del terminal y comparo con funcionarios de la BD
                     await usuariosT.forEach(async (usuarioT: any) => {
                         let usuarioBD = await Usuario.findOneBy({ uid: usuarioT.uid, terminal: terminal })
+                        //Si existe pregunto si cambió sy nombre y actualizo
                         if (usuarioBD) {
                             if (usuarioT.name !== usuarioBD.nombre) {
                             usuarioBD.nombre = usuarioT.name;
@@ -120,6 +119,7 @@ export const sincronizarTerminal = async (req: Request, res: Response) => {
                             usuario.uid = usuarioT.uid;
                             usuario.ci = usuarioT.user_id;
                             usuario.nombre = usuarioT.name;
+                            //usuario.fechaAlta =
                             usuario.terminal = terminal;
                             await usuario.save()
                         }
@@ -193,5 +193,19 @@ async function getMarcaciones(ci:number, terminal:Terminal) {
 async function getNumMarcaciones(ci:number, terminal:Terminal) {
     let marcaciones = await Marcacion.findBy({ci: ci, terminal: terminal});
     return marcaciones.length;
+}
+
+async function crearUsuario(usuarioT: any, terminal: Terminal) {
+    let usuario = new Usuario();
+    usuario.uid = usuarioT.uid;
+    usuario.ci = usuarioT.user_id;
+    usuario.nombre = usuarioT.name;
+    usuario.terminal = terminal;
+    //Determinar las fechas de alta
+    let marcaciones = await getMarcaciones(usuario.ci, terminal)
+    if(marcaciones.le)
+    //usuario.fechaAlta =
+
+    await usuario.save()
 }
 
