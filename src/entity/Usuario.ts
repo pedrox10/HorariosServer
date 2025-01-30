@@ -30,7 +30,7 @@ export class Usuario extends BaseEntity{
     nombre:string
     @Column({ default: EstadoUsuario.activo })
     estado:EstadoUsuario
-    @Column({type: 'date', nullable: false  })
+    @Column({type: 'date', nullable: false })
     fechaAlta: Date;
     @Column({type: 'date', nullable: true})
     fechaBaja: Date;

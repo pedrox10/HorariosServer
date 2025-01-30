@@ -96,13 +96,15 @@ export const getJornadas = async (req: Request, res: Response) => {
             dow: 1,
         },
     });
-    const startWeek = moment().year(parseInt(gestion)).month(parseInt(mes)).startOf('month').week();
+    let startWeek = moment().year(parseInt(gestion)).month(parseInt(mes)).startOf('month').week();
+    if(startWeek == 53 || startWeek == 52)
+        startWeek = 1
     let endWeek;
     if (parseInt(mes) === 11) {
         endWeek = 53
     } else
         endWeek = moment().year(parseInt(gestion)).month(parseInt(mes)).endOf('month').week();
-
+    console.log("Inicio Semana: " + startWeek + " Fin semana: " + endWeek)
     for (var week = startWeek; week <= endWeek; week++) {
         let primerDiaSemana: Moment = moment().year(parseInt(gestion)).month(parseInt(mes)).week(week).startOf('week');
         let ultimoDiaSemana: Moment = moment().year(parseInt(gestion)).month(parseInt(mes)).week(week).endOf('week');

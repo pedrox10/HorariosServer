@@ -1,11 +1,11 @@
 import {Request, Response} from "express"
 import {Terminal} from "../entity/Terminal";
 import {AppDataSource} from "../data-source";
-import fs from "fs";
 import {Marcacion} from "../entity/Marcacion";
 import path from "path";
 import {EstadoUsuario, Usuario} from "../entity/Usuario";
 import moment from 'moment';
+import {Turno} from "../entity/Turno";
 
 const envPython = path.join(__dirname, "../scriptpy/envpy", "bin", "python3");
 const spawn = require('await-spawn');
@@ -100,7 +100,7 @@ export const sincronizarTerminal = async (req: Request, res: Response) => {
                 const args = [terminal?.ip, terminal?.puerto];
                 args.unshift(pyFile);
                 const pyprog = await spawn(envPython, args);
-                let usuariosT = JSON.parse(pyprog.toString());
+                let usuariosT: any = JSON.parse(pyprog.toString());
 
                 //let usuariosT = [{"uid":1,"role":0,"password":"","name":"PEDRO DINO BARCO","cardno":0,"user_id":"5907490"},{"uid":2,"role":0,"password":"","name":"MARIA COSTA","cardno":0,"user_id":"5907491"}]
                 let usuariosBD = await Usuario.find({where: {terminal: terminal}});
@@ -115,12 +115,7 @@ export const sincronizarTerminal = async (req: Request, res: Response) => {
                             await usuarioBD.save()
                             }
                         } else {
-                            let usuario = new Usuario();
-                            usuario.uid = usuarioT.uid;
-                            usuario.ci = usuarioT.user_id;
-                            usuario.nombre = usuarioT.name;
-                            //usuario.fechaAlta =
-                            usuario.terminal = terminal;
+                            let usuario = await getNuevoUsuario(usuarioT, terminal)
                             await usuario.save()
                         }
                     });
@@ -133,31 +128,18 @@ export const sincronizarTerminal = async (req: Request, res: Response) => {
 
                 } else {
                     let usuarios: Usuario[] = [];
-                    await usuariosT.forEach(async (usuarioT: any) => {
-                        let usuario = new Usuario();
-                        usuario.uid = usuarioT.uid;
-                        usuario.ci = usuarioT.user_id;
-                        usuario.nombre = usuarioT.name;
-                        usuario.terminal = terminal;
+                    for(let usuarioT of usuariosT) {
+                        let usuario = await getNuevoUsuario(usuarioT, terminal)
                         usuarios.push(usuario);
-                    });
+                    }
+
                     const userRepo = AppDataSource.getRepository(Usuario);
                     await userRepo.insert(usuarios);
-                    let nuevosUsuarios = await Usuario.findBy({terminal: terminal})
-                    let usuariosInactivos: Usuario[] = []
-                    for(let usuario of nuevosUsuarios) {
-                        let numMarcaciones = await getNumMarcaciones(usuario.ci, terminal)
-                        if( numMarcaciones == 0){
-                            usuario.estado = EstadoUsuario.inactivo
-                            usuariosInactivos.push(usuario)
-                        }
-                    }
-                    await userRepo.save(usuariosInactivos)
+                    console.log(usuarios)
                 }
                 terminal.ult_sincronizacion = moment().toDate()
                 console.log(moment(terminal.ult_sincronizacion))
                 await terminal.save()
-
             } catch (e: any) {
                 res.send("Error")
                 console.log(e.stderr.toString())
@@ -190,22 +172,41 @@ async function getMarcaciones(ci:number, terminal:Terminal) {
     return marcaciones;
 }
 
-async function getNumMarcaciones(ci:number, terminal:Terminal) {
-    let marcaciones = await Marcacion.findBy({ci: ci, terminal: terminal});
-    return marcaciones.length;
-}
-
-async function crearUsuario(usuarioT: any, terminal: Terminal) {
+async function getNuevoUsuario(usuarioT: any, terminal: Terminal) {
     let usuario = new Usuario();
     usuario.uid = usuarioT.uid;
     usuario.ci = usuarioT.user_id;
     usuario.nombre = usuarioT.name;
     usuario.terminal = terminal;
-    //Determinar las fechas de alta
-    let marcaciones = await getMarcaciones(usuario.ci, terminal)
-    if(marcaciones.le)
-    //usuario.fechaAlta =
+    let marcaciones: Marcacion[] = [];
+    marcaciones = await getMarcaciones(usuario.ci, terminal);
+    if(marcaciones) {
+        if(marcaciones.length > 0) {
+            usuario.fechaAlta = moment(marcaciones.at(0)!.fecha, "YYYY-MM-DD").toDate();
+            console.log(usuario.fechaAlta)
+        } else {
+            usuario.fechaAlta = moment().toDate();
+            usuario.estado = EstadoUsuario.inactivo;
+            console.log(usuario.fechaAlta)
+        }
+    }
+    return usuario;
+}
 
-    await usuario.save()
+async function eliminarUsuario(usuario: Usuario) {
+   /* for (let jornada of jornadas) {
+        if (jornada.getNumTurnos() == 2) {
+            turnosBorrar.push(jornada.priTurno);
+            turnosBorrar.push(jornada.segTurno);
+        } else if (jornada.getNumTurnos() == 1) {
+            turnosBorrar.push(jornada.priTurno)
+        } else
+            jornadasBorrar.push(jornada);
+    }
+
+    console.log(turnosBorrar)
+    console.log(jornadasBorrar)
+    const turnoRepo = AppDataSource.getRepository(Turno);
+    await turnoRepo.remove(turnosBorrar)*/
 }
 
