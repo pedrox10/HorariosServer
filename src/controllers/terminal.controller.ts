@@ -6,6 +6,7 @@ import path from "path";
 import {EstadoUsuario, Usuario} from "../entity/Usuario";
 import moment from 'moment';
 import {Turno} from "../entity/Turno";
+import {Jornada} from "../entity/Jornada";
 
 const envPython = path.join(__dirname, "../scriptpy/envpy", "bin", "python3");
 const spawn = require('await-spawn');
@@ -122,7 +123,7 @@ export const sincronizarTerminal = async (req: Request, res: Response) => {
 
                     await usuariosBD.forEach(async (usuario: Usuario) => {
                         if (buscarUsuarioEn(usuario, usuariosT) == false) {
-                            await Usuario.delete({id: usuario.id});
+                            await eliminarUsuario(usuario);
                         }
                     });
 
@@ -194,19 +195,23 @@ async function getNuevoUsuario(usuarioT: any, terminal: Terminal) {
 }
 
 async function eliminarUsuario(usuario: Usuario) {
-   /* for (let jornada of jornadas) {
+    //Borramos los turnos asignados a ese usuario
+    let turnosBorrar: Turno[] = [];
+    let jornadas = usuario.jornadas;
+    for (let jornada of jornadas) {
         if (jornada.getNumTurnos() == 2) {
             turnosBorrar.push(jornada.priTurno);
             turnosBorrar.push(jornada.segTurno);
         } else if (jornada.getNumTurnos() == 1) {
             turnosBorrar.push(jornada.priTurno)
-        } else
-            jornadasBorrar.push(jornada);
+        }
     }
-
-    console.log(turnosBorrar)
-    console.log(jornadasBorrar)
     const turnoRepo = AppDataSource.getRepository(Turno);
-    await turnoRepo.remove(turnosBorrar)*/
+    await turnoRepo.remove(turnosBorrar);
+
+    //Borramos las marcaciones
+
+    //Borramos las marcaciones y sus jornadas
+    Usuario.delete({id: usuario.id});
 }
 
