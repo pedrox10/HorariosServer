@@ -144,21 +144,52 @@ export const getResumenMarcaciones = async (req: Request, res: Response) => {
                     }
                     if (hayExcepcionesCompletas) {
                         excepcionCompleta = getExcepcionCompleta(jornada, excepcionesCompletas)
-                        if (excepcionCompleta)
-                            jornada.estado = EstadoJornada.con_excepcion_completa
+                        if (excepcionCompleta) {
+                            switch (excepcionCompleta.licencia.nombre) {
+                                case "Vacacion":
+                                    jornada.estado = EstadoJornada.vacacion
+                                    break;
+                                case "Permiso":
+                                    jornada.estado = EstadoJornada.permiso
+                                    break;
+                                case "Baja Medica":
+                                    jornada.estado = EstadoJornada.baja_medica
+                                    break;
+                                case "Licencia":
+                                    jornada.estado = EstadoJornada.licencia
+                                    break;
+                                default :
+                                    jornada.estado = EstadoJornada.otro
+                                    break;
+                            }
+                        }
                     }
                     if (jornada.estado != EstadoJornada.dia_libre && jornada.estado != EstadoJornada.activa) {
-                        switch (jornada.estado) {
-                            case EstadoJornada.feriado:
-                                infoMarcacion.horario = "Feriado";
-                                infoMarcacion.mensaje = feriado.nombre;
-                                infoMarcacion.activo = false
-                                break;
-                            case EstadoJornada.con_excepcion_completa:
-                                infoMarcacion.horario = excepcionCompleta.licencia.nombre;
-                                infoMarcacion.mensaje = excepcionCompleta.detalle;
-                                infoMarcacion.activo = false
-                                break;
+                        infoMarcacion.activo = false
+                        if(jornada.estado == EstadoJornada.feriado) {
+                            infoMarcacion.horario = "Feriado";
+                            infoMarcacion.mensaje = feriado.nombre;
+                            infoMarcacion.estado = EstadoJornada.feriado
+                        } else {
+                            infoMarcacion.horario = excepcionCompleta.licencia.nombre;
+                            infoMarcacion.mensaje = excepcionCompleta.detalle;
+                            switch (jornada.estado) {
+                                case EstadoJornada.vacacion:
+                                    infoMarcacion.estado = EstadoJornada.vacacion
+                                    break;
+                                case EstadoJornada.permiso:
+                                    infoMarcacion.estado = EstadoJornada.permiso
+                                    break;
+                                case EstadoJornada.baja_medica:
+                                    infoMarcacion.estado = EstadoJornada.baja_medica
+                                    break;
+                                case EstadoJornada.licencia:
+                                    infoMarcacion.estado = EstadoJornada.licencia
+                                    break;
+                                case EstadoJornada.otro:
+                                    infoMarcacion.estado = EstadoJornada.otro
+                                    break;
+                            }
                         }
                     } else {
                         infoMarcacion.horario = jornada.horario.nombre;
@@ -330,12 +361,14 @@ export const getResumenMarcaciones = async (req: Request, res: Response) => {
                                 infoMarcacion.activo = true
                             } else {
                                 infoMarcacion.mensaje = "Dia de descanso"
+                                infoMarcacion.estado = EstadoJornada.dia_libre
                             }
                         }
                     }
                 } else {
                     infoMarcacion.horario = "Ninguno"
                     infoMarcacion.mensaje = "Asigna antes un horario"
+                    infoMarcacion.estado = EstadoJornada.sin_asignar
                 }
                 infoMarcaciones.push(infoMarcacion)
             }

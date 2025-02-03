@@ -1,3 +1,5 @@
+import {EstadoJornada} from "../entity/Jornada";
+
 export class InfoMarcacion{
   dia:string;
   horario: string;
@@ -13,6 +15,7 @@ export class InfoMarcacion{
   activo:boolean
   mensaje:string
   numTurnos: number
+  estado: EstadoJornada
 
   constructor() {
   }

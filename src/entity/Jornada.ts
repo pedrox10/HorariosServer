@@ -8,9 +8,13 @@ export enum EstadoJornada {
     dia_libre,
     activa,
     feriado,
-    con_excepcion_completa,
-    con_excepcion_horas,
+    vacacion,
+    baja_medica,
+    permiso,
+    licencia,
+    otro,
     sin_asignar,
+    con_excepcion
 }
 
 @Entity()
@@ -31,7 +35,6 @@ export class Jornada extends BaseEntity {
     usuario: Usuario
     @ManyToOne(() => Horario)
     horario: Horario
-
     infoExtra: InfoExtraJornada
 
     getNumTurnos() {
