@@ -79,10 +79,13 @@ export const getResumenMarcaciones = async (req: Request, res: Response) => {
             terminal: true,
         }
     });
+    //let usuarioInfo = await Usuario.findOneBy({id: parseInt(id)});
+
     if (usuario) {
         let fechaIni = moment(ini).format('yyyy-MM-DD')
         let fechaFin = moment(fin).format('yyyy-MM-DD')
         let resumenMarcacion: ResumenMarcacion = new ResumenMarcacion();
+        resumenMarcacion.usuario = usuario;
         let infoMarcaciones: InfoMarcacion[] = [];
         let rango = momentExt.range(moment(fechaIni).toDate(), moment(fechaFin).toDate())
 
