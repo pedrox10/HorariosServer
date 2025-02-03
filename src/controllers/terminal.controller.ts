@@ -123,7 +123,7 @@ export const sincronizarTerminal = async (req: Request, res: Response) => {
 
                     await usuariosBD.forEach(async (usuario: Usuario) => {
                         if (buscarUsuarioEn(usuario, usuariosT) == false) {
-                            await eliminarUsuario(usuario);
+                            await eliminarUsuario(usuario, terminal);
                         }
                     });
 
@@ -168,8 +168,9 @@ function buscarUsuarioEn(usuario: Usuario, datos: any[]) {
     return res;
 }
 
-async function getMarcaciones(ci:number, terminal:Terminal) {
-    let marcaciones = await Marcacion.findBy({ci: ci, terminal: terminal});
+async function getMarcaciones(ci:number, terminal: Terminal) {
+    let marcaciones: Marcacion[] = [];
+    marcaciones = await Marcacion.findBy({ci: ci, terminal: terminal});
     return marcaciones;
 }
 
@@ -194,10 +195,21 @@ async function getNuevoUsuario(usuarioT: any, terminal: Terminal) {
     return usuario;
 }
 
-async function eliminarUsuario(usuario: Usuario) {
+async function eliminarUsuario(usuario: Usuario, terminal: Terminal) {
+    //Borramos las marcaciones
+    let marcaciones: Marcacion[] = [];
+    marcaciones = await getMarcaciones(usuario.ci, terminal);
+    console.log("a borrar: " + marcaciones.length)
+    const marcacionRepo = AppDataSource.getRepository(Marcacion);
+    await marcacionRepo.remove(marcaciones);
+
     //Borramos los turnos asignados a ese usuario
     let turnosBorrar: Turno[] = [];
-    let jornadas = usuario.jornadas;
+    let jornadas = await Jornada.find({
+        where: {
+            usuario: usuario,
+        }, relations: {priTurno: true, segTurno: true}
+    },)
     for (let jornada of jornadas) {
         if (jornada.getNumTurnos() == 2) {
             turnosBorrar.push(jornada.priTurno);
@@ -209,9 +221,7 @@ async function eliminarUsuario(usuario: Usuario) {
     const turnoRepo = AppDataSource.getRepository(Turno);
     await turnoRepo.remove(turnosBorrar);
 
-    //Borramos las marcaciones
-
     //Borramos las marcaciones y sus jornadas
-    Usuario.delete({id: usuario.id});
+    await Usuario.delete({id: usuario.id});
 }
 

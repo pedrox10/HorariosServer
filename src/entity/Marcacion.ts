@@ -1,5 +1,4 @@
 import {BaseEntity, Column, Entity, ManyToOne, PrimaryGeneratedColumn} from "typeorm";
-import {Usuario} from "./Usuario";
 import {Terminal} from "./Terminal";
 
 @Entity()
