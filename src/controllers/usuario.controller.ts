@@ -124,6 +124,7 @@ export const getResumenMarcaciones = async (req: Request, res: Response) => {
             let totalCantRetrasos: number = 0
             let totalMinRetrasos: number = 0
             let totalSinMarcar: number = 0
+            let totalAusencias: number = 0
 
             for (let fecha of rangoValido.by("day")) {
                 let jornada = await getJornadaPor(usuario, fecha.format("YYYY-MM-DD"))
@@ -197,8 +198,8 @@ export const getResumenMarcaciones = async (req: Request, res: Response) => {
                     } else {
                         infoMarcacion.horario = jornada.horario.nombre;
                         infoMarcacion.numTurnos = jornada.getNumTurnos();
-
-                        if (jornada.getNumTurnos() == 2) {
+                        let numTurnos = jornada.getNumTurnos();
+                        if (numTurnos == 2) {
                             let priEntradasM: Moment[] = [];
                             let priSalidasM: Moment[] = [];
                             let segEntradasM: Moment[] = [];
@@ -218,7 +219,6 @@ export const getResumenMarcaciones = async (req: Request, res: Response) => {
                             let marcaciones = await getMarcacionesPor(usuario, fecha.format("YYYY-MM-DD"))
                             marcaciones.forEach(marcacion => {
                                 let horaMarcaje = moment(marcacion.fecha + " " + marcacion.hora).format('YYYY-MM-DD HH:mm')
-                                console.log(horaMarcaje)
                                 if (priEntRango.contains(moment(horaMarcaje), {excludeEnd: true}))
                                     priEntradasM.push(moment(horaMarcaje))
                                 else if (priSalRango.contains(moment(horaMarcaje), {excludeEnd: true}))
@@ -296,14 +296,21 @@ export const getResumenMarcaciones = async (req: Request, res: Response) => {
                                 sinMarcar++
                                 totalSinMarcar++
                             }
-                            infoMarcacion.activo = true
-                            infoMarcacion.noMarcados = sinMarcar
-                            infoMarcacion.cantRetrasos = cantRetrasos
-                            infoMarcacion.minRetrasos = minRetrasos
-                            infoMarcacion.hayPriRetraso = hayPriRetraso
-                            infoMarcacion.haySegRetraso = haySegRetraso
+                            infoMarcacion.activo = true;
+                            if(sinMarcar == numTurnos*2) {
+                                infoMarcacion.noMarcados = 0;
+                                totalSinMarcar = totalSinMarcar - numTurnos*2;
+                                totalAusencias++;
+                                infoMarcacion.estado = EstadoJornada.ausencia
+                            } else {
+                                infoMarcacion.noMarcados = sinMarcar;
+                            }
+                            infoMarcacion.cantRetrasos = cantRetrasos;
+                            infoMarcacion.minRetrasos = minRetrasos;
+                            infoMarcacion.hayPriRetraso = hayPriRetraso;
+                            infoMarcacion.haySegRetraso = haySegRetraso;
                         } else {
-                            if (jornada.getNumTurnos() == 1) {
+                            if (numTurnos == 1) {
                                 let priEntradasM: Moment[] = [];
                                 let priSalidasM: Moment[] = [];
                                 //Genero los rangos para entrdas y salidas:
@@ -357,11 +364,18 @@ export const getResumenMarcaciones = async (req: Request, res: Response) => {
                                     sinMarcar++
                                     totalSinMarcar++
                                 }
-                                infoMarcacion.noMarcados = sinMarcar
-                                infoMarcacion.cantRetrasos = cantRetrasos
-                                infoMarcacion.minRetrasos = minRetrasos
-                                infoMarcacion.hayPriRetraso = hayPriRetraso
-                                infoMarcacion.activo = true
+                                infoMarcacion.activo = true;
+                                if(sinMarcar == numTurnos*2) {
+                                    infoMarcacion.noMarcados = 0;
+                                    totalSinMarcar = totalSinMarcar - numTurnos*2;
+                                    totalAusencias++;
+                                    infoMarcacion.estado = EstadoJornada.ausencia
+                                } else {
+                                    infoMarcacion.noMarcados = sinMarcar;
+                                }
+                                infoMarcacion.cantRetrasos = cantRetrasos;
+                                infoMarcacion.minRetrasos = minRetrasos;
+                                infoMarcacion.hayPriRetraso = hayPriRetraso;
                             } else {
                                 infoMarcacion.mensaje = "Dia de descanso"
                                 infoMarcacion.estado = EstadoJornada.dia_libre
@@ -378,6 +392,7 @@ export const getResumenMarcaciones = async (req: Request, res: Response) => {
             resumenMarcacion.totalCantRetrasos = totalCantRetrasos
             resumenMarcacion.totalMinRetrasos = totalMinRetrasos
             resumenMarcacion.totalSinMarcar = totalSinMarcar
+            resumenMarcacion.totalAusencias = totalAusencias
             resumenMarcacion.infoMarcaciones = infoMarcaciones
             res.send(resumenMarcacion)
         }
