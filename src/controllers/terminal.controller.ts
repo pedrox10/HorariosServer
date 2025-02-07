@@ -58,7 +58,6 @@ export const getFechaPriMarcacion = async (req: Request, res: Response) => {
     res.send(JSON.stringify(terminal?.marcaciones[0].fecha))
 }
 
-
 export const sincronizarTerminal = async (req: Request, res: Response) => {
     const {id} = req.params;
     const terminal = await Terminal.findOne({where: {id: parseInt(id)},});
