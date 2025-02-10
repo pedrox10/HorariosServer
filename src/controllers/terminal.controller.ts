@@ -92,16 +92,6 @@ export const sincronizarTerminal = async (req: Request, res: Response) => {
                     marcacion.terminal = terminal;
                     marcaciones.push(marcacion)
                 }
-                /*JSON.parse(pyprog.toString()).forEach((value: any) => {
-                    let marcacion = new Marcacion();
-                    marcacion.ci = value.user_id;
-                    let fecha = moment(value.timestamp, "YYYY-MM-DD")
-                    let hora = moment(value.timestamp, "YYYY-MM-DD HH-mm-ss")
-                    marcacion.fecha = moment(fecha).toDate()
-                    marcacion.hora = moment(hora).toDate()
-                    marcacion.terminal = terminal;
-                    marcaciones.push(marcacion)
-                });*/
                 const marcacionRepo = AppDataSource.getRepository(Marcacion);
                 await marcacionRepo.insert(marcaciones);
                 console.log("Agregados: " + marcaciones.length + " nuevas marcaciones")
@@ -119,13 +109,11 @@ export const sincronizarTerminal = async (req: Request, res: Response) => {
                 args.unshift(pyFile);
                 const pyprog = await spawn(envPython, args);
                 let usuariosT: any = JSON.parse(pyprog.toString());
-
                 //let usuariosT = [{"uid":1,"role":0,"password":"","name":"PEDRO DINO BARCO","cardno":0,"user_id":"5907490"},{"uid":2,"role":0,"password":"","name":"MARIA COSTA","cardno":0,"user_id":"5907491"}]
                 let usuariosBD = await Usuario.find({where: {terminal: terminal}});
                 if (fueSincronizado) {
                     //Recorro los usuarios del terminal y comparo con funcionarios de la BD
-
-                    await usuariosT.forEach(async (usuarioT: any) => {
+                    for(let usuarioT of usuariosT) {
                         let usuarioBD = await Usuario.findOneBy({uid: usuarioT.uid, terminal: terminal})
                         //Si existe pregunto si cambió sy nombre y actualizo
                         if (usuarioBD) {
@@ -137,24 +125,21 @@ export const sincronizarTerminal = async (req: Request, res: Response) => {
                             let usuario = await getNuevoUsuario(usuarioT, terminal)
                             await usuario.save()
                         }
-                    });
-
-                    await usuariosBD.forEach(async (usuario: Usuario) => {
+                    }
+                    for(let usuario of usuariosBD) {
                         if (buscarUsuarioEn(usuario, usuariosT) == false) {
                             await eliminarUsuario(usuario, terminal);
                         }
-                    });
-
+                    }
                 } else {
                     let usuarios: Usuario[] = [];
                     for (let usuarioT of usuariosT) {
                         let usuario = await getNuevoUsuario(usuarioT, terminal)
                         usuarios.push(usuario);
                     }
-
                     const userRepo = AppDataSource.getRepository(Usuario);
                     await userRepo.insert(usuarios);
-                    console.log(usuarios)
+                    //console.log(usuarios)
                 }
                 terminal.ult_sincronizacion = moment().toDate()
                 console.log(moment(terminal.ult_sincronizacion))
@@ -203,11 +188,9 @@ async function getNuevoUsuario(usuarioT: any, terminal: Terminal) {
     if (marcaciones) {
         if (marcaciones.length > 0) {
             usuario.fechaAlta = moment(marcaciones.at(0)!.fecha, "YYYY-MM-DD").toDate();
-            console.log(usuario.fechaAlta)
         } else {
             usuario.fechaAlta = moment().toDate();
             usuario.estado = EstadoUsuario.inactivo;
-            console.log(usuario.fechaAlta)
         }
     }
     return usuario;
