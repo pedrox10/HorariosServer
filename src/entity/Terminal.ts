@@ -14,6 +14,8 @@ export class  Terminal extends BaseEntity {
     puerto: number
     @Column({type: 'datetime', nullable: true})
     ult_sincronizacion: Date;
+    @Column()
+    tieneConexion: boolean
 
     @OneToMany(() => Usuario, (usuario) => usuario.terminal)
     usuarios: Usuario[]

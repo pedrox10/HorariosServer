@@ -137,7 +137,6 @@ export const getResumenMarcaciones = async (req: Request, res: Response) => {
                 let haySegRetraso: boolean = false
                 let dia = moment(fecha).locale("es").format("ddd DD")
                 dia = dia.charAt(0).toUpperCase() + dia.substring(1)
-                infoMarcacion.fecha = moment(fecha).toDate();
                 infoMarcacion.dia = dia
                 if (jornada) {
                     let feriado: Asueto | any;
@@ -321,10 +320,11 @@ export const getResumenMarcaciones = async (req: Request, res: Response) => {
 
                                 let priSalFin = moment(jornada.fecha + " " + "23:59").format('YYYY-MM-DD HH:mm')
                                 let priSalRango = momentExt.range(moment(priEntFin).toDate(), moment(priSalFin).toDate())
-                                //Obtengo las marcaciones segun fecha y clasifico segun rangos
+                                //Ontengo las marcaciones segun fecha y clasifico segun rangos
                                 let marcaciones = await getMarcacionesPor(usuario, fecha.format("YYYY-MM-DD"))
                                 marcaciones.forEach(marcacion => {
                                     let horaMarcaje = moment(marcacion.fecha + " " + marcacion.hora).format('YYYY-MM-DD HH:mm')
+                                    console.log(horaMarcaje)
                                     if (priEntRango.contains(moment(horaMarcaje), {excludeEnd: true}))
                                         priEntradasM.push(moment(horaMarcaje))
                                     else if (priSalRango.contains(moment(horaMarcaje)))

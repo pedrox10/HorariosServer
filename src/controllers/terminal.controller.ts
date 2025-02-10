@@ -16,6 +16,7 @@ export const crearTerminal = async (req: Request, res: Response) => {
     terminal.nombre = req.body.nombre
     terminal.ip = req.body.ip
     terminal.puerto = req.body.puerto
+    terminal.tieneConexion = req.body.tieneConexion
     await terminal.save();
     console.log(terminal)
     res.send(terminal)
@@ -23,12 +24,13 @@ export const crearTerminal = async (req: Request, res: Response) => {
 
 export const editarTerminal = async (req: Request, res: Response) => {
     const {id} = req.params;
-    const {nombre, ip, puerto} = req.body
+    const {nombre, ip, puerto, tieneConexion} = req.body
     const terminal = await Terminal.findOne({where: {id: parseInt(id)},});
     if (terminal) {
         terminal.nombre = nombre;
         terminal.ip = ip;
         terminal.puerto = puerto
+        terminal.tieneConexion = tieneConexion
         terminal.save()
         res.send(terminal)
     }
@@ -36,9 +38,14 @@ export const editarTerminal = async (req: Request, res: Response) => {
 
 export const eliminarTerminal = async (req: Request, res: Response) => {
     const {id} = req.params;
-    const aux = await Terminal.delete({id: parseInt(id)});
-    console.log(aux)
-    res.send(aux)
+    const terminal = await Terminal.findOne({where: {id: parseInt(id)}, relations: {usuarios: true}});
+    if (terminal) {
+        for (let usuario of terminal.usuarios) {
+            await eliminarUsuario(usuario, terminal)
+        }
+        const aux = await Terminal.delete({id: parseInt(id)});
+        res.send(aux)
+    }
 }
 
 export const getTerminales = async (req: Request, res: Response) => {
@@ -74,7 +81,8 @@ export const sincronizarTerminal = async (req: Request, res: Response) => {
                 const pyprog = await spawn(envPython, args);
                 let marcaciones: Marcacion[] = [];
                 //const pyprog = fs.readFileSync("./src/registros.json");
-                JSON.parse(pyprog.toString()).forEach((value: any) => {
+                let marcacionesT = JSON.parse(pyprog.toString());
+                for(let value of marcacionesT) {
                     let marcacion = new Marcacion();
                     marcacion.ci = value.user_id;
                     let fecha = moment(value.timestamp, "YYYY-MM-DD")
@@ -83,7 +91,17 @@ export const sincronizarTerminal = async (req: Request, res: Response) => {
                     marcacion.hora = moment(hora).toDate()
                     marcacion.terminal = terminal;
                     marcaciones.push(marcacion)
-                });
+                }
+                /*JSON.parse(pyprog.toString()).forEach((value: any) => {
+                    let marcacion = new Marcacion();
+                    marcacion.ci = value.user_id;
+                    let fecha = moment(value.timestamp, "YYYY-MM-DD")
+                    let hora = moment(value.timestamp, "YYYY-MM-DD HH-mm-ss")
+                    marcacion.fecha = moment(fecha).toDate()
+                    marcacion.hora = moment(hora).toDate()
+                    marcacion.terminal = terminal;
+                    marcaciones.push(marcacion)
+                });*/
                 const marcacionRepo = AppDataSource.getRepository(Marcacion);
                 await marcacionRepo.insert(marcaciones);
                 console.log("Agregados: " + marcaciones.length + " nuevas marcaciones")
@@ -106,13 +124,14 @@ export const sincronizarTerminal = async (req: Request, res: Response) => {
                 let usuariosBD = await Usuario.find({where: {terminal: terminal}});
                 if (fueSincronizado) {
                     //Recorro los usuarios del terminal y comparo con funcionarios de la BD
+
                     await usuariosT.forEach(async (usuarioT: any) => {
-                        let usuarioBD = await Usuario.findOneBy({ uid: usuarioT.uid, terminal: terminal })
+                        let usuarioBD = await Usuario.findOneBy({uid: usuarioT.uid, terminal: terminal})
                         //Si existe pregunto si cambió sy nombre y actualizo
                         if (usuarioBD) {
                             if (usuarioT.name !== usuarioBD.nombre) {
-                            usuarioBD.nombre = usuarioT.name;
-                            await usuarioBD.save()
+                                usuarioBD.nombre = usuarioT.name;
+                                await usuarioBD.save()
                             }
                         } else {
                             let usuario = await getNuevoUsuario(usuarioT, terminal)
@@ -128,7 +147,7 @@ export const sincronizarTerminal = async (req: Request, res: Response) => {
 
                 } else {
                     let usuarios: Usuario[] = [];
-                    for(let usuarioT of usuariosT) {
+                    for (let usuarioT of usuariosT) {
                         let usuario = await getNuevoUsuario(usuarioT, terminal)
                         usuarios.push(usuario);
                     }
@@ -167,7 +186,7 @@ function buscarUsuarioEn(usuario: Usuario, datos: any[]) {
     return res;
 }
 
-async function getMarcaciones(ci:number, terminal: Terminal) {
+async function getMarcaciones(ci: number, terminal: Terminal) {
     let marcaciones: Marcacion[] = [];
     marcaciones = await Marcacion.findBy({ci: ci, terminal: terminal});
     return marcaciones;
@@ -181,8 +200,8 @@ async function getNuevoUsuario(usuarioT: any, terminal: Terminal) {
     usuario.terminal = terminal;
     let marcaciones: Marcacion[] = [];
     marcaciones = await getMarcaciones(usuario.ci, terminal);
-    if(marcaciones) {
-        if(marcaciones.length > 0) {
+    if (marcaciones) {
+        if (marcaciones.length > 0) {
             usuario.fechaAlta = moment(marcaciones.at(0)!.fecha, "YYYY-MM-DD").toDate();
             console.log(usuario.fechaAlta)
         } else {
@@ -220,7 +239,7 @@ async function eliminarUsuario(usuario: Usuario, terminal: Terminal) {
     const turnoRepo = AppDataSource.getRepository(Turno);
     await turnoRepo.remove(turnosBorrar);
 
-    //Borramos las marcaciones y sus jornadas
+    //Borramos las jornadas restantes
     await Usuario.delete({id: usuario.id});
 }
 
