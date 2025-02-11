@@ -85,11 +85,10 @@ export const getNumJornadas = async (req: Request, res: Response) => {
     }
 }
 
-//Devuelve todas las jornadas asignadas a un Funcionario
+//Devuelve las jornadas asignadas a un Funcionario por gestion y mes
 export const getJornadas = async (req: Request, res: Response) => {
     const {id, gestion, mes} = req.params;
     let usuario: Usuario | any = await Usuario.findOne({where: {id: parseInt(id)},});
-    console.log(usuario.nombre)
     let calendar: any = []
     moment.updateLocale('es', {
         week: {
@@ -136,6 +135,15 @@ export const getJornadas = async (req: Request, res: Response) => {
         })
     }
     await res.send(calendar)
+}
+
+export const  getJornadasPorMes = async (req: Request, res: Response) => {
+    const {id, gestion, mes} = req.params;
+    let usuario: Usuario | any = await Usuario.findOne({where: {id: parseInt(id)}, relations: {jornadas: true}});
+    let jornadas: Jornada[];
+    for(let jornada of usuario.jornadas) {
+
+    }
 }
 
 export const asignarHorario = async (req: Request, res: Response) => {
