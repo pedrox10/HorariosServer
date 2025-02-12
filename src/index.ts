@@ -2,7 +2,6 @@ import "reflect-metadata"
 import express from "express"
 import cors from "cors"
 import morgan from "morgan"
-import {Terminal} from "./entity/Terminal"
 import {AppDataSource} from "./data-source"
 import routes from "./routes"
 
@@ -18,8 +17,6 @@ app.use(routes)
 app.get("*", (req, res) => {
     res.sendFile(path.join(__dirname, "../public/index.html"));
 });
-
-
 
 app.get('/', (req, res) => {
     res.send("Inicio Server")
