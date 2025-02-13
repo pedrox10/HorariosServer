@@ -138,12 +138,18 @@ export const getJornadas = async (req: Request, res: Response) => {
 }
 
 export const  getJornadasPorMes = async (req: Request, res: Response) => {
-    const {id, gestion, mes} = req.params;
-    let usuario: Usuario | any = await Usuario.findOne({where: {id: parseInt(id)}, relations: {jornadas: true}});
+    const {id, iniMes, finMes} = req.params;
+    let fechaIni = moment(iniMes).format("YYYY-MM-DD");
+    let fechaFin = moment(finMes).format("YYYY-MM-DD");
+    let usuario = await Usuario.findOne({where: {id: parseInt(id)},});
     let jornadas: Jornada[];
-    for(let jornada of usuario.jornadas) {
-
+    if (usuario) {
+        jornadas = await Jornada.findBy({
+            usuario: usuario,
+            fecha: Between(moment(fechaIni).toDate(), moment(fechaFin).toDate())});
     }
+    await res.send(jornadas)
+
 }
 
 export const asignarHorario = async (req: Request, res: Response) => {
