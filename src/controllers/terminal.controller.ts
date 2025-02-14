@@ -7,6 +7,7 @@ import {EstadoUsuario, Usuario} from "../entity/Usuario";
 import moment from 'moment';
 import {Turno} from "../entity/Turno";
 import {Jornada} from "../entity/Jornada";
+import logger from "../logger/logger";
 
 const envPython = path.join(__dirname, "../scriptpy/envpy", "bin", "python3");
 const spawn = require('await-spawn');

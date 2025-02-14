@@ -4,19 +4,20 @@ import cors from "cors"
 import morgan from "morgan"
 import {AppDataSource} from "./data-source"
 import routes from "./routes"
+import requestLogger from './middleware/loggerMiddleware';
+import errorHandler from './middleware/errorMiddleware';
+import logger from './logger/logger';
 
 const path = require("path");
 const app = express()
 
 app.use(express.json())
-app.use(express.urlencoded({extended: true}))
 app.use(cors());
 app.use(morgan("dev"))
-app.use(express.static(path.join(__dirname, "../public")))
 app.use(routes)
-app.get("*", (req, res) => {
-    res.sendFile(path.join(__dirname, "../public/index.html"));
-});
+app.use(requestLogger);
+app.use(errorHandler);
+
 
 app.get('/', (req, res) => {
     res.send("Inicio Server")
@@ -25,9 +26,9 @@ app.get('/', (req, res) => {
 async function main() {
     await AppDataSource.initialize();
     app.listen(4000, () => {
-        console.log("Servidor corriendo");
+        logger.info("Servidor corriendo");
     })
-    console.log("desde index ggg...")
 }
 
 main()
+

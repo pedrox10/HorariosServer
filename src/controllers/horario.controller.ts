@@ -147,9 +147,8 @@ export const  getJornadasPorMes = async (req: Request, res: Response) => {
         jornadas = await Jornada.findBy({
             usuario: usuario,
             fecha: Between(moment(fechaIni).toDate(), moment(fechaFin).toDate())});
+        await res.send(jornadas)
     }
-    await res.send(jornadas)
-
 }
 
 export const asignarHorario = async (req: Request, res: Response) => {
@@ -178,7 +177,6 @@ export const asignarHorario = async (req: Request, res: Response) => {
         } else
             jornadasBorrar.push(jornada);
     }
-
     console.log(turnosBorrar)
     console.log(jornadasBorrar)
     const turnoRepo = AppDataSource.getRepository(Turno);

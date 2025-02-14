@@ -79,7 +79,6 @@ export const getResumenMarcaciones = async (req: Request, res: Response) => {
             terminal: true,
         }
     });
-    //let usuarioInfo = await Usuario.findOneBy({id: parseInt(id)});
 
     if (usuario) {
         let fechaIni = moment(ini).format('yyyy-MM-DD')
