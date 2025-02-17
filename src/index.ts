@@ -26,7 +26,7 @@ app.get('/', (req, res) => {
 async function main() {
     await AppDataSource.initialize();
     app.listen(4000, () => {
-        logger.info("Servidor corriendo");
+        logger.info("Servidor Iniciado");
     })
 }
 

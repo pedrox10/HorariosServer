@@ -98,7 +98,7 @@ export const sincronizarTerminal = async (req: Request, res: Response) => {
                 console.log("Agregados: " + marcaciones.length + " nuevas marcaciones")
             } catch (e: any) {
                 res.send("Error")
-                console.log(e.stderr.toString())
+                logger.error("Error en la carga de marcaciones")
             }
         }
         await getMarcacionesPy();
@@ -147,7 +147,7 @@ export const sincronizarTerminal = async (req: Request, res: Response) => {
                 await terminal.save()
             } catch (e: any) {
                 res.send("Error")
-                console.log(e.stderr.toString())
+                logger.error("Error en la carga de uusuarios")
             }
         }
         await getUsuariosPy();
