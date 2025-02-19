@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 |2025-02-14 23:09:17 [INFO]: Servidor corriendo
 2025-02-14 23:09:36 [INFO]: GET /terminal/1 304 - - 35.181 ms {}
 2025-02-14 23:09:36 [INFO]: GET /terminal/1/usuarios 304 - - 70.573 ms {}
@@ -165,3 +166,10 @@
 2025-02-15 00:15:31 [INFO]: GET /usuario/86/ini/20250101/fin/20250130 304 - - 93.119 ms {}
 2025-02-15 00:15:41 [INFO]: GET /terminal/1 304 - - 1.419 ms {}
 2025-02-15 00:15:41 [INFO]: GET /terminal/1/usuarios 304 - - 10.949 ms {}
+=======
+2025-02-14 18:03:36 [INFO]: Servidor corriendo
+2025-02-14 18:06:24 [INFO]: Servidor corriendo
+2025-02-17 09:31:37 [INFO]: Servidor Iniciado
+2025-02-17 12:01:21 [INFO]: Servidor Iniciado
+2025-02-17 16:43:32 [INFO]: Servidor Iniciado
+>>>>>>> e4e3825aaee2cd15ee597fa497858efc9bfac2ed
