@@ -14,9 +14,9 @@ const app = express()
 app.use(express.json())
 app.use(cors());
 app.use(morgan("dev"))
-app.use(routes)
 app.use(requestLogger);
 app.use(errorHandler);
+app.use(routes)
 
 
 app.get('/', (req, res) => {
@@ -29,6 +29,5 @@ async function main() {
         logger.info("Servidor corriendo");
     })
 }
-
 main()
 

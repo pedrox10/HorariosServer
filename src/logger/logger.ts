@@ -1,13 +1,12 @@
 import winston from 'winston';
 import moment from 'moment-timezone';
 
-// Formato de logs personalizado
 const logFormat = winston.format.printf(({ timestamp, level, message }) => {
     return `${timestamp} [${level.toUpperCase()}]: ${message}`;
 });
 
-// Configuración de Winston
 const logger = winston.createLogger({
+    level: 'info', // Asegúrate de que el nivel es correcto
     format: winston.format.combine(
         winston.format.timestamp({
             format: () => moment().tz('America/Caracas').format('YYYY-MM-DD HH:mm:ss') // UTC -04
@@ -15,19 +14,19 @@ const logger = winston.createLogger({
         logFormat
     ),
     transports: [
-        new winston.transports.Console(), // Mostrar en consola siempre
+        new winston.transports.Console(), // Se verá en consola
 
-        // Logs de información y otros niveles (excluyendo 'error')
+        // Solo logs de INFO y superiores
         new winston.transports.File({
             filename: 'logs/app.log',
-            level: 'info', // Guarda logs de INFO, WARN, etc.
+            level: 'info',
             handleExceptions: false
         }),
 
-        // Logs de error exclusivamente
+        // Solo logs de ERROR
         new winston.transports.File({
             filename: 'logs/error.log',
-            level: 'error', // Solo guarda logs de ERROR
+            level: 'error',
             handleExceptions: true
         })
     ]

@@ -1,0 +1,13 @@
+2025-02-14 23:19:38 [ERROR]: prue4ba
+2025-02-14 23:21:10 [ERROR]: uncaughtException: Este es un error de prueba
+Error: Este es un error de prueba
+    at Object.<anonymous> (C:\Users\pedrox10\Desktop\SistemaControlHorarios\HorarioServer\src\index.ts:33:7)
+    at Module._compile (node:internal/modules/cjs/loader:1358:14)
+    at Module._compile (C:\Users\pedrox10\Desktop\SistemaControlHorarios\HorarioServer\node_modules\source-map-support\source-map-support.js:568:25)
+    at Module.m._compile (C:\Users\pedrox10\AppData\Local\Temp\ts-node-dev-hook-2273367678346112.js:69:33)
+    at Module._extensions..js (node:internal/modules/cjs/loader:1416:10)
+    at require.extensions..jsx.require.extensions..js (C:\Users\pedrox10\AppData\Local\Temp\ts-node-dev-hook-2273367678346112.js:114:20)
+    at require.extensions.<computed> (C:\Users\pedrox10\AppData\Local\Temp\ts-node-dev-hook-2273367678346112.js:71:20)
+    at Object.nodeDevHook [as .ts] (C:\Users\pedrox10\Desktop\SistemaControlHorarios\HorarioServer\node_modules\ts-node-dev\lib\hook.js:63:13)
+    at Module.load (node:internal/modules/cjs/loader:1208:32)
+    at Function.Module._load (node:internal/modules/cjs/loader:1024:12)
