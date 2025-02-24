@@ -10,11 +10,11 @@ else:
 timeout = 60              # Tiempo de espera para la conexión
 
 zk = ZK(zk_ip, port=zk_port, timeout=timeout)
-# Define a custom function to serialize datetime objects 
-def serialize_datetime(obj): 
-    if isinstance(obj, datetime.datetime): 
-        return obj.isoformat() 
-    raise TypeError("Type not serializable") 
+# Define a custom function to serialize datetime objects
+def serialize_datetime(obj):
+    if isinstance(obj, datetime.datetime):
+        return obj.isoformat()
+    raise TypeError("Type not serializable")
 try:
     conn = zk.connect()
     attendance_records = conn.get_attendance()
@@ -36,5 +36,3 @@ try:
     conn.disconnect()
 except Exception as e:
     print(f"Error: {e}")
-
-

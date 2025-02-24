@@ -8,7 +8,6 @@ import requestLogger from './middleware/loggerMiddleware';
 import errorHandler from './middleware/errorMiddleware';
 import logger from './logger/logger';
 
-const path = require("path");
 const app = express()
 
 app.use(express.json())
