@@ -11,3 +11,15 @@ Error: Este es un error de prueba
     at Object.nodeDevHook [as .ts] (C:\Users\pedrox10\Desktop\SistemaControlHorarios\HorarioServer\node_modules\ts-node-dev\lib\hook.js:63:13)
     at Module.load (node:internal/modules/cjs/loader:1208:32)
     at Function.Module._load (node:internal/modules/cjs/loader:1024:12)
+2025-02-24 17:57:28 [ERROR]: uncaughtException: Cannot read properties of undefined (reading 'filter')
+TypeError: Cannot read properties of undefined (reading 'filter')
+    at /home/developer/Desktop/Sistema Control de Horarios/HorariosServer/src/controllers/usuario.controller.ts:28:47
+    at Generator.next (<anonymous>)
+    at fulfilled (/home/developer/Desktop/Sistema Control de Horarios/HorariosServer/src/controllers/usuario.controller.ts:28:58)
+    at processTicksAndRejections (node:internal/process/task_queues:95:5)
+2025-02-24 17:58:53 [ERROR]: uncaughtException: Cannot read properties of undefined (reading 'filter')
+TypeError: Cannot read properties of undefined (reading 'filter')
+    at /home/developer/Desktop/Sistema Control de Horarios/HorariosServer/src/controllers/usuario.controller.ts:28:47
+    at Generator.next (<anonymous>)
+    at fulfilled (/home/developer/Desktop/Sistema Control de Horarios/HorariosServer/src/controllers/usuario.controller.ts:28:58)
+    at processTicksAndRejections (node:internal/process/task_queues:95:5)

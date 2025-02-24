@@ -21,7 +21,15 @@ export const getUsuarios = async (req: Request, res: Response) => {
             usuarios: true,
         }
     });
-    res.send(terminal?.usuarios)
+    let usuarios = terminal?.usuarios;
+    if(usuarios) {
+        for (const user of usuarios) {
+            let jornada = await getUltimaJornadaAsignadaMesActual(user.id);
+            if(jornada)
+                user.ultimaJornadaDelMes = jornada;
+        }
+        res.send(usuarios)
+    }
 }
 
 export const getUsuario = async (req: Request, res: Response) => {
@@ -79,7 +87,6 @@ export const getResumenMarcaciones = async (req: Request, res: Response) => {
             terminal: true,
         }
     });
-
     if (usuario) {
         let fechaIni = moment(ini).format('yyyy-MM-DD')
         let fechaFin = moment(fin).format('yyyy-MM-DD')
@@ -453,4 +460,25 @@ function getSinRegistros(rangoSinRegistros: DateRange) {
         infoMarcaciones.push(infoMarcacion)
     }
     return infoMarcaciones;
+}
+
+export async function getUltimaJornadaAsignadaMesActual(usuarioId: number) {
+    const inicioMes = moment().startOf('month').toDate();
+    const finMes = moment().endOf('month').toDate();
+
+    // Buscamos la última jornada (fecha más alta) entre inicioMes y finMes
+    const ultimaJornada = await Jornada.findOne({
+        where: {
+            usuario: { id: usuarioId }, // Relación con el usuario
+            fecha: Between(inicioMes, finMes),
+        },
+        order: {
+            fecha: 'DESC', // Orden descendente para tomar la más reciente
+        },
+        relations: {
+            priTurno: true,
+            segTurno: true,
+        },
+    });
+    return ultimaJornada;
 }

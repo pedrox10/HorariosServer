@@ -4,8 +4,6 @@ import {
     PrimaryGeneratedColumn,
     OneToMany,
     BaseEntity,
-    OneToOne,
-    JoinColumn,
     ManyToOne,
     VirtualColumn
 } from "typeorm"
@@ -36,6 +34,8 @@ export class Usuario extends BaseEntity{
     fechaBaja: Date;
     @Column({type: 'date', nullable: true})
     fechaCumpleano: Date;
+
+    ultimaJornadaDelMes: Jornada;
 
     @OneToMany(() => Jornada, (jornada) => jornada.usuario)
     jornadas: Jornada[]
