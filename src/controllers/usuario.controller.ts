@@ -23,10 +23,13 @@ export const getUsuarios = async (req: Request, res: Response) => {
     });
     let usuarios = terminal?.usuarios;
     if(usuarios) {
-        for (const user of usuarios) {
-            let jornada = await getUltimaJornadaAsignadaMesActual(user.id);
-            if(jornada)
-                user.ultimaJornadaDelMes = jornada;
+        for (const usuario of usuarios) {
+            let jornada = await getUltimaJornadaAsignadaMesActual(usuario.id);
+            if(jornada) {
+                usuario.horarioMes = moment(jornada.fecha).format("DD/MM/YYYY");
+            } else {
+                usuario.horarioMes = "Sin Asignar"
+            }
         }
         res.send(usuarios)
     }
@@ -465,7 +468,6 @@ function getSinRegistros(rangoSinRegistros: DateRange) {
 export async function getUltimaJornadaAsignadaMesActual(usuarioId: number) {
     const inicioMes = moment().startOf('month').toDate();
     const finMes = moment().endOf('month').toDate();
-
     // Buscamos la última jornada (fecha más alta) entre inicioMes y finMes
     const ultimaJornada = await Jornada.findOne({
         where: {
