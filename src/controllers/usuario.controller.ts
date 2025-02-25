@@ -26,7 +26,9 @@ export const getUsuarios = async (req: Request, res: Response) => {
         for (const usuario of usuarios) {
             let jornada = await getUltimaJornadaAsignadaMesActual(usuario.id);
             if(jornada) {
-                usuario.horarioMes = moment(jornada.fecha).format("DD/MM/YYYY");
+                let dia = moment(jornada.fecha).format("DD");
+                let mes = moment(jornada.fecha).format("MMM");
+                usuario.horarioMes = "Hasta " + dia + " " + mes;
             } else {
                 usuario.horarioMes = "Sin Asignar"
             }
