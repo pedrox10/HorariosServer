@@ -1129,3 +1129,9 @@
 2025-02-25 14:52:46 [INFO]: GET /terminal/2 304 - - 1.875 ms {}
 2025-02-25 14:52:46 [INFO]: GET /terminal/2/usuarios 304 - - 90.291 ms {}
 2025-02-25 14:54:12 [INFO]: GET /terminales 304 - - 1.640 ms {}
+2025-02-25 16:26:46 [INFO]: Servidor Iniciado
+2025-02-25 16:27:04 [INFO]: GET /terminales 304 - - 30.292 ms {}
+2025-02-25 16:27:07 [INFO]: GET /terminal/1 304 - - 8.655 ms {}
+2025-02-25 16:27:07 [INFO]: GET /terminal/1/usuarios 200 23716 - 428.251 ms {}
+2025-02-25 16:28:18 [INFO]: GET /terminal/1 304 - - 16.806 ms {}
+2025-02-25 16:28:18 [INFO]: GET /terminal/1/usuarios 304 - - 323.014 ms {}
