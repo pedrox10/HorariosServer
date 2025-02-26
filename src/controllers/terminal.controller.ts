@@ -8,7 +8,7 @@ import {EstadoUsuario, Usuario} from "../entity/Usuario";
 import moment from 'moment';
 import {Turno} from "../entity/Turno";
 import {Jornada} from "../entity/Jornada";
-import {EntityManager, QueryRunner} from "typeorm";
+import {Between, EntityManager, QueryRunner} from "typeorm";
 import * as fs from "fs";
 
 const envPython = path.join(__dirname, "../scriptpy/envpy", "bin", "python3");
@@ -68,6 +68,22 @@ export const getFechaPriMarcacion = async (req: Request, res: Response) => {
     const {id} = req.params;
     const terminal = await Terminal.findOne({where: {id: parseInt(id)}, relations: {marcaciones: true}});
     res.send(JSON.stringify(terminal?.marcaciones[0].fecha))
+}
+
+export const conectarTerminal = async (req: Request, res: Response) => {
+    const {id} = req.params;
+    const terminal = await Terminal.findOne({where: {id: parseInt(id)}});
+    if (!terminal) {
+        return res.status(404).json({error: "Terminal no encontrada"});
+    }
+    const pyFileConectar = 'src/scriptpy/conectar.py';
+    let args = [terminal.ip, terminal.puerto];
+    args.unshift(pyFileConectar);
+    console.log(args)
+    const pyprogConectar = await spawn(envPython, args);
+    let respuesta = JSON.parse(pyprogConectar.toString());
+    console.log(pyprogConectar.toString())
+    res.send(respuesta)
 }
 
 export const sincronizarTerminal = async (req: Request, res: Response) => {
@@ -149,7 +165,6 @@ export const sincronizarTerminal = async (req: Request, res: Response) => {
                 usuariosNuevos.push(usuario);
             }
         }
-
         // Insertar y actualizar usuarios
         if (usuariosNuevos.length > 0) {
             await queryRunner.manager.insert(Usuario, usuariosNuevos);
@@ -161,36 +176,45 @@ export const sincronizarTerminal = async (req: Request, res: Response) => {
         for (let usuario of usuariosEliminados) {
             await eliminarUsuario(usuario, terminal, queryRunner);
         }
-
         // Actualizar la terminal con la fecha de sincronización
         terminal.ult_sincronizacion = moment().toDate();
         await queryRunner.manager.save(terminal);
-
         // Si todo sale bien, hacer commit de la transacción
         await queryRunner.commitTransaction();
-
         // Recuperar la terminal con la relación de usuarios para la respuesta
         let t = await Terminal.findOne({
             where: { id: terminal.id },
             relations: { usuarios: true },
         });
 
+        let usuarios = t?.usuarios;
+        if (usuarios) {
+            for (let usuario of usuarios) {
+                let jornada = await ultJornadaAsignadaMes(usuario.id);
+                if (jornada) {
+                    let dia = moment(jornada.fecha).format("DD");
+                    let mes = moment(jornada.fecha).format("MMM");
+                    usuario.horarioMes = "Hasta " + dia + " " + mes;
+                } else {
+                    usuario.horarioMes = "Sin Asignar"
+                }
+            }
+        }
         console.log({
             mensaje: "¡Sincronización exitosa!",
             nuevas_marcaciones: marcacionesNuevas.length,
             usuarios_agregados: usuariosNuevos.length,
             usuarios_editados: usuariosEditados.length,
             usuarios_eliminados: usuariosEliminados.length,
-            usuarios: t?.usuarios || []
+            usuarios: usuarios || []
         });
-
         return res.status(200).json({
             mensaje: "Sincronización exitosa",
             nuevas_marcaciones: marcacionesNuevas.length,
             usuarios_agregados: usuariosNuevos.length,
             usuarios_editados: usuariosEditados.length,
             usuarios_eliminados: usuariosEliminados.length,
-            usuarios: t?.usuarios || []
+            usuarios: usuarios || []
         });
 
     } catch (error: any) {
@@ -229,7 +253,6 @@ async function getNuevoUsuario(usuarioT: any, terminal: Terminal, manager: Entit
     usuario.ci = usuarioT.user_id;
     usuario.nombre = usuarioT.name;
     usuario.terminal = terminal;
-    usuario.horarioMes = "Sin Asignar"
     let marcaciones = await getMarcaciones(usuario.ci, terminal, manager);
     if (marcaciones.length > 0) {
         usuario.fechaAlta = moment(marcaciones.at(0)!.fecha, "YYYY-MM-DD").toDate();
@@ -251,7 +274,6 @@ async function eliminarUsuario(usuario: Usuario, terminal: Terminal, queryRunner
     if (marcaciones.length > 0) {
         await queryRunner.manager.remove(Marcacion, marcaciones);
     }
-
     //Borramos los turnos asignados a ese usuario
     let turnosBorrar: Turno[] = [];
     let jornadas = await Jornada.find({
@@ -268,8 +290,26 @@ async function eliminarUsuario(usuario: Usuario, terminal: Terminal, queryRunner
         }
     }
     await queryRunner.manager.remove(Turno, turnosBorrar)
-
     //Borramos las jornadas restantes
-    //await Usuario.delete({id: usuario.id});
     await queryRunner.manager.delete(Usuario, { id: usuario.id });
+}
+
+export async function ultJornadaAsignadaMes(usuarioId: number) {
+    const inicioMes = moment().startOf('month').toDate();
+    const finMes = moment().endOf('month').toDate();
+    // Buscamos la última jornada (fecha más alta) entre inicioMes y finMes
+    const ultimaJornada = await Jornada.findOne({
+        where: {
+            usuario: {id: usuarioId}, // Relación con el usuario
+            fecha: Between(inicioMes, finMes),
+        },
+        order: {
+            fecha: 'DESC', // Orden descendente para tomar la más reciente
+        },
+        relations: {
+            priTurno: true,
+            segTurno: true,
+        },
+    });
+    return ultimaJornada;
 }

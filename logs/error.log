@@ -59,3 +59,35 @@ EntityPropertyNotFoundError: Property "horarioMes" was not found in "Usuario". M
     at C:\Users\pedrox10\Desktop\SistemaControlHorarios\HorarioServer\src\controllers\horario.controller.ts:252:33
     at Generator.next (<anonymous>)
     at C:\Users\pedrox10\Desktop\SistemaControlHorarios\HorarioServer\src\controllers\horario.controller.ts:31:71
+2025-02-26 17:16:40 [ERROR]: uncaughtException: child exited with code 1
+Error: child exited with code 1
+    at ChildProcess.<anonymous> (/home/developer/Desktop/Sistema Control de Horarios/HorariosServer/node_modules/await-spawn/index.js:28:21)
+    at ChildProcess.emit (node:events:517:28)
+    at maybeClose (node:internal/child_process:1098:16)
+    at Process.ChildProcess._handle.onexit (node:internal/child_process:303:5)
+2025-02-26 17:19:18 [ERROR]: uncaughtException: child exited with code 1
+Error: child exited with code 1
+    at ChildProcess.<anonymous> (/home/developer/Desktop/Sistema Control de Horarios/HorariosServer/node_modules/await-spawn/index.js:28:21)
+    at ChildProcess.emit (node:events:517:28)
+    at maybeClose (node:internal/child_process:1098:16)
+    at Process.ChildProcess._handle.onexit (node:internal/child_process:303:5)
+2025-02-26 17:20:04 [ERROR]: uncaughtException: child exited with code 1
+Error: child exited with code 1
+    at ChildProcess.<anonymous> (/home/developer/Desktop/Sistema Control de Horarios/HorariosServer/node_modules/await-spawn/index.js:28:21)
+    at ChildProcess.emit (node:events:517:28)
+    at maybeClose (node:internal/child_process:1098:16)
+    at Process.ChildProcess._handle.onexit (node:internal/child_process:303:5)
+2025-02-26 17:31:06 [ERROR]: uncaughtException: child exited with code 1
+Error: child exited with code 1
+    at ChildProcess.<anonymous> (/home/developer/Desktop/Sistema Control de Horarios/HorariosServer/node_modules/await-spawn/index.js:28:21)
+    at ChildProcess.emit (node:events:517:28)
+    at maybeClose (node:internal/child_process:1098:16)
+    at Socket.<anonymous> (node:internal/child_process:450:11)
+    at Socket.emit (node:events:517:28)
+    at Pipe.<anonymous> (node:net:351:12)
+2025-02-26 17:34:18 [ERROR]: uncaughtException: child exited with code 1
+Error: child exited with code 1
+    at ChildProcess.<anonymous> (/home/developer/Desktop/Sistema Control de Horarios/HorariosServer/node_modules/await-spawn/index.js:28:21)
+    at ChildProcess.emit (node:events:517:28)
+    at maybeClose (node:internal/child_process:1098:16)
+    at Process.ChildProcess._handle.onexit (node:internal/child_process:303:5)

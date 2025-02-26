@@ -22,7 +22,6 @@ try:
         }
         aux.append(data)
     print(json.dumps(aux))
-
     conn.disconnect()
 
 except Exception as e:

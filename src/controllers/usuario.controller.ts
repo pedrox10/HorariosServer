@@ -22,10 +22,10 @@ export const getUsuarios = async (req: Request, res: Response) => {
         }
     });
     let usuarios = terminal?.usuarios;
-    if(usuarios) {
+    if (usuarios) {
         for (const usuario of usuarios) {
-            let jornada = await getUltimaJornadaAsignadaMesActual(usuario.id);
-            if(jornada) {
+            let jornada = await ultJornadaAsignadaMes(usuario.id);
+            if (jornada) {
                 let dia = moment(jornada.fecha).format("DD");
                 let mes = moment(jornada.fecha).format("MMM");
                 usuario.horarioMes = "Hasta " + dia + " " + mes;
@@ -182,7 +182,7 @@ export const getResumenMarcaciones = async (req: Request, res: Response) => {
                     }
                     if (jornada.estado != EstadoJornada.dia_libre && jornada.estado != EstadoJornada.activa) {
                         infoMarcacion.activo = false
-                        if(jornada.estado == EstadoJornada.feriado) {
+                        if (jornada.estado == EstadoJornada.feriado) {
                             infoMarcacion.horario = "Feriado";
                             infoMarcacion.mensaje = feriado.nombre;
                             infoMarcacion.estado = EstadoJornada.feriado
@@ -309,9 +309,9 @@ export const getResumenMarcaciones = async (req: Request, res: Response) => {
                                 totalSinMarcar++
                             }
                             infoMarcacion.activo = true;
-                            if(sinMarcar == numTurnos*2) {
+                            if (sinMarcar == numTurnos * 2) {
                                 infoMarcacion.noMarcados = 0;
-                                totalSinMarcar = totalSinMarcar - numTurnos*2;
+                                totalSinMarcar = totalSinMarcar - numTurnos * 2;
                                 totalAusencias++;
                                 infoMarcacion.estado = EstadoJornada.ausencia
                             } else {
@@ -376,9 +376,9 @@ export const getResumenMarcaciones = async (req: Request, res: Response) => {
                                     totalSinMarcar++
                                 }
                                 infoMarcacion.activo = true;
-                                if(sinMarcar == numTurnos*2) {
+                                if (sinMarcar == numTurnos * 2) {
                                     infoMarcacion.noMarcados = 0;
-                                    totalSinMarcar = totalSinMarcar - numTurnos*2;
+                                    totalSinMarcar = totalSinMarcar - numTurnos * 2;
                                     totalAusencias++;
                                     infoMarcacion.estado = EstadoJornada.ausencia
                                 } else {
@@ -467,13 +467,13 @@ function getSinRegistros(rangoSinRegistros: DateRange) {
     return infoMarcaciones;
 }
 
-export async function getUltimaJornadaAsignadaMesActual(usuarioId: number) {
+export async function ultJornadaAsignadaMes(usuarioId: number) {
     const inicioMes = moment().startOf('month').toDate();
     const finMes = moment().endOf('month').toDate();
     // Buscamos la última jornada (fecha más alta) entre inicioMes y finMes
     const ultimaJornada = await Jornada.findOne({
         where: {
-            usuario: { id: usuarioId }, // Relación con el usuario
+            usuario: {id: usuarioId}, // Relación con el usuario
             fecha: Between(inicioMes, finMes),
         },
         order: {
