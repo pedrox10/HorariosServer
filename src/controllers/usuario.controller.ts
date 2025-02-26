@@ -208,7 +208,7 @@ export const getResumenMarcaciones = async (req: Request, res: Response) => {
                             }
                         }
                     } else {
-                        infoMarcacion.horario = jornada.horario.nombre;
+                        infoMarcacion.horario = {nombre: jornada.horario.nombre, color: jornada.horario.color};
                         infoMarcacion.numTurnos = jornada.getNumTurnos();
                         let numTurnos = jornada.getNumTurnos();
                         if (numTurnos == 2) {
@@ -388,7 +388,7 @@ export const getResumenMarcaciones = async (req: Request, res: Response) => {
                                 infoMarcacion.minRetrasos = minRetrasos;
                                 infoMarcacion.hayPriRetraso = hayPriRetraso;
                             } else {
-                                infoMarcacion.mensaje = "Dia de descanso"
+                                infoMarcacion.mensaje = "Día de descanso"
                                 infoMarcacion.estado = EstadoJornada.dia_libre
                             }
                         }
@@ -461,7 +461,7 @@ function getSinRegistros(rangoSinRegistros: DateRange) {
         infoMarcacion.dia = dia
         infoMarcacion.horario = "Sin registros"
         infoMarcacion.activo = false
-        infoMarcacion.mensaje = "Funcionario no fué registrado"
+        infoMarcacion.mensaje = "Funcionario aún no registrado en biométrico"
         infoMarcaciones.push(infoMarcacion)
     }
     return infoMarcaciones;

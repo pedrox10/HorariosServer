@@ -23,3 +23,39 @@ TypeError: Cannot read properties of undefined (reading 'filter')
     at Generator.next (<anonymous>)
     at fulfilled (/home/developer/Desktop/Sistema Control de Horarios/HorariosServer/src/controllers/usuario.controller.ts:28:58)
     at processTicksAndRejections (node:internal/process/task_queues:95:5)
+2025-02-25 22:54:21 [ERROR]: uncaughtException: Property "horarioMes" was not found in "Usuario". Make sure your query is correct.
+EntityPropertyNotFoundError: Property "horarioMes" was not found in "Usuario". Make sure your query is correct.
+    at SelectQueryBuilder.buildWhere (C:\Users\pedrox10\Desktop\SistemaControlHorarios\HorarioServer\src\query-builder\SelectQueryBuilder.ts:4256:27)
+    at SelectQueryBuilder.buildWhere (C:\Users\pedrox10\Desktop\SistemaControlHorarios\HorarioServer\src\query-builder\SelectQueryBuilder.ts:4498:48)
+    at SelectQueryBuilder.applyFindOptions (C:\Users\pedrox10\Desktop\SistemaControlHorarios\HorarioServer\src\query-builder\SelectQueryBuilder.ts:3141:40)
+    at SelectQueryBuilder.setFindOptions (C:\Users\pedrox10\Desktop\SistemaControlHorarios\HorarioServer\src\query-builder\SelectQueryBuilder.ts:105:14)
+    at EntityManager.find (C:\Users\pedrox10\Desktop\SistemaControlHorarios\HorarioServer\src\entity-manager\EntityManager.ts:1104:14)
+    at Repository.find (C:\Users\pedrox10\Desktop\SistemaControlHorarios\HorarioServer\src\repository\Repository.ts:544:29)
+    at Function.find (C:\Users\pedrox10\Desktop\SistemaControlHorarios\HorarioServer\src\repository\BaseEntity.ts:483:40)
+    at C:\Users\pedrox10\Desktop\SistemaControlHorarios\HorarioServer\src\controllers\usuario.controller.ts:125:81
+    at Generator.next (<anonymous>)
+    at fulfilled (C:\Users\pedrox10\Desktop\SistemaControlHorarios\HorarioServer\src\controllers\usuario.controller.ts:28:58)
+2025-02-25 22:56:36 [ERROR]: uncaughtException: Property "horarioMes" was not found in "Usuario". Make sure your query is correct.
+EntityPropertyNotFoundError: Property "horarioMes" was not found in "Usuario". Make sure your query is correct.
+    at SelectQueryBuilder.buildWhere (C:\Users\pedrox10\Desktop\SistemaControlHorarios\HorarioServer\src\query-builder\SelectQueryBuilder.ts:4256:27)
+    at SelectQueryBuilder.buildWhere (C:\Users\pedrox10\Desktop\SistemaControlHorarios\HorarioServer\src\query-builder\SelectQueryBuilder.ts:4498:48)
+    at SelectQueryBuilder.applyFindOptions (C:\Users\pedrox10\Desktop\SistemaControlHorarios\HorarioServer\src\query-builder\SelectQueryBuilder.ts:3141:40)
+    at SelectQueryBuilder.setFindOptions (C:\Users\pedrox10\Desktop\SistemaControlHorarios\HorarioServer\src\query-builder\SelectQueryBuilder.ts:105:14)
+    at EntityManager.find (C:\Users\pedrox10\Desktop\SistemaControlHorarios\HorarioServer\src\entity-manager\EntityManager.ts:1104:14)
+    at Repository.find (C:\Users\pedrox10\Desktop\SistemaControlHorarios\HorarioServer\src\repository\Repository.ts:544:29)
+    at Function.find (C:\Users\pedrox10\Desktop\SistemaControlHorarios\HorarioServer\src\repository\BaseEntity.ts:483:40)
+    at C:\Users\pedrox10\Desktop\SistemaControlHorarios\HorarioServer\src\controllers\usuario.controller.ts:125:81
+    at Generator.next (<anonymous>)
+    at fulfilled (C:\Users\pedrox10\Desktop\SistemaControlHorarios\HorarioServer\src\controllers\usuario.controller.ts:28:58)
+2025-02-25 23:00:27 [ERROR]: uncaughtException: Property "horarioMes" was not found in "Usuario". Make sure your query is correct.
+EntityPropertyNotFoundError: Property "horarioMes" was not found in "Usuario". Make sure your query is correct.
+    at SelectQueryBuilder.buildWhere (C:\Users\pedrox10\Desktop\SistemaControlHorarios\HorarioServer\src\query-builder\SelectQueryBuilder.ts:4256:27)
+    at SelectQueryBuilder.buildWhere (C:\Users\pedrox10\Desktop\SistemaControlHorarios\HorarioServer\src\query-builder\SelectQueryBuilder.ts:4498:48)
+    at SelectQueryBuilder.applyFindOptions (C:\Users\pedrox10\Desktop\SistemaControlHorarios\HorarioServer\src\query-builder\SelectQueryBuilder.ts:3141:40)
+    at SelectQueryBuilder.setFindOptions (C:\Users\pedrox10\Desktop\SistemaControlHorarios\HorarioServer\src\query-builder\SelectQueryBuilder.ts:105:14)
+    at EntityManager.findOne (C:\Users\pedrox10\Desktop\SistemaControlHorarios\HorarioServer\src\entity-manager\EntityManager.ts:1211:14)
+    at Repository.findOne (C:\Users\pedrox10\Desktop\SistemaControlHorarios\HorarioServer\src\repository\Repository.ts:597:29)
+    at Function.findOne (C:\Users\pedrox10\Desktop\SistemaControlHorarios\HorarioServer\src\repository\BaseEntity.ts:544:40)
+    at C:\Users\pedrox10\Desktop\SistemaControlHorarios\HorarioServer\src\controllers\horario.controller.ts:252:33
+    at Generator.next (<anonymous>)
+    at C:\Users\pedrox10\Desktop\SistemaControlHorarios\HorarioServer\src\controllers\horario.controller.ts:31:71

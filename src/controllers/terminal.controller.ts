@@ -176,7 +176,7 @@ export const sincronizarTerminal = async (req: Request, res: Response) => {
         });
 
         console.log({
-            mensaje: "Sincronización exitosa",
+            mensaje: "¡Sincronización exitosa!",
             nuevas_marcaciones: marcacionesNuevas.length,
             usuarios_agregados: usuariosNuevos.length,
             usuarios_editados: usuariosEditados.length,
@@ -199,7 +199,7 @@ export const sincronizarTerminal = async (req: Request, res: Response) => {
             await queryRunner.rollbackTransaction();
         }
         return res.status(500).json({
-            error: "Error en la sincronización",
+            mensaje: "¡Error en la sincronización!",
             detalle: error.message
         });
     } finally {
@@ -229,6 +229,7 @@ async function getNuevoUsuario(usuarioT: any, terminal: Terminal, manager: Entit
     usuario.ci = usuarioT.user_id;
     usuario.nombre = usuarioT.name;
     usuario.terminal = terminal;
+    usuario.horarioMes = "Sin Asignar"
     let marcaciones = await getMarcaciones(usuario.ci, terminal, manager);
     if (marcaciones.length > 0) {
         usuario.fechaAlta = moment(marcaciones.at(0)!.fecha, "YYYY-MM-DD").toDate();

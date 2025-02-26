@@ -3,7 +3,7 @@ import {EstadoJornada} from "../entity/Jornada";
 export class InfoMarcacion{
   dia:string;
   fecha: Date;
-  horario: string;
+  horario: any;
   priEntradas: string[]
   priSalidas: string[]
   segEntradas: string[]
