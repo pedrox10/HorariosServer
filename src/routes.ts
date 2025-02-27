@@ -6,7 +6,6 @@ import {
     getUsuarios, getExcepciones, editarUsuario
 } from "./controllers/usuario.controller";
 import {
-    conectarTerminal,
     crearTerminal,
     editarTerminal,
     eliminarTerminal, getFechaPriMarcacion, getTerminal,
@@ -31,7 +30,6 @@ router.put('/terminal/editar/:id', editarTerminal);
 router.delete('/terminal/eliminar/:id', eliminarTerminal);
 router.get("/terminales",getTerminales);
 router.get("/terminal/sincronizar/:id", sincronizarTerminal);
-router.get("/terminal/conectar/:id", conectarTerminal);
 router.get("/terminal/:id/pri-marcacion",getFechaPriMarcacion);
 
 // Rutas para operaciones con Usuarios

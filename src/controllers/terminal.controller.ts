@@ -70,27 +70,13 @@ export const getFechaPriMarcacion = async (req: Request, res: Response) => {
     res.send(JSON.stringify(terminal?.marcaciones[0].fecha))
 }
 
-export const conectarTerminal = async (req: Request, res: Response) => {
-    const {id} = req.params;
-    const terminal = await Terminal.findOne({where: {id: parseInt(id)}});
-    if (!terminal) {
-        return res.status(404).json({error: "Terminal no encontrada"});
-    }
-    const pyFileConectar = 'src/scriptpy/conectar.py';
-    let args = [terminal.ip, terminal.puerto];
-    args.unshift(pyFileConectar);
-    console.log(args)
-    const pyprogConectar = await spawn(envPython, args);
-    let respuesta = JSON.parse(pyprogConectar.toString());
-    console.log(pyprogConectar.toString())
-    res.send(respuesta)
-}
-
 export const sincronizarTerminal = async (req: Request, res: Response) => {
     const { id } = req.params;
     const terminal = await Terminal.findOne({ where: { id: parseInt(id) } });
     if (!terminal) {
-        return res.status(404).json({ error: "Terminal no encontrada" });
+        return res.status(500).json({
+            mensaje: "¡Terminal no encontrado en Base de Datos!",
+        });
     }
 
     const fueSincronizado = terminal.ult_sincronizacion !== null;
@@ -103,6 +89,12 @@ export const sincronizarTerminal = async (req: Request, res: Response) => {
     await queryRunner.connect();
 
     try {
+        const conectado = await conectar(terminal.ip, terminal.puerto);
+        if (!conectado) {
+            return res.status(500).json({
+                mensaje: "¡Terminal sin conexion a la red!",
+            });
+        }
         // Iniciar una única transacción para todo el proceso
         await queryRunner.startTransaction();
         const manager: EntityManager = queryRunner.manager;
@@ -206,7 +198,6 @@ export const sincronizarTerminal = async (req: Request, res: Response) => {
             usuarios_agregados: usuariosNuevos.length,
             usuarios_editados: usuariosEditados.length,
             usuarios_eliminados: usuariosEliminados.length,
-            usuarios: usuarios || []
         });
         return res.status(200).json({
             mensaje: "Sincronización exitosa",
@@ -231,6 +222,17 @@ export const sincronizarTerminal = async (req: Request, res: Response) => {
         await queryRunner.release();
     }
 };
+
+async function conectar(ip: string, puerto: number) {
+    let res: boolean = false;
+    const pyFileConectar = 'src/scriptpy/conectar.py';
+    let args = [ip, puerto];
+    args.unshift(pyFileConectar);
+    const pyprogConectar = await spawn(envPython, args);
+    let respuesta = JSON.parse(pyprogConectar.toString());
+    res = respuesta.conectado === true ? true : false;
+    return res;
+}
 
 function buscarUsuarioEn(usuario: Usuario, datos: any[]) {
     let res = false;

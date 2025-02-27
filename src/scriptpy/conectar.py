@@ -8,11 +8,11 @@ def check_connection(ip, port=4370):
         conn = zk.connect()
         if conn:
             zk.disconnect()
-            return {"connected": True}
+            return {"conectado": True}
         else:
-            return {"connected": False}
+            return {"conectado": False}
     except Exception as e:
-        return {"connected": False, "error": str(e)}
+        return {"conectado": False, "error": str(e)}
 
 if __name__ == "__main__":
     ip = sys.argv[1]  # IP del dispositivo
