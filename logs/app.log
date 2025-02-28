@@ -2525,3 +2525,62 @@
 2025-02-27 17:50:20 [INFO]: GET /terminal/1/usuarios 200 23878 - 355.085 ms {}
 2025-02-27 17:50:27 [INFO]: GET /terminal/sincronizar/1 500 47 - 3057.708 ms {}
 2025-02-27 17:50:33 [INFO]: GET /terminales 200 1276 - 3.067 ms {}
+2025-02-27 23:49:45 [INFO]: Servidor Iniciado
+2025-02-28 00:01:01 [INFO]: GET /terminales 200 1276 - 50.104 ms {}
+2025-02-28 00:01:12 [INFO]: GET /terminal/1 200 136 - 32.838 ms {}
+2025-02-28 00:01:16 [INFO]: GET /terminal/1/usuarios 200 23878 - 3856.905 ms {}
+2025-02-28 00:01:20 [INFO]: GET /terminales 304 - - 1.781 ms {}
+2025-02-28 00:01:21 [INFO]: GET /terminal/1 304 - - 1.687 ms {}
+2025-02-28 00:01:21 [INFO]: GET /terminal/1/usuarios 304 - - 296.506 ms {}
+2025-02-28 00:01:53 [INFO]: GET /terminales 304 - - 2.534 ms {}
+2025-02-28 00:01:54 [INFO]: GET /terminal/2 200 133 - 4.397 ms {}
+2025-02-28 00:01:54 [INFO]: GET /terminal/2/usuarios 200 9081 - 107.324 ms {}
+2025-02-28 00:01:56 [INFO]: GET /terminales 304 - - 4.472 ms {}
+2025-02-28 00:01:56 [INFO]: GET /terminal/3 200 118 - 3.591 ms {}
+2025-02-28 00:01:56 [INFO]: GET /terminal/3/usuarios 200 2 - 10.632 ms {}
+2025-02-28 00:01:58 [INFO]: GET /terminales 304 - - 3.037 ms {}
+2025-02-28 00:01:59 [INFO]: GET /terminal/5 200 136 - 2.020 ms {}
+2025-02-28 00:01:59 [INFO]: GET /terminal/5/usuarios 200 10849 - 116.275 ms {}
+2025-02-28 00:02:04 [INFO]: GET /terminales 304 - - 3.838 ms {}
+2025-02-28 00:02:06 [INFO]: GET /terminal/6 200 137 - 3.119 ms {}
+2025-02-28 00:02:06 [INFO]: GET /terminal/6/usuarios 200 15372 - 148.064 ms {}
+2025-02-28 00:02:20 [INFO]: GET /terminales 304 - - 1.378 ms {}
+2025-02-28 00:02:23 [INFO]: GET /asuetos 304 - - 10.771 ms {}
+2025-02-28 00:02:23 [INFO]: GET /licencias 304 - - 7.521 ms {}
+2025-02-28 00:02:54 [INFO]: GET /terminales 304 - - 6.442 ms {}
+2025-02-28 00:02:57 [INFO]: GET /asuetos 304 - - 8.599 ms {}
+2025-02-28 00:02:57 [INFO]: GET /licencias 304 - - 8.019 ms {}
+2025-02-28 00:02:57 [INFO]: GET /horarios 200 4016 - 8.091 ms {}
+2025-02-28 00:02:58 [INFO]: GET /terminales 304 - - 2.153 ms {}
+2025-02-28 00:03:03 [INFO]: GET /terminal/1 304 - - 1.738 ms {}
+2025-02-28 00:03:03 [INFO]: GET /terminal/1/usuarios 304 - - 308.852 ms {}
+2025-02-28 00:03:59 [INFO]: GET /horarios 304 - - 19.439 ms {}
+2025-02-28 00:04:00 [INFO]: GET /asuetos 304 - - 4.579 ms {}
+2025-02-28 00:04:00 [INFO]: GET /licencias 304 - - 2.338 ms {}
+2025-02-28 00:04:01 [INFO]: GET /terminales 304 - - 2.299 ms {}
+2025-02-28 00:04:12 [INFO]: GET /asuetos 304 - - 7.631 ms {}
+2025-02-28 00:04:12 [INFO]: GET /licencias 304 - - 0.913 ms {}
+2025-02-28 00:04:12 [INFO]: GET /horarios 304 - - 6.616 ms {}
+2025-02-28 00:04:13 [INFO]: GET /terminales 304 - - 1.368 ms {}
+2025-02-28 00:08:13 [INFO]: GET /terminales 304 - - 2.379 ms {}
+2025-02-28 00:44:29 [INFO]: GET /licencias 304 - - 2.253 ms {}
+2025-02-28 00:44:29 [INFO]: GET /asuetos 304 - - 4.748 ms {}
+2025-02-28 00:44:32 [INFO]: GET /horarios 304 - - 2.154 ms {}
+2025-02-28 00:44:34 [INFO]: GET /terminales 304 - - 3.107 ms {}
+2025-02-28 00:49:57 [INFO]: GET /horarios 304 - - 6.005 ms {}
+2025-02-28 00:59:11 [INFO]: GET /asuetos 304 - - 8.883 ms {}
+2025-02-28 00:59:11 [INFO]: GET /licencias 304 - - 4.945 ms {}
+2025-02-28 01:01:34 [INFO]: GET /licencias 304 - - 33.350 ms {}
+2025-02-28 01:01:34 [INFO]: GET /asuetos 304 - - 139.791 ms {}
+2025-02-28 01:07:20 [INFO]: GET /asuetos 304 - - 4.312 ms {}
+2025-02-28 01:07:20 [INFO]: GET /licencias 304 - - 1.157 ms {}
+2025-02-28 01:08:18 [INFO]: Servidor Iniciado
+2025-02-28 01:21:48 [INFO]: Servidor Iniciado
+2025-02-28 01:32:02 [INFO]: Servidor Iniciado
+2025-02-28 01:34:18 [INFO]: GET /asuetos 304 - - 13.070 ms {}
+2025-02-28 01:34:18 [INFO]: GET /licencias 304 - - 3.627 ms {}
+2025-02-28 01:38:45 [INFO]: GET /asuetos 304 - - 2.014 ms {}
+2025-02-28 01:38:45 [INFO]: GET /licencias 304 - - 1.729 ms {}
+2025-02-28 01:41:29 [INFO]: GET /asuetos 304 - - 11.299 ms {}
+2025-02-28 01:41:29 [INFO]: GET /licencias 304 - - 11.643 ms {}
+2025-02-28 01:44:48 [INFO]: Servidor Iniciado

@@ -14,7 +14,7 @@ import {
 } from "./controllers/terminal.controller";
 import {
     asignarHorario,
-    crearHorario, eliminarHorario,
+    crearHorario, editarFechaAsueto, eliminarHorario,
     eliminarJornada,
     getAsuetos,
     getHorario,
@@ -51,6 +51,7 @@ router.get('/horario/crear/:horario/:jornadas', crearHorario);
 router.get('/horario/:id/eliminar', eliminarHorario);
 router.delete('/eliminar-jornada/:id', eliminarJornada);
 router.get('/asuetos/', getAsuetos);
+router.get('/asueto/:id/editarFecha/:fecha', editarFechaAsueto);
 router.get('/licencias/', getLicencias);
 router.get('/horario/:id/jornadas', getNumJornadas);
 

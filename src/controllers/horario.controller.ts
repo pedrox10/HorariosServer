@@ -248,6 +248,16 @@ export const eliminarJornada = async (req: Request, res: Response) => {
     res.send("true")
 }
 
+export const editarFechaAsueto = async (req: Request, res: Response) => {
+    const {id, fecha} = req.params;
+    let asueto = await Asueto.findOneBy({id: parseInt(id)},);
+    let nuevaFecha = moment(fecha).format("YYYY-MM-DD")
+    if (asueto) {
+        asueto.fecha = moment(nuevaFecha).toDate()
+        asueto.save();
+    }
+}
+
 async function getJornada(usuario: Usuario, fecha: string) {
     let jornada = await Jornada.findOne({
         where: {usuario: usuario, fecha: moment(fecha).toDate()}, relations: {
