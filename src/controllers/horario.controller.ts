@@ -228,7 +228,13 @@ export const asignarHorario = async (req: Request, res: Response) => {
         console.log("termino turnos")
     })
     await jornadaRepo.insert(jornadasGuardar)
-    res.send({"res": true})
+    let ultimaJornada = jornadasGuardar.at(jornadasGuardar.length - 1)
+    if(ultimaJornada) {
+        let dia = moment(ultimaJornada.fecha).format("DD");
+        let mes = moment(ultimaJornada.fecha).format("MMM");
+        let horarioMes = "Hasta " + dia + " " + mes;
+        res.send({"res": true, "ultDiaAsignado": horarioMes})
+    }
 }
 
 export const eliminarJornada = async (req: Request, res: Response) => {
