@@ -11,6 +11,7 @@ import {ResumenMarcacion} from "../models/ResumenMarcacion";
 import {ExcepcionTickeo, TipoExcepcion} from "../entity/ExcepcionTickeo";
 import {Asueto, TipoAsueto} from "../entity/Asueto";
 import {Between} from "typeorm";
+import axios, {AxiosResponse} from "axios";
 
 const momentExt = extendMoment(MomentExt);
 
@@ -485,4 +486,39 @@ export async function ultJornadaAsignadaMes(usuarioId: number) {
         },
     });
     return ultimaJornada;
+}
+
+interface AuthResponse {
+    token: string;
+}
+
+interface ProtectedData {
+    data: any;
+}
+
+async function obtenerToken(): Promise<string> {
+    try {
+        const response: AxiosResponse<AuthResponse> = await axios.post('http://190.181.22.149:3330/auth/login', {
+            username: 'tu_usuario',
+            password: 'tu_contraseña',
+        });
+        return response.data.token;
+    } catch (error: any) {
+        console.error('Error al obtener el token:', error.response?.data || error.message);
+        throw error;
+    }
+}
+
+async function obtenerDatos(): Promise<void> {
+    try {
+        const token: string = await obtenerToken();
+        const response: AxiosResponse<ProtectedData> = await axios.get('http://190.181.22.149:3330/datos-protegidos', {
+            headers: {
+                Authorization: token,
+            },
+        });
+        console.log('Datos obtenidos:', response.data);
+    } catch (error: any) {
+        console.error('Error al obtener datos:', error.response?.data || error.message);
+    }
 }

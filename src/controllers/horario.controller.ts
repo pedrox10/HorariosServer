@@ -261,6 +261,9 @@ export const editarFechaAsueto = async (req: Request, res: Response) => {
     if (asueto) {
         asueto.fecha = moment(nuevaFecha).toDate()
         asueto.save();
+        res.json(asueto)
+    } else {
+
     }
 }
 

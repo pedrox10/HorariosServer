@@ -74,7 +74,7 @@ export const sincronizarTerminal = async (req: Request, res: Response) => {
     const { id } = req.params;
     const terminal = await Terminal.findOne({ where: { id: parseInt(id) } });
     if (!terminal) {
-        return res.status(500).json({
+        return res.status(404).json({
             mensaje: "¡Terminal no encontrado en Base de Datos!",
         });
     }
