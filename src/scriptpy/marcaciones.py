@@ -18,6 +18,8 @@ def serialize_datetime(obj):
 try:
     conn = zk.connect()
     attendance_records = conn.get_attendance()
+    serial_number = conn.get_serialnumber()
+    current_time = serialize_datetime(conn.get_time())
     marcaciones = []
     if fecha_desde == "":
         marcaciones = attendance_records
@@ -32,7 +34,13 @@ try:
         "timestamp": serialize_datetime(record.timestamp)
         }
         aux.append(data)
-    print(json.dumps(aux))
+    resultado = {
+        "total_marcaciones": len(attendance_records),
+        "numero_serie": serial_number,
+        "hora_terminal": current_time,
+        "marcaciones": aux
+    }
+    print(json.dumps(resultado))
     conn.disconnect()
 except Exception as e:
     print(f"Error: {e}")

@@ -12,6 +12,8 @@ export class Horario extends BaseEntity{
     tolerancia: number
     @Column()
     color: string
+    @Column()
+    area: string
     @Column({nullable: true})
     descripcion: string
     @OneToMany(() => JornadaDia, (jornadaDia) => jornadaDia.horario)

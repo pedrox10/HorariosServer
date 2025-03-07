@@ -106,7 +106,12 @@ export const sincronizarTerminal = async (req: Request, res: Response) => {
         }
         argsMarcaciones.unshift(pyFileMarcaciones);
         const pyprogMarcaciones = await spawn(envPython, argsMarcaciones);
-        let marcacionesT = JSON.parse(pyprogMarcaciones.toString());
+        console.log(pyprogMarcaciones.toString())
+        let respuesta = JSON.parse(pyprogMarcaciones.toString())
+        let marcacionesT = respuesta.marcaciones;
+        let numeroSerie = respuesta.numero_serie
+        let horaTerminal = respuesta.hora_terminal
+        let totalMarcaciones = respuesta.total_marcaciones
 
         for (let value of marcacionesT) {
             let marcacion = new Marcacion();
@@ -198,6 +203,9 @@ export const sincronizarTerminal = async (req: Request, res: Response) => {
             usuarios_agregados: usuariosNuevos.length,
             usuarios_editados: usuariosEditados.length,
             usuarios_eliminados: usuariosEliminados.length,
+            numero_serie: numeroSerie,
+            hora_terminal: horaTerminal,
+            total_marcaciones: totalMarcaciones
         });
         return res.status(200).json({
             mensaje: "Sincronización exitosa",
@@ -205,6 +213,9 @@ export const sincronizarTerminal = async (req: Request, res: Response) => {
             usuarios_agregados: usuariosNuevos.length,
             usuarios_editados: usuariosEditados.length,
             usuarios_eliminados: usuariosEliminados.length,
+            numero_serie: numeroSerie,
+            hora_terminal: horaTerminal,
+            total_marcaciones: totalMarcaciones,
             usuarios: usuarios || []
         });
 
