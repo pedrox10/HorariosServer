@@ -79,7 +79,7 @@ export const sincronizarTerminal = async (req: Request, res: Response) => {
         });
     }
 
-    const fueSincronizado = terminal.ult_sincronizacion !== null;
+    const fueSincronizado = terminal.ultSincronizacion !== null;
     let marcacionesNuevas: Marcacion[] = [];
     let usuariosNuevos: Usuario[] = [];
     let usuariosEditados: Usuario[] = [];
@@ -95,14 +95,12 @@ export const sincronizarTerminal = async (req: Request, res: Response) => {
                 mensaje: "¡Terminal sin conexion a la red!",
             });
         }
-        // Iniciar una única transacción para todo el proceso
-        await queryRunner.startTransaction();
-        const manager: EntityManager = queryRunner.manager;
+
         // --- Procesamiento de Marcaciones ---
         const pyFileMarcaciones = 'src/scriptpy/marcaciones.py';
         let argsMarcaciones = [terminal.ip, terminal.puerto];
         if (fueSincronizado) {
-            argsMarcaciones.push(moment(terminal.ult_sincronizacion).format('MM/DD/YY HH:mm:ss'));
+            argsMarcaciones.push(moment(terminal.ultSincronizacion).format('MM/DD/YY HH:mm:ss'));
         }
         argsMarcaciones.unshift(pyFileMarcaciones);
         const pyprogMarcaciones = await spawn(envPython, argsMarcaciones);
@@ -124,6 +122,9 @@ export const sincronizarTerminal = async (req: Request, res: Response) => {
             marcacionesNuevas.push(marcacion);
         }
 
+        // Iniciar una única transacción para todo el proceso
+        await queryRunner.startTransaction();
+        const manager: EntityManager = queryRunner.manager;
         // Inserta las marcaciones usando el mismo queryRunner
         await queryRunner.manager.insert(Marcacion, marcacionesNuevas);
 
@@ -155,12 +156,15 @@ export const sincronizarTerminal = async (req: Request, res: Response) => {
                     usuariosEliminados.push(usuario);
                 }
             }
+            if(terminal.numSerie !== numeroSerie)
+                terminal.numSerie = numeroSerie
         } else {
             // Si es la primera sincronización, agregar todos los usuarios nuevos
             for (let usuarioT of usuariosT) {
                 let usuario = await getNuevoUsuario(usuarioT, terminal, manager);
                 usuariosNuevos.push(usuario);
             }
+            terminal.numSerie = numeroSerie;
         }
         // Insertar y actualizar usuarios
         if (usuariosNuevos.length > 0) {
@@ -174,7 +178,8 @@ export const sincronizarTerminal = async (req: Request, res: Response) => {
             await eliminarUsuario(usuario, terminal, queryRunner);
         }
         // Actualizar la terminal con la fecha de sincronización
-        terminal.ult_sincronizacion = moment().toDate();
+        terminal.totalMarcaciones = totalMarcaciones;
+        terminal.ultSincronizacion = moment().toDate();
         await queryRunner.manager.save(terminal);
         // Si todo sale bien, hacer commit de la transacción
         await queryRunner.commitTransaction();
