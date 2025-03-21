@@ -8,6 +8,4 @@ export class Licencia extends BaseEntity{
     id: number;
     @Column()
     nombre: string;
-    @Column()
-    tipo:TipoExcepcion
 }

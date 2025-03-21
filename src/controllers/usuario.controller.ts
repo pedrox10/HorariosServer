@@ -8,10 +8,45 @@ import {InfoMarcacion} from "../models/InfoMarcacion";
 import {DateRange, extendMoment} from "moment-range";
 import {EstadoJornada, Jornada} from "../entity/Jornada";
 import {ResumenMarcacion} from "../models/ResumenMarcacion";
-import {ExcepcionTickeo, TipoExcepcion} from "../entity/ExcepcionTickeo";
+import {ExcepcionTickeo} from "../entity/ExcepcionTickeo";
 import {Asueto, TipoAsueto} from "../entity/Asueto";
 import {Between} from "typeorm";
-import axios, {AxiosResponse} from "axios";
+import mongoose from "mongoose";
+import {Excepcion} from "../models/Excepcion";
+
+// Definir interfaces de los modelos
+interface Funcionario {
+    _id: mongoose.Types.ObjectId;
+    ci: number;
+}
+interface Registro {
+    _id: mongoose.Types.ObjectId;
+    id_funcionario: mongoose.Types.ObjectId;
+    estado: boolean;
+}
+
+interface Dia {
+    fecha: Date;
+    jornada: string;
+    turno: string;
+}
+
+interface Solicitud {
+    _id: mongoose.Types.ObjectId;
+    id_registro: mongoose.Types.ObjectId;
+    estado: string;
+    dias: Dia[]; // ✅ Agregar el tipo correcto
+    tipo: string
+    detalle: string
+    hora_inicio: string
+    hora_fin: string
+}
+
+mongoose.connect("mongodb://localhost:27017/management");
+
+const funcionarioModel = mongoose.model<Funcionario>("funcionarios", new mongoose.Schema({}, { strict: false }));
+const registroModel = mongoose.model<Registro>("registros", new mongoose.Schema({}, { strict: false }));
+const solicitudModel = mongoose.model<Solicitud>("solicitudes", new mongoose.Schema({}, { strict: false }));
 
 const momentExt = extendMoment(MomentExt);
 
@@ -111,7 +146,7 @@ export const getResumenMarcaciones = async (req: Request, res: Response) => {
             let hayFeriados = false;
             let hayExcepcionesCompletas = false;
             if (rango.contains(moment(usuario.fechaAlta), {excludeStart: true})) {
-                let rangoSinRegistros = momentExt.range(moment(fechaIni).toDate(), moment(usuario.fechaAlta).subtract("day", 1).toDate())
+                let rangoSinRegistros = momentExt.range(moment(fechaIni).toDate(), moment(usuario.fechaAlta).subtract(1, "day").toDate())
                 rangoValido = momentExt.range(moment(usuario.fechaAlta).toDate(), moment(fechaFin).toDate())
                 infoMarcaciones.push(...getSinRegistros(rangoSinRegistros))
             } else {
@@ -123,15 +158,39 @@ export const getResumenMarcaciones = async (req: Request, res: Response) => {
             })
             if (feriados.length > 0)
                 hayFeriados = true
-            let excepcionesCompletas: ExcepcionTickeo[] = await ExcepcionTickeo.find({
-                where: {
-                    fecha: Between(rangoValido.start.toDate(), rangoValido.end.toDate()),
-                    tipo: TipoExcepcion.completa,
-                    usuario: usuario
-                }, relations: {licencia: true}
-            })
-            if (excepcionesCompletas.length > 0)
-                hayExcepcionesCompletas = true
+
+            let excepcionesCompletas: Excepcion[] = [];
+            let excepcionesRangoHoras: Excepcion[] = [];
+            let solicitudesAprobadas = await obtenerSolicitudesAprobadasPorCI(usuario.ci);
+            if(solicitudesAprobadas) {
+                solicitudesAprobadas.forEach(solicitudDoc => {
+                    const solicitud = solicitudDoc.toObject(); // Convertir a objeto JS
+                    solicitud.dias.forEach(dia => {
+                        if (dia.fecha >= rangoValido.start.toDate() && dia.fecha <= rangoValido.end.toDate()) {
+                            if (dia.jornada === "completa") {
+                                let excepcionCompleta: Excepcion = new Excepcion();
+                                excepcionCompleta.fecha = dia.fecha;
+                                excepcionCompleta.jornada = dia.jornada
+                                excepcionCompleta.detalle = solicitud.detalle
+                                excepcionCompleta.licencia = solicitud.tipo
+                                excepcionesCompletas.push(excepcionCompleta);
+                            } else if (dia.jornada === "media") {
+                                let excepcionRangoHoras: Excepcion = new Excepcion();
+                                excepcionRangoHoras.fecha = dia.fecha;
+                                excepcionRangoHoras.jornada = dia.jornada
+                                excepcionRangoHoras.turno = dia.turno
+                                excepcionRangoHoras.detalle = solicitud.detalle
+                                excepcionRangoHoras.licencia = solicitud.tipo
+                                excepcionesRangoHoras.push(excepcionRangoHoras);
+                            }
+                        }
+                    });
+                });
+                if (excepcionesCompletas.length > 0)
+                    hayExcepcionesCompletas = true
+            } else {
+
+            }
 
             let totalCantRetrasos: number = 0
             let totalMinRetrasos: number = 0
@@ -184,26 +243,32 @@ export const getResumenMarcaciones = async (req: Request, res: Response) => {
                     if (jornada.estado != EstadoJornada.dia_libre && jornada.estado != EstadoJornada.activa) {
                         infoMarcacion.activo = false
                         if (jornada.estado == EstadoJornada.feriado) {
-                            infoMarcacion.horario = "Feriado";
+                            infoMarcacion.horario =  {nombre: "Feriado", color: "#9da3fd"};
                             infoMarcacion.mensaje = feriado.nombre;
                             infoMarcacion.estado = EstadoJornada.feriado
                         } else {
-                            infoMarcacion.horario = excepcionCompleta.licencia.nombre;
+                            infoMarcacion.horario =  {nombre: "", color: ""};
+                            infoMarcacion.horario.nombre = excepcionCompleta.licencia.nombre
                             infoMarcacion.mensaje = excepcionCompleta.detalle;
                             switch (jornada.estado) {
                                 case EstadoJornada.vacacion:
+                                    infoMarcacion.horario.color =  "#6cfd98";
                                     infoMarcacion.estado = EstadoJornada.vacacion
                                     break;
                                 case EstadoJornada.permiso:
+                                    infoMarcacion.horario.color =  "#7fd5fa";
                                     infoMarcacion.estado = EstadoJornada.permiso
                                     break;
                                 case EstadoJornada.baja_medica:
+                                    infoMarcacion.horario.color =  "#fc7b7d";
                                     infoMarcacion.estado = EstadoJornada.baja_medica
                                     break;
                                 case EstadoJornada.licencia:
+                                    infoMarcacion.horario.color =  "#a7c454";
                                     infoMarcacion.estado = EstadoJornada.licencia
                                     break;
                                 case EstadoJornada.otro:
+                                    infoMarcacion.horario.color =  "#939393";
                                     infoMarcacion.estado = EstadoJornada.otro
                                     break;
                             }
@@ -326,7 +391,8 @@ export const getResumenMarcaciones = async (req: Request, res: Response) => {
                             if (numTurnos == 1) {
                                 let priEntradasM: Moment[] = [];
                                 let priSalidasM: Moment[] = [];
-                                //Genero los rangos para entrdas y salidas:
+
+                                //Genero los rangos para entradas y salidas:
                                 let priEntIni = moment(jornada.fecha + " " + "00:00").format('YYYY-MM-DD HH:mm')
                                 let priEntFin = moment(jornada.fecha + " " + jornada.priTurno.horaSalida).subtract(1, "hours").format('YYYY-MM-DD HH:mm')
                                 let priEntRango = momentExt.range(moment(priEntIni).toDate(), moment(priEntFin).toDate())
@@ -342,9 +408,9 @@ export const getResumenMarcaciones = async (req: Request, res: Response) => {
                                     else if (priSalRango.contains(moment(horaMarcaje)))
                                         priSalidasM.push(moment(horaMarcaje))
                                 })
+
                                 let priEntradas: string[] = [];
                                 let priSalidas: string[] = [];
-
                                 if (priEntradasM.length > 0) {
                                     priEntradasM.sort((a, b) => a.diff(b));
                                     priEntradasM.map(entrada => {
@@ -442,7 +508,7 @@ function getFeriado(jornada: Jornada, feriados: Asueto[]) {
     return res;
 }
 
-function getExcepcionCompleta(jornada: Jornada, excepcionesCompletas: ExcepcionTickeo[]) {
+function getExcepcionCompleta(jornada: Jornada, excepcionesCompletas: Excepcion[]) {
     let res: ExcepcionTickeo | any = null;
     for (let excepcionCompleta of excepcionesCompletas) {
         if (excepcionCompleta.fecha === jornada.fecha) {
@@ -461,6 +527,7 @@ function getSinRegistros(rangoSinRegistros: DateRange) {
         dia = dia.charAt(0).toUpperCase() + dia.substring(1)
         infoMarcacion.dia = dia
         infoMarcacion.horario = "Sin registros"
+        infoMarcacion.estado = EstadoJornada.sin_registros;
         infoMarcacion.activo = false
         infoMarcacion.mensaje = "Funcionario aún no registrado en biométrico"
         infoMarcaciones.push(infoMarcacion)
@@ -488,37 +555,24 @@ export async function ultJornadaAsignadaMes(usuarioId: number) {
     return ultimaJornada;
 }
 
-interface AuthResponse {
-    token: string;
-}
-
-interface ProtectedData {
-    data: any;
-}
-
-async function obtenerToken(): Promise<string> {
+async function obtenerSolicitudesAprobadasPorCI(ci: number) {
     try {
-        const response: AxiosResponse<AuthResponse> = await axios.post('http://190.181.22.149:3330/auth/login', {
-            username: 'tu_usuario',
-            password: 'tu_contraseña',
-        });
-        return response.data.token;
-    } catch (error: any) {
-        console.error('Error al obtener el token:', error.response?.data || error.message);
-        throw error;
-    }
-}
-
-async function obtenerDatos(): Promise<void> {
-    try {
-        const token: string = await obtenerToken();
-        const response: AxiosResponse<ProtectedData> = await axios.get('http://190.181.22.149:3330/datos-protegidos', {
-            headers: {
-                Authorization: token,
-            },
-        });
-        console.log('Datos obtenidos:', response.data);
-    } catch (error: any) {
-        console.error('Error al obtener datos:', error.response?.data || error.message);
+        // 1. Buscar funcionario por CI
+        const funcionario = await funcionarioModel.findOne({ ci });
+        if (!funcionario) {
+            console.log("Funcionario no encontrado");
+            return;
+        }
+        // 2. Buscar registro activo del funcionario
+        const registro = await registroModel.findOne({ id_funcionario: funcionario._id, estado: true });
+        if (!registro) {
+            console.log("No hay registro activo para este funcionario");
+            return;
+        }
+        // 3. Buscar solicitudes aprobadas con el id_registro encontrado
+        const solicitudesAprobadas = await solicitudModel.find({ id_registro: registro._id, estado: "APROBADO" });
+        return solicitudesAprobadas;
+    } catch (error) {
+        console.error("Error al obtener solicitudes aprobadas:", error);
     }
 }

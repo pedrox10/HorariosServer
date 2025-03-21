@@ -14,7 +14,7 @@ export enum EstadoJornada {
     licencia,
     otro,
     sin_asignar,
-    con_excepcion,
+    sin_registros,
     ausencia
 }
 
@@ -32,11 +32,16 @@ export class Jornada extends BaseEntity {
     segTurno: Turno
     @Column({ default: EstadoJornada.activa })
     estado:EstadoJornada
+    @Column()
+    esInvierno: boolean
+    @Column()
+    esLactancia: boolean
     @ManyToOne(() => Usuario, (usuario) => usuario.jornadas, { cascade: true, onDelete: "CASCADE" })
     usuario: Usuario
     @ManyToOne(() => Horario)
     horario: Horario
     infoExtra: InfoExtraJornada
+    tieneExcepcion: boolean
 
     getNumTurnos() {
         let res: number = 0;

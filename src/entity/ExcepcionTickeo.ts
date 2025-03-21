@@ -1,7 +1,6 @@
 import {Entity, Column, PrimaryGeneratedColumn, ManyToOne, OneToOne, JoinColumn, BaseEntity} from "typeorm"
 import {Licencia} from "./Licencia";
 import {Usuario} from "./Usuario";
-import {Horario} from "./Horario";
 
 export enum TipoExcepcion {
     rango,          //Excepciones para rangos de horas
