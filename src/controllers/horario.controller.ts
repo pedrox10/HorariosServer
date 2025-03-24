@@ -50,6 +50,23 @@ export const crearHorario = async (req: Request, res: Response) => {
     res.send(nuevoHorario)
 }
 
+export const editarHorario = async (req: Request, res: Response) => {
+    const {id} = req.params;
+    const horario = await Horario.findOne({where: {id: parseInt(id)},});
+    const {nombre, tolerancia, color, area, descripcion} = req.body
+    if(horario) {
+        horario.nombre = nombre;
+        horario.tolerancia = tolerancia;
+        horario.color = color;
+        horario.area = area;
+        horario.descripcion = descripcion;
+        await horario.save();
+        res.status(200).send(horario)
+    } else {
+        res.status(400).send("El horario no existe")
+    }
+}
+
 export const eliminarHorario = async (req: Request, res: Response) => {
     const {id} = req.params;
     const aux = await Horario.delete({id: parseInt(id)});

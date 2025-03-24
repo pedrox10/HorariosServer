@@ -14,7 +14,7 @@ import {
 } from "./controllers/terminal.controller";
 import {
     asignarHorario,
-    crearHorario, editarFechaAsueto, eliminarHorario,
+    crearHorario, editarFechaAsueto, editarHorario, eliminarHorario,
     eliminarJornada,
     getAsuetos,
     getHorario,
@@ -48,6 +48,7 @@ router.get('/horario/:id', getHorario);
 router.get('/horarios/', getHorarios);
 router.get("/asignar-horario/:id/usuarios/:ids/ini/:ini/fin/:fin/jornadas/:jornadas", asignarHorario)
 router.get('/horario/crear/:horario/:jornadas', crearHorario);
+router.put('/horario/editar/:id', editarHorario);
 router.get('/horario/:id/eliminar', eliminarHorario);
 router.delete('/eliminar-jornada/:id', eliminarJornada);
 router.get('/asuetos/', getAsuetos);
