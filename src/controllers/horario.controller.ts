@@ -52,7 +52,7 @@ export const crearHorario = async (req: Request, res: Response) => {
 
 export const editarHorario = async (req: Request, res: Response) => {
     const {id} = req.params;
-    const horario = await Horario.findOne({where: {id: parseInt(id)},});
+    const horario = await Horario.findOne({where: {id: parseInt(id)}, relations: {jornadaDias: true},});
     const {nombre, tolerancia, color, area, descripcion} = req.body
     if(horario) {
         horario.nombre = nombre;

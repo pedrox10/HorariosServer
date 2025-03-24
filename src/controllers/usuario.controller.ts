@@ -165,6 +165,7 @@ export const getResumenMarcaciones = async (req: Request, res: Response) => {
             if(solicitudesAprobadas) {
                 solicitudesAprobadas.forEach(solicitudDoc => {
                     const solicitud = solicitudDoc.toObject(); // Convertir a objeto JS
+                    console.log(solicitud)
                     solicitud.dias.forEach(dia => {
                         if (dia.fecha >= rangoValido.start.toDate() && dia.fecha <= rangoValido.end.toDate()) {
                             if (dia.jornada === "completa") {
@@ -186,8 +187,11 @@ export const getResumenMarcaciones = async (req: Request, res: Response) => {
                         }
                     });
                 });
-                if (excepcionesCompletas.length > 0)
+                if (excepcionesCompletas.length > 0) {
                     hayExcepcionesCompletas = true
+                    //console.log(excepcionesCompletas)
+                }
+
             } else {
 
             }
@@ -221,7 +225,7 @@ export const getResumenMarcaciones = async (req: Request, res: Response) => {
                     if (hayExcepcionesCompletas) {
                         excepcionCompleta = getExcepcionCompleta(jornada, excepcionesCompletas)
                         if (excepcionCompleta) {
-                            switch (excepcionCompleta.licencia.nombre) {
+                            switch (excepcionCompleta.licencia) {
                                 case "Vacacion":
                                     jornada.estado = EstadoJornada.vacacion
                                     break;
@@ -231,8 +235,9 @@ export const getResumenMarcaciones = async (req: Request, res: Response) => {
                                 case "Baja Medica":
                                     jornada.estado = EstadoJornada.baja_medica
                                     break;
-                                case "Licencia":
+                                case "LI":
                                     jornada.estado = EstadoJornada.licencia
+                                    console.log("LI detectado")
                                     break;
                                 default :
                                     jornada.estado = EstadoJornada.otro
@@ -248,7 +253,7 @@ export const getResumenMarcaciones = async (req: Request, res: Response) => {
                             infoMarcacion.estado = EstadoJornada.feriado
                         } else {
                             infoMarcacion.horario =  {nombre: "", color: ""};
-                            infoMarcacion.horario.nombre = excepcionCompleta.licencia.nombre
+                            infoMarcacion.horario.nombre = excepcionCompleta.licencia
                             infoMarcacion.mensaje = excepcionCompleta.detalle;
                             switch (jornada.estado) {
                                 case EstadoJornada.vacacion:
@@ -509,10 +514,12 @@ function getFeriado(jornada: Jornada, feriados: Asueto[]) {
 }
 
 function getExcepcionCompleta(jornada: Jornada, excepcionesCompletas: Excepcion[]) {
-    let res: ExcepcionTickeo | any = null;
+    let res: Excepcion | null = null;
     for (let excepcionCompleta of excepcionesCompletas) {
-        if (excepcionCompleta.fecha === jornada.fecha) {
-            res = excepcionCompleta
+        const fechaExcepcion = moment(excepcionCompleta.fecha).utc().startOf('day').toDate();
+        const fechaJornada = moment(jornada.fecha).utc().startOf('day').toDate();
+        if (fechaExcepcion.getTime() === fechaJornada.getTime()) { // Comparación con timestamps
+            res = excepcionCompleta;
             break;
         }
     }
