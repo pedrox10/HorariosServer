@@ -15,10 +15,10 @@ app.use(cors());
 app.use(morgan("dev"))
 app.use(requestLogger);
 app.use(errorHandler);
-app.use(routes)
+app.use("/api", routes)
 
 
-app.get('/', (req, res) => {
+app.get('/api', (req, res) => {
     res.send("Inicio Server")
 })
 

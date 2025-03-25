@@ -32,9 +32,9 @@ export class Jornada extends BaseEntity {
     segTurno: Turno
     @Column({ default: EstadoJornada.activa })
     estado:EstadoJornada
-    @Column()
+    @Column({nullable: true})
     esInvierno: boolean
-    @Column()
+    @Column({nullable: true})
     esLactancia: boolean
     @ManyToOne(() => Usuario, (usuario) => usuario.jornadas, { cascade: true, onDelete: "CASCADE" })
     usuario: Usuario

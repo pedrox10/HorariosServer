@@ -14,11 +14,11 @@ export class  Terminal extends BaseEntity {
     puerto: number
     @Column({type: 'datetime', nullable: true})
     ultSincronizacion: Date;
-    @Column()
+    @Column({ nullable: true })
     numSerie: string
-    @Column()
+    @Column({ nullable: true})
     totalMarcaciones: number
-    @Column()
+    @Column({ nullable: true })
     tieneConexion: boolean
     @OneToMany(() => Usuario, (usuario) => usuario.terminal)
     usuarios: Usuario[]
