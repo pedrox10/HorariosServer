@@ -16,10 +16,12 @@ export class Horario extends BaseEntity{
     area: string
     @Column({nullable: true})
     descripcion: string
-    @Column()
+    @Column({nullable: true})
     diasIntercalados: boolean
-    @Column()
+    @Column({nullable: true})
     jornadasDosDias: boolean
+    @Column({nullable: true})
+    esTeleTrabajo: boolean
     @OneToMany(() => JornadaDia, (jornadaDia) => jornadaDia.horario)
     jornadaDias: JornadaDia[]
 }

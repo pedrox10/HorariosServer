@@ -35,14 +35,14 @@ interface Solicitud {
     _id: mongoose.Types.ObjectId;
     id_registro: mongoose.Types.ObjectId;
     estado: string;
-    dias: Dia[]; // ✅ Agregar el tipo correcto
+    dias: Dia[]; // Agregar el tipo correcto
     tipo: string
     detalle: string
     hora_inicio: string
     hora_fin: string
 }
 
-mongoose.connect("mongodb://localhost:27017/management");
+//mongoose.connect("mongodb://localhost:27017/management");
 
 const funcionarioModel = mongoose.model<Funcionario>("funcionarios", new mongoose.Schema({}, { strict: false }));
 const registroModel = mongoose.model<Registro>("registros", new mongoose.Schema({}, { strict: false }));
@@ -161,7 +161,7 @@ export const getResumenMarcaciones = async (req: Request, res: Response) => {
 
             let excepcionesCompletas: Excepcion[] = [];
             let excepcionesRangoHoras: Excepcion[] = [];
-            let solicitudesAprobadas = await obtenerSolicitudesAprobadasPorCI(usuario.ci);
+            /*let solicitudesAprobadas = await obtenerSolicitudesAprobadasPorCI(usuario.ci);
             if(solicitudesAprobadas) {
                 solicitudesAprobadas.forEach(solicitudDoc => {
                     const solicitud = solicitudDoc.toObject(); // Convertir a objeto JS
@@ -189,12 +189,8 @@ export const getResumenMarcaciones = async (req: Request, res: Response) => {
                 });
                 if (excepcionesCompletas.length > 0) {
                     hayExcepcionesCompletas = true
-                    //console.log(excepcionesCompletas)
                 }
-
-            } else {
-
-            }
+            } */
 
             let totalCantRetrasos: number = 0
             let totalMinRetrasos: number = 0
@@ -245,7 +241,7 @@ export const getResumenMarcaciones = async (req: Request, res: Response) => {
                             }
                         }
                     }
-                    if (jornada.estado != EstadoJornada.dia_libre && jornada.estado != EstadoJornada.activa) {
+                    if (jornada.estado != EstadoJornada.dia_libre && jornada.estado != EstadoJornada.activa && jornada.estado != EstadoJornada.teletrabajo) {
                         infoMarcacion.activo = false
                         if (jornada.estado == EstadoJornada.feriado) {
                             infoMarcacion.horario =  {nombre: "Feriado", color: "#9da3fd"};
@@ -460,8 +456,13 @@ export const getResumenMarcaciones = async (req: Request, res: Response) => {
                                 infoMarcacion.minRetrasos = minRetrasos;
                                 infoMarcacion.hayPriRetraso = hayPriRetraso;
                             } else {
-                                infoMarcacion.mensaje = "Día de descanso"
-                                infoMarcacion.estado = EstadoJornada.dia_libre
+                                if(jornada.estado === EstadoJornada.teletrabajo) {
+                                    infoMarcacion.estado = EstadoJornada.teletrabajo
+                                    infoMarcacion.mensaje = "Trabajo a distancia (desde casa)"
+                                } else {
+                                    infoMarcacion.estado = EstadoJornada.dia_libre
+                                    infoMarcacion.mensaje = "Día de descanso"
+                                }
                             }
                         }
                     }

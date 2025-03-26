@@ -15,7 +15,8 @@ export enum EstadoJornada {
     otro,
     sin_asignar,
     sin_registros,
-    ausencia
+    ausencia,
+    teletrabajo
 }
 
 @Entity()

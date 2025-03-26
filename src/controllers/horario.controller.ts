@@ -260,7 +260,7 @@ export const asignarHorario = async (req: Request, res: Response) => {
                     turnosGuardar.push(priTurno)
                 }
             } else {
-                jornada.estado = EstadoJornada.dia_libre
+                jornada.estado = horario?.esTeleTrabajo ? EstadoJornada.teletrabajo : EstadoJornada.dia_libre
             }
             jornadasGuardar.push(jornada)
         }
