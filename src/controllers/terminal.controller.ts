@@ -48,7 +48,8 @@ export const eliminarTerminal = async (req: Request, res: Response) => {
         for (let usuario of terminal.usuarios) {
             await eliminarUsuario(usuario, terminal, queryRunner)
         }
-        const aux = await Terminal.delete({id: parseInt(id)});
+        await queryRunner.manager.delete(Marcacion, { terminal: terminal.id });
+        let aux = await queryRunner.manager.delete(Terminal, { id: terminal.id });
         res.send(aux)
     }
 }
@@ -284,30 +285,17 @@ async function getNuevoUsuario(usuarioT: any, terminal: Terminal, manager: Entit
 }
 
 async function eliminarUsuario(usuario: Usuario, terminal: Terminal, queryRunner: QueryRunner) {
-    //Borramos las marcaciones
-    const marcaciones: Marcacion[] = await queryRunner.manager.find(Marcacion, {
-        where: { ci: usuario.ci, terminal: terminal }
-    });
-    console.log("a borrar: " + marcaciones.length)
-    if (marcaciones.length > 0) {
-        await queryRunner.manager.remove(Marcacion, marcaciones);
+    // Obtener todas las jornadas del usuario con sus turnos
+    const jornadas = await queryRunner.manager.find(Jornada, { where: { usuario: usuario }, relations: { priTurno: true, segTurno: true }});
+    // Extraer los turnos únicos a eliminar
+    const turnosBorrar = jornadas.flatMap(j =>
+        j.getNumTurnos() === 2 ? [j.priTurno, j.segTurno] :
+            j.getNumTurnos() === 1 ? [j.priTurno] : []
+    );
+    // Eliminar turnos si hay alguno
+    if (turnosBorrar.length > 0) {
+        await queryRunner.manager.remove(Turno, turnosBorrar);
     }
-    //Borramos los turnos asignados a ese usuario
-    let turnosBorrar: Turno[] = [];
-    let jornadas = await Jornada.find({
-        where: {
-            usuario: usuario,
-        }, relations: {priTurno: true, segTurno: true}
-    },)
-    for (let jornada of jornadas) {
-        if (jornada.getNumTurnos() == 2) {
-            turnosBorrar.push(jornada.priTurno);
-            turnosBorrar.push(jornada.segTurno);
-        } else if (jornada.getNumTurnos() == 1) {
-            turnosBorrar.push(jornada.priTurno)
-        }
-    }
-    await queryRunner.manager.remove(Turno, turnosBorrar)
     //Borramos las jornadas restantes
     await queryRunner.manager.delete(Usuario, { id: usuario.id });
 }
