@@ -9,12 +9,14 @@ import errorHandler from './middleware/errorMiddleware';
 import logger from './logger/logger';
 
 const app = express()
+
 app.use(express.json())
 app.use(cors());
 app.use(morgan("dev"))
 app.use(requestLogger);
 app.use(errorHandler);
 app.use("/api", routes)
+
 
 app.get('/api', (req, res) => {
     res.send("Inicio Server")
