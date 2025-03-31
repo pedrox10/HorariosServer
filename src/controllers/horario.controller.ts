@@ -174,6 +174,11 @@ export const  getJornadasPorMes = async (req: Request, res: Response) => {
 export const asignarHorario = async (req: Request, res: Response) => {
     console.time('buscar_superpuestas');
     const {id, ids, ini, fin, jornadas} = req.params;
+    const { invierno, lactancia } = req.query; // Obtener desde Query Params
+    const esInvierno = invierno === "true";
+    const esLactancia = lactancia === "true";
+    console.log("Es Invierno:", esInvierno);
+    console.log("Es Lactancia:", esLactancia);
     let horario = await Horario.findOne({where: {id: parseInt(id)},});
     let listaIds = ids.split(",")
     let usuarios = await Usuario.find({
