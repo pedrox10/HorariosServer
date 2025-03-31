@@ -14,7 +14,7 @@ import {Between} from "typeorm";
 import mongoose from "mongoose";
 import {Excepcion} from "../models/Excepcion";
 
-// Definir interfaces de los modelos
+/*
 interface Funcionario {
     _id: mongoose.Types.ObjectId;
     ci: number;
@@ -41,13 +41,11 @@ interface Solicitud {
     hora_inicio: string
     hora_fin: string
 }
-
-//mongoose.connect("mongodb://localhost:27017/management");
-
+mongoose.connect("mongodb://localhost:27017/management");
 const funcionarioModel = mongoose.model<Funcionario>("funcionarios", new mongoose.Schema({}, { strict: false }));
 const registroModel = mongoose.model<Registro>("registros", new mongoose.Schema({}, { strict: false }));
 const solicitudModel = mongoose.model<Solicitud>("solicitudes", new mongoose.Schema({}, { strict: false }));
-
+*/
 const momentExt = extendMoment(MomentExt);
 
 export const getUsuarios = async (req: Request, res: Response) => {
@@ -562,7 +560,7 @@ export async function ultJornadaAsignadaMes(usuarioId: number) {
     });
     return ultimaJornada;
 }
-
+/*
 async function obtenerSolicitudesAprobadasPorCI(ci: number) {
     try {
         // 1. Buscar funcionario por CI
@@ -583,4 +581,4 @@ async function obtenerSolicitudesAprobadasPorCI(ci: number) {
     } catch (error) {
         console.error("Error al obtener solicitudes aprobadas:", error);
     }
-}
+}*/

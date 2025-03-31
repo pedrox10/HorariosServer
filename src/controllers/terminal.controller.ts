@@ -9,7 +9,6 @@ import moment from 'moment';
 import {Turno} from "../entity/Turno";
 import {Jornada} from "../entity/Jornada";
 import {Between, EntityManager, QueryRunner} from "typeorm";
-import * as fs from "fs";
 
 const envPython = path.join(__dirname, "../scriptpy/envpy", "bin", "python3");
 const spawn = require('await-spawn');

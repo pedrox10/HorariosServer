@@ -6,7 +6,7 @@ import {Between, In} from "typeorm";
 import moment, * as MomentExt from "moment";
 import {Moment} from "moment";
 import {JornadaDia} from "../entity/JornadaDia";
-import {extendMoment} from "moment-range";
+import {DateRange, extendMoment} from "moment-range";
 import {env} from "../environments/environments";
 import {EstadoJornada, Jornada} from "../entity/Jornada";
 import {Turno} from "../entity/Turno";
@@ -218,60 +218,73 @@ export const asignarHorario = async (req: Request, res: Response) => {
     }
     console.timeEnd('bd_superpuestas');
     console.time('asignacion');
-    let rango = momentExt.range(moment(fechaIni).toDate(), moment(fechaFin).toDate())
-    let dias: Iterable<Moment>;
-    let diasDescanso: Iterable<Moment>;
-    if(horario?.diasIntercalados || horario?.jornadasDosDias) {
-        dias = rango.by("day", {step: 2});
-        let rangoDiasDescanso = momentExt.range(moment(fechaIni).add(1, "days"), moment(fechaFin).toDate())
-        diasDescanso = rangoDiasDescanso.by("day", {step: 2})
-    } else {
-        dias = rango.by("day");
-    }
+
     let listaJornadas: JornadaDia[] = [];
     listaJornadas = JSON.parse(jornadas);
     let jornadasGuardar: Jornada[] = [];
     let turnosGuardar: Turno[] = [];
 
     for (let usuario of usuarios) {
-        for (let fecha of dias) {
-            let dia: string | any = env.dias.at(moment(fecha).day())
-            let jornadaDia = buscarEn(dia, listaJornadas)
-            let jornada = new Jornada()
-            jornada.fecha = moment(fecha.format("YYYY-MM-DD")).toDate();
-            jornada.usuario = usuario
-            jornada.horario = horario!;
-            if (jornadaDia.habilitado) {
-                if (getNumTurnos(jornadaDia) == 2) {
-                    let priTurno = new Turno()
-                    priTurno.horaEntrada = jornadaDia.priEntrada;
-                    priTurno.horaSalida = jornadaDia.priSalida;
-                    jornada.priTurno = priTurno;
-                    let segTurno = new Turno()
-                    segTurno.horaEntrada = jornadaDia.segEntrada;
-                    segTurno.horaSalida = jornadaDia.segSalida;
-                    jornada.segTurno = segTurno;
-                    turnosGuardar.push(priTurno, segTurno);
-                } else {
-                    let priTurno = new Turno()
-                    priTurno.horaEntrada = jornadaDia.priEntrada;
-                    priTurno.horaSalida = jornadaDia.priSalida;
-                    jornada.priTurno = priTurno
-                    turnosGuardar.push(priTurno)
-                }
+        let rango = momentExt.range(moment(fechaIni).toDate(), moment(fechaFin).toDate())
+        let dias: Iterable<Moment>;
+        let diasDescanso: Iterable<Moment>;
+        let rangoValido: DateRange;
+        let esVacio = moment(fechaIni).isBefore(moment(usuario.fechaAlta)) && moment(fechaFin).isBefore(usuario.fechaAlta);
+        if (!esVacio) {
+            console.log("genero rangos")
+            if (rango.contains(moment(usuario.fechaAlta), {excludeStart: true})) {
+                rangoValido = momentExt.range(moment(usuario.fechaAlta).toDate(), moment(fechaFin).toDate())
+                console.log("rango contiene")
             } else {
-                jornada.estado = horario?.esTeleTrabajo ? EstadoJornada.teletrabajo : EstadoJornada.dia_libre
+                rangoValido = momentExt.range(moment(fechaIni).toDate(), moment(fechaFin).toDate())
+                console.log("no contiene")
             }
-            jornadasGuardar.push(jornada)
-        }
-        if(horario?.diasIntercalados || horario?.jornadasDosDias) {
-            for(let fecha of diasDescanso!) {
+            dias = rangoValido.by("day");
+            if(horario?.diasIntercalados || horario?.jornadasDosDias) {
+                dias = rangoValido.by("day", {step: 2});
+                let copia = rangoValido.clone();
+                let rangoDiasDescanso = momentExt.range(copia.start.add(1, "days"), moment(fechaFin).toDate())
+                diasDescanso = rangoDiasDescanso.by("day", {step: 2})
+            }
+            for (let fecha of dias) {
+                let dia: string | any = env.dias.at(moment(fecha).day())
+                let jornadaDia = buscarEn(dia, listaJornadas)
                 let jornada = new Jornada()
                 jornada.fecha = moment(fecha.format("YYYY-MM-DD")).toDate();
                 jornada.usuario = usuario
                 jornada.horario = horario!;
-                jornada.estado = EstadoJornada.dia_libre
+                if (jornadaDia.habilitado) {
+                    if (getNumTurnos(jornadaDia) == 2) {
+                        let priTurno = new Turno()
+                        priTurno.horaEntrada = jornadaDia.priEntrada;
+                        priTurno.horaSalida = jornadaDia.priSalida;
+                        jornada.priTurno = priTurno;
+                        let segTurno = new Turno()
+                        segTurno.horaEntrada = jornadaDia.segEntrada;
+                        segTurno.horaSalida = jornadaDia.segSalida;
+                        jornada.segTurno = segTurno;
+                        turnosGuardar.push(priTurno, segTurno);
+                    } else {
+                        let priTurno = new Turno()
+                        priTurno.horaEntrada = jornadaDia.priEntrada;
+                        priTurno.horaSalida = jornadaDia.priSalida;
+                        jornada.priTurno = priTurno
+                        turnosGuardar.push(priTurno)
+                    }
+                } else {
+                    jornada.estado = horario?.esTeleTrabajo ? EstadoJornada.teletrabajo : EstadoJornada.dia_libre
+                }
                 jornadasGuardar.push(jornada)
+            }
+            if(horario?.diasIntercalados || horario?.jornadasDosDias) {
+                for(let fecha of diasDescanso!) {
+                    let jornada = new Jornada()
+                    jornada.fecha = moment(fecha.format("YYYY-MM-DD")).toDate();
+                    jornada.usuario = usuario
+                    jornada.horario = horario!;
+                    jornada.estado = EstadoJornada.dia_libre
+                    jornadasGuardar.push(jornada)
+                }
             }
         }
     }
@@ -279,14 +292,18 @@ export const asignarHorario = async (req: Request, res: Response) => {
     await AppDataSource.getRepository(Jornada).insert(jornadasGuardar);
     console.timeEnd('asignacion');
     console.time("ultJornada")
-    let ultimaJornada = jornadasGuardar.reduce((max, jornada) =>
-        max.fecha > jornada.fecha ? max : jornada
-    );
-    if(ultimaJornada) {
-        let dia = moment(ultimaJornada.fecha).format("DD");
-        let mes = moment(ultimaJornada.fecha).format("MMM");
-        let horarioMes = "Hasta " + dia + " " + mes;
-        res.send({"res": true, "ultDiaAsignado": horarioMes})
+    if(jornadasGuardar.length > 0) {
+        let ultimaJornada = jornadasGuardar.reduce((max, jornada) =>
+            max.fecha > jornada.fecha ? max : jornada
+        );
+        if(ultimaJornada) {
+            let dia = moment(ultimaJornada.fecha).format("DD");
+            let mes = moment(ultimaJornada.fecha).format("MMM");
+            let horarioMes = "Hasta " + dia + " " + mes;
+            res.send({"res": true, "ultDiaAsignado": horarioMes})
+        }
+    } else {
+        res.send({"res": false, "ultDiaAsignado": ""})
     }
     console.timeEnd("ultJornada")
 }
