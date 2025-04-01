@@ -279,6 +279,10 @@ export const asignarHorario = async (req: Request, res: Response) => {
                 } else {
                     jornada.estado = horario?.esTeleTrabajo ? EstadoJornada.teletrabajo : EstadoJornada.dia_libre
                 }
+                if(esInvierno)
+                    jornada.esInvierno = esInvierno;
+                if(esLactancia)
+                    jornada.esLactancia = esLactancia;
                 jornadasGuardar.push(jornada)
             }
             if(horario?.diasIntercalados || horario?.jornadasDosDias) {
@@ -288,6 +292,10 @@ export const asignarHorario = async (req: Request, res: Response) => {
                     jornada.usuario = usuario
                     jornada.horario = horario!;
                     jornada.estado = EstadoJornada.dia_libre
+                    if(esInvierno)
+                        jornada.esInvierno = esInvierno;
+                    if(esLactancia)
+                        jornada.esLactancia = esLactancia;
                     jornadasGuardar.push(jornada)
                 }
             }
