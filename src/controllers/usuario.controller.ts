@@ -209,6 +209,10 @@ export const getResumenMarcaciones = async (req: Request, res: Response) => {
                 infoMarcacion.fecha = moment(fecha).toDate();
                 infoMarcacion.dia = dia
                 if (jornada) {
+                    infoMarcacion.esInvierno = jornada.esInvierno
+                    infoMarcacion.esLactancia = jornada.esLactancia
+                    infoMarcacion.esJornadaDosDias = jornada.horario.jornadasDosDias
+
                     let feriado: Asueto | any;
                     let excepcionCompleta: ExcepcionTickeo | any;
                     if (hayFeriados) {

@@ -177,8 +177,6 @@ export const asignarHorario = async (req: Request, res: Response) => {
     const { invierno, lactancia } = req.query; // Obtener desde Query Params
     const esInvierno = invierno === "true";
     const esLactancia = lactancia === "true";
-    console.log("Es Invierno:", esInvierno);
-    console.log("Es Lactancia:", esLactancia);
     let horario = await Horario.findOne({where: {id: parseInt(id)},});
     let listaIds = ids.split(",")
     let usuarios = await Usuario.find({

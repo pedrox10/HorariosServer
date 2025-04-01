@@ -17,6 +17,10 @@ export class InfoMarcacion{
   mensaje:string
   numTurnos: number
   estado: EstadoJornada
+  esInvierno:boolean
+  esLactancia:boolean
+  esJornadaDosDias:boolean
+
 
   constructor() {
   }
