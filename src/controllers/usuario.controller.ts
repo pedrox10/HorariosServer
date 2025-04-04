@@ -24,13 +24,11 @@ interface Registro {
     id_funcionario: mongoose.Types.ObjectId;
     estado: boolean;
 }
-
 interface Dia {
     fecha: Date;
     jornada: string;
     turno: string;
 }
-
 interface Solicitud {
     _id: mongoose.Types.ObjectId;
     id_registro: mongoose.Types.ObjectId;
