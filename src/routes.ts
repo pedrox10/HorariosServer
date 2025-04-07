@@ -9,7 +9,7 @@ import {
     crearTerminal,
     editarTerminal,
     eliminarTerminal, getFechaPriMarcacion, getTerminal,
-    getTerminales,
+    getTerminales, getTerminalPorIp,
     sincronizarTerminal
 } from "./controllers/terminal.controller";
 import {
@@ -25,6 +25,7 @@ const router = Router();
 
 // Rutas para operaciones con Terminales
 router.get("/terminal/:id",getTerminal);
+router.get("/terminal/ip/:ip",getTerminalPorIp);
 router.post('/terminal/agregar', crearTerminal);
 router.put('/terminal/editar/:id', editarTerminal);
 router.delete('/terminal/eliminar/:id', eliminarTerminal);

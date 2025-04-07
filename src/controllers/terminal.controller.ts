@@ -58,6 +58,29 @@ export const getTerminales = async (req: Request, res: Response) => {
     res.send(terminales)
 }
 
+export const getUsuarios = async (req: Request, res: Response) => {
+    const {id} = req.params;
+    const terminal = await Terminal.findOne({
+        where: {id: parseInt(id)}, relations: {
+            usuarios: true,
+        }
+    });
+    let usuarios = terminal?.usuarios;
+    if (usuarios) {
+        for (const usuario of usuarios) {
+            let jornada = await ultJornadaAsignadaMes(usuario.id);
+            if (jornada) {
+                let dia = moment(jornada.fecha).format("DD");
+                let mes = moment(jornada.fecha).format("MMM");
+                usuario.horarioMes = "Hasta " + dia + " " + mes;
+            } else {
+                usuario.horarioMes = "Sin Asignar"
+            }
+        }
+        res.send(usuarios)
+    }
+}
+
 export const getTerminal = async (req: Request, res: Response) => {
     const {id} = req.params;
     const terminal = await Terminal.findOne({where: {id: parseInt(id)},});
@@ -68,6 +91,25 @@ export const getFechaPriMarcacion = async (req: Request, res: Response) => {
     const {id} = req.params;
     const terminal = await Terminal.findOne({where: {id: parseInt(id)}, relations: {marcaciones: true}});
     res.send(JSON.stringify(terminal?.marcaciones[0].fecha))
+}
+
+export const getTerminalPorIp = async (req: Request, res: Response) => {
+    const {ip} = req.params;
+    try {
+        const terminal = await Terminal.findOne({
+            where: {ip: ip}, relations: {
+                usuarios: true,
+            }
+        });
+        if (!terminal) {
+            return res.status(404).json({ exito: false, respuesta: "Terminal no encontrado"});
+        }
+        console.log(terminal)
+        return res.status(200).json({ exito: true, respuesta: terminal});
+    } catch (error) {
+        return res.status(500).json({ exito: false, respuesta: "Error en servidor"});
+        console.error("Error en el servidor", error);
+    }
 }
 
 export const sincronizarTerminal = async (req: Request, res: Response) => {
@@ -95,7 +137,6 @@ export const sincronizarTerminal = async (req: Request, res: Response) => {
                 mensaje: "¡Terminal sin conexion a la red!",
             });
         }
-
         // --- Procesamiento de Marcaciones ---
         const pyFileMarcaciones = 'src/scriptpy/marcaciones.py';
         let argsMarcaciones = [terminal.ip, terminal.puerto];
