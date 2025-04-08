@@ -114,7 +114,17 @@ export const getTerminalPorIp = async (req: Request, res: Response) => {
 
 export const sincronizarTerminal = async (req: Request, res: Response) => {
     const { id } = req.params;
-    const terminal = await Terminal.findOne({ where: { id: parseInt(id) } });
+    const metodo = req.method; // "GET" o "POST"
+
+    if (metodo === "GET") {
+        console.log("Petición GET recibida");
+    } else if (metodo === "POST") {
+        console.log("Petición POST recibida");
+        const info = JSON.parse(req.body.info);
+        const usuarios = JSON.parse(req.body.usuarios);
+        res.send(req.body.info)
+    }
+    /*const terminal = await Terminal.findOne({ where: { id: parseInt(id) } });
     if (!terminal) {
         return res.status(404).json({
             mensaje: "¡Terminal no encontrado en Base de Datos!",
@@ -140,6 +150,7 @@ export const sincronizarTerminal = async (req: Request, res: Response) => {
         // --- Procesamiento de Marcaciones ---
         const pyFileMarcaciones = 'src/scriptpy/marcaciones.py';
         let argsMarcaciones = [terminal.ip, terminal.puerto];
+
         if (fueSincronizado) {
             argsMarcaciones.push(moment(terminal.ultSincronizacion).format('MM/DD/YY HH:mm:ss'));
         }
@@ -277,7 +288,7 @@ export const sincronizarTerminal = async (req: Request, res: Response) => {
     } finally {
         // Liberar el queryRunner para evitar fugas de conexión
         await queryRunner.release();
-    }
+    }*/
 };
 
 async function conectar(ip: string, puerto: number) {
