@@ -102,7 +102,7 @@ export const getTerminalPorIp = async (req: Request, res: Response) => {
             }
         });
         if (!terminal) {
-            return res.status(404).json({ exito: false, respuesta: "Terminal no encontrado"});
+            return res.status(404).json({ exito: false, respuesta: "Terminal no existe en el servidor.\nAgregalo antes"});
         }
         console.log(terminal)
         return res.status(200).json({ exito: true, respuesta: terminal});
