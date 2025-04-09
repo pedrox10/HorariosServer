@@ -102,9 +102,8 @@ export const getTerminalPorIp = async (req: Request, res: Response) => {
             }
         });
         if (!terminal) {
-            return res.status(404).json({ exito: false, respuesta: "Terminal no existe en el servidor.\nAgregalo antes"});
+            return res.status(404).json({ exito: false, respuesta: "Terminal no encontrado en el servidor.\nSe debe agregar antes"});
         }
-        console.log(terminal)
         return res.status(200).json({ exito: true, respuesta: terminal});
     } catch (error) {
         return res.status(500).json({ exito: false, respuesta: "Error en servidor"});
@@ -116,15 +115,7 @@ export const sincronizarTerminal = async (req: Request, res: Response) => {
     const { id } = req.params;
     const metodo = req.method; // "GET" o "POST"
 
-    if (metodo === "GET") {
-        console.log("Petición GET recibida");
-    } else if (metodo === "POST") {
-        console.log("Petición POST recibida");
-        const info = JSON.parse(req.body.info);
-        const usuarios = JSON.parse(req.body.usuarios);
-        res.send(req.body.info)
-    }
-    /*const terminal = await Terminal.findOne({ where: { id: parseInt(id) } });
+    const terminal = await Terminal.findOne({ where: { id: parseInt(id) } });
     if (!terminal) {
         return res.status(404).json({
             mensaje: "¡Terminal no encontrado en Base de Datos!",
@@ -137,55 +128,71 @@ export const sincronizarTerminal = async (req: Request, res: Response) => {
     let usuariosEditados: Usuario[] = [];
     let usuariosEliminados: Usuario[] = [];
 
+    let marcacionesT: any;
+    let usuariosT: any;
+    let numeroSerie;
+    let horaTerminal;
+    let totalMarcaciones;
+
     const queryRunner = AppDataSource.createQueryRunner();
     await queryRunner.connect();
 
     try {
-        const conectado = await conectar(terminal.ip, terminal.puerto);
-        if (!conectado) {
-            return res.status(500).json({
-                mensaje: "¡Terminal sin conexion a la red!",
-            });
-        }
-        // --- Procesamiento de Marcaciones ---
-        const pyFileMarcaciones = 'src/scriptpy/marcaciones.py';
-        let argsMarcaciones = [terminal.ip, terminal.puerto];
+        if (metodo === "GET") {
+            const conectado = await conectar(terminal.ip, terminal.puerto);
+            if (!conectado) {
+                return res.status(500).json({
+                    mensaje: "¡Terminal sin conexion a la red!",
+                });
+            }
+            // --- Procesamiento de Marcaciones ---
+            const pyFileMarcaciones = 'src/scriptpy/marcaciones.py';
+            let argsMarcaciones = [terminal.ip, terminal.puerto];
 
-        if (fueSincronizado) {
-            argsMarcaciones.push(moment(terminal.ultSincronizacion).format('MM/DD/YY HH:mm:ss'));
+            if (fueSincronizado) {
+                argsMarcaciones.push(moment(terminal.ultSincronizacion).format('MM/DD/YY HH:mm:ss'));
+            }
+            argsMarcaciones.unshift(pyFileMarcaciones);
+            const pyprogMarcaciones = await spawn(envPython, argsMarcaciones);
+            console.log(pyprogMarcaciones.toString())
+            let respuesta = JSON.parse(pyprogMarcaciones.toString())
+            marcacionesT = respuesta.marcaciones;
+            numeroSerie = respuesta.numero_serie
+            horaTerminal = respuesta.hora_terminal
+            totalMarcaciones = respuesta.total_marcaciones
+        } else if (metodo === "POST") {
+            console.log("Petición POST recibida");
+            const info = JSON.parse(req.body.info);
+            marcacionesT = info.marcaciones;
+            numeroSerie = info.numero_serie
+            horaTerminal = info.hora_terminal
+            totalMarcaciones = info.total_marcaciones
         }
-        argsMarcaciones.unshift(pyFileMarcaciones);
-        const pyprogMarcaciones = await spawn(envPython, argsMarcaciones);
-        console.log(pyprogMarcaciones.toString())
-        let respuesta = JSON.parse(pyprogMarcaciones.toString())
-        let marcacionesT = respuesta.marcaciones;
-        let numeroSerie = respuesta.numero_serie
-        let horaTerminal = respuesta.hora_terminal
-        let totalMarcaciones = respuesta.total_marcaciones
 
         for (let value of marcacionesT) {
             let marcacion = new Marcacion();
             marcacion.ci = value.user_id;
-            // Se asume que el timestamp viene en formato adecuado;
-            // ajustar los formatos según sea necesario
             marcacion.fecha = moment(value.timestamp, "YYYY-MM-DD").toDate();
             marcacion.hora = moment(value.timestamp, "YYYY-MM-DD HH-mm-ss").toDate();
             marcacion.terminal = terminal;
             marcacionesNuevas.push(marcacion);
         }
-
         // Iniciar una única transacción para todo el proceso
         await queryRunner.startTransaction();
         const manager: EntityManager = queryRunner.manager;
         // Inserta las marcaciones usando el mismo queryRunner
         await queryRunner.manager.insert(Marcacion, marcacionesNuevas);
-
         // --- Procesamiento de Usuarios ---
-        const pyFileUsuarios = 'src/scriptpy/usuarios.py';
-        let argsUsuarios = [terminal.ip, terminal.puerto];
-        argsUsuarios.unshift(pyFileUsuarios);
-        const pyprogUsuarios = await spawn(envPython, argsUsuarios);
-        let usuariosT: any = JSON.parse(pyprogUsuarios.toString());
+        if (metodo === "GET") {
+            const pyFileUsuarios = 'src/scriptpy/usuarios.py';
+            let argsUsuarios = [terminal.ip, terminal.puerto];
+            argsUsuarios.unshift(pyFileUsuarios);
+            const pyprogUsuarios = await spawn(envPython, argsUsuarios);
+            usuariosT = JSON.parse(pyprogUsuarios.toString());
+        } else if (metodo === "POST") {
+            usuariosT = JSON.parse(req.body.usuarios);
+        }
+
         let usuariosBD = await Usuario.find({ where: { terminal: terminal } });
 
         if (fueSincronizado) {
@@ -288,7 +295,7 @@ export const sincronizarTerminal = async (req: Request, res: Response) => {
     } finally {
         // Liberar el queryRunner para evitar fugas de conexión
         await queryRunner.release();
-    }*/
+    }
 };
 
 async function conectar(ip: string, puerto: number) {

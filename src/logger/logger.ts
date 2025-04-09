@@ -1,35 +1,39 @@
 import winston from 'winston';
-import moment from 'moment-timezone';
+import DailyRotateFile from 'winston-daily-rotate-file';
 
 const logFormat = winston.format.printf(({ timestamp, level, message }) => {
-    return `${timestamp} [${level.toUpperCase()}]: ${message}`;
+    let outputMessage = message;
+
+    if (typeof message === 'string' && message.length > 1000) {
+        outputMessage = message.substring(0, 1000) + '... [mas]';
+    }
+    return `${timestamp} [${level.toUpperCase()}]: ${outputMessage}`;
 });
 
 const logger = winston.createLogger({
-    level: 'info', // Asegúrate de que el nivel es correcto
+    level: 'info',
     format: winston.format.combine(
-        winston.format.timestamp({
-            format: () => moment().tz('America/Caracas').format('YYYY-MM-DD HH:mm:ss') // UTC -04
-        }),
+        winston.format.timestamp(),
         logFormat
     ),
     transports: [
-        new winston.transports.Console(), // Se verá en consola
-
-        // Solo logs de INFO y superiores
-        new winston.transports.File({
-            filename: 'logs/app.log',
+        new DailyRotateFile({
+            dirname: 'logs',
+            filename: 'app-%DATE%.log',
+            datePattern: 'YYYY-MM', // 👉 un log por mes
+            zippedArchive: false,
+            maxSize: '20m',
+            maxFiles: '12m', // guarda hasta 12 meses
             level: 'info',
-            handleExceptions: false
         }),
-
+        new winston.transports.Console(),
         // Solo logs de ERROR
         new winston.transports.File({
             filename: 'logs/error.log',
             level: 'error',
             handleExceptions: true
         })
-    ]
+    ],
 });
 
 export default logger;
