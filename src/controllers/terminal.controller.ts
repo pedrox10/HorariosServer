@@ -238,7 +238,12 @@ export const sincronizarTerminal = async (req: Request, res: Response) => {
         }
         // Actualizar la terminal con la fecha de sincronización
         terminal.totalMarcaciones = totalMarcaciones;
-        terminal.ultSincronizacion = moment().toDate();
+        if (metodo === "GET") {
+            terminal.ultSincronizacion = moment().toDate();
+        } else if (metodo === "POST") {
+            console.log(req.body.fecha_respaldo)
+            terminal.ultSincronizacion = moment(req.body.fecha_respaldo, "YYYY-MM-dd[T]HH:mm:ss").toDate();
+        }
         await queryRunner.manager.save(terminal);
         // Si todo sale bien, hacer commit de la transacción
         await queryRunner.commitTransaction();
