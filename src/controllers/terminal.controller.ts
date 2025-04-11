@@ -241,8 +241,11 @@ export const sincronizarTerminal = async (req: Request, res: Response) => {
         if (metodo === "GET") {
             terminal.ultSincronizacion = moment().toDate();
         } else if (metodo === "POST") {
-            console.log(req.body.fecha_respaldo)
-            terminal.ultSincronizacion = moment(req.body.fecha_respaldo, "YYYY-MM-dd[T]HH:mm:ss").toDate();
+            const fecha = moment("2025-12-29T11:43:00", "YYYY-MM-DD[T]HH:mm:ss");
+            console.log("Con YYYY:", fecha.format("YYYY-MM-DD"));
+            console.log("Con yyyy:", fecha.format("yyyy-MM-DD"));
+            console.log(horaTerminal)
+            terminal.ultSincronizacion = moment(horaTerminal, "YYYY-MM-DD[T]HH:mm:ss").toDate();
         }
         await queryRunner.manager.save(terminal);
         // Si todo sale bien, hacer commit de la transacción
