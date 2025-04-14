@@ -8,7 +8,7 @@ import {InfoMarcacion} from "../models/InfoMarcacion";
 import {DateRange, extendMoment} from "moment-range";
 import {EstadoJornada, Jornada} from "../entity/Jornada";
 import {ResumenMarcacion} from "../models/ResumenMarcacion";
-import {ExcepcionTickeo} from "../entity/ExcepcionTickeo";
+import {ExcepcionTickeo, TipoExcepcion} from "../entity/ExcepcionTickeo";
 import {Asueto, TipoAsueto} from "../entity/Asueto";
 import {Between} from "typeorm";
 import mongoose from "mongoose";
@@ -141,6 +141,8 @@ export const getResumenMarcaciones = async (req: Request, res: Response) => {
             let rangoValido: DateRange;
             let hayFeriados = false;
             let hayExcepcionesCompletas = false;
+            let hayExcepcionesTickeo = false;
+
             if (rango.contains(moment(usuario.fechaAlta), {excludeStart: true})) {
                 let rangoSinRegistros = momentExt.range(moment(fechaIni).toDate(), moment(usuario.fechaAlta).subtract(1, "day").toDate())
                 rangoValido = momentExt.range(moment(usuario.fechaAlta).toDate(), moment(fechaFin).toDate())
@@ -154,6 +156,14 @@ export const getResumenMarcaciones = async (req: Request, res: Response) => {
             })
             if (feriados.length > 0)
                 hayFeriados = true
+
+            let excepcionesTickeo: ExcepcionTickeo[] = await ExcepcionTickeo.findBy({
+                fecha: Between(rangoValido.start.toDate(), rangoValido.end.toDate()),
+                tipo: TipoExcepcion.rango
+            })
+            console.log(excepcionesTickeo)
+            if (excepcionesTickeo.length > 0)
+                hayExcepcionesTickeo = true
 
             let excepcionesCompletas: Excepcion[] = [];
             let excepcionesRangoHoras: Excepcion[] = [];
@@ -241,6 +251,7 @@ export const getResumenMarcaciones = async (req: Request, res: Response) => {
                             }
                         }
                     }
+
                     if (jornada.estado != EstadoJornada.dia_libre && jornada.estado != EstadoJornada.activa && jornada.estado != EstadoJornada.teletrabajo) {
                         infoMarcacion.activo = false
                         if (jornada.estado == EstadoJornada.feriado) {

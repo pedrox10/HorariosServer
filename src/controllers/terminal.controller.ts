@@ -154,7 +154,7 @@ export const sincronizarTerminal = async (req: Request, res: Response) => {
             }
             argsMarcaciones.unshift(pyFileMarcaciones);
             const pyprogMarcaciones = await spawn(envPython, argsMarcaciones);
-            console.log(pyprogMarcaciones.toString())
+            //console.log(pyprogMarcaciones.toString())
             let respuesta = JSON.parse(pyprogMarcaciones.toString())
             marcacionesT = respuesta.marcaciones;
             numeroSerie = respuesta.numero_serie
@@ -238,15 +238,11 @@ export const sincronizarTerminal = async (req: Request, res: Response) => {
         }
         // Actualizar la terminal con la fecha de sincronización
         terminal.totalMarcaciones = totalMarcaciones;
-        if (metodo === "GET") {
-            terminal.ultSincronizacion = moment().toDate();
-        } else if (metodo === "POST") {
-            const fecha = moment("2025-12-29T11:43:00", "YYYY-MM-DD[T]HH:mm:ss");
-            console.log("Con YYYY:", fecha.format("YYYY-MM-DD"));
-            console.log("Con yyyy:", fecha.format("yyyy-MM-DD"));
-            console.log(horaTerminal)
-            terminal.ultSincronizacion = moment(horaTerminal, "YYYY-MM-DD[T]HH:mm:ss").toDate();
-        }
+        const fecha = moment("2026-01-01T11:43:00", "YYYY-MM-DD[T]HH:mm:ss");
+        console.log("Con YYYY:", fecha.format("YYYY-MM-DD"));
+        console.log("Con yyyy:", fecha.format("yyyy-MM-DD"));
+        console.log(horaTerminal)
+        terminal.ultSincronizacion = moment(horaTerminal, "YYYY-MM-DD[T]HH:mm:ss").toDate();
         await queryRunner.manager.save(terminal);
         // Si todo sale bien, hacer commit de la transacción
         await queryRunner.commitTransaction();

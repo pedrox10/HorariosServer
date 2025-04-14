@@ -21,7 +21,6 @@ export class InfoMarcacion{
   esLactancia:boolean
   esJornadaDosDias:boolean
 
-
   constructor() {
   }
 }
