@@ -159,6 +159,7 @@ export const getResumenMarcaciones = async (req: Request, res: Response) => {
 
             let excepcionesTickeo: ExcepcionTickeo[] = await ExcepcionTickeo.findBy({
                 fecha: Between(rangoValido.start.toDate(), rangoValido.end.toDate()),
+                usuario: usuario,
                 tipo: TipoExcepcion.rango
             })
             console.log(excepcionesTickeo)
