@@ -1,4 +1,5 @@
 import winston from 'winston';
+import moment from "moment";
 import DailyRotateFile from 'winston-daily-rotate-file';
 
 const logFormat = winston.format.printf(({ timestamp, level, message }) => {
@@ -13,7 +14,9 @@ const logFormat = winston.format.printf(({ timestamp, level, message }) => {
 const logger = winston.createLogger({
     level: 'info',
     format: winston.format.combine(
-        winston.format.timestamp(),
+        winston.format.timestamp({
+            format: () => moment().format('DD/MM/YYYY HH:mm:ss'),
+        }),
         logFormat
     ),
     transports: [

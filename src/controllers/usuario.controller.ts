@@ -142,6 +142,7 @@ export const getResumenMarcaciones = async (req: Request, res: Response) => {
             let hayFeriados = false;
             let hayExcepcionesCompletas = false;
             let hayExcepcionesTickeo = false;
+            let rangoDeBaja: DateRange | any;
 
             if (rango.contains(moment(usuario.fechaAlta), {excludeStart: true})) {
                 let rangoSinRegistros = momentExt.range(moment(fechaIni).toDate(), moment(usuario.fechaAlta).subtract(1, "day").toDate())
@@ -149,6 +150,12 @@ export const getResumenMarcaciones = async (req: Request, res: Response) => {
                 infoMarcaciones.push(...getSinRegistros(rangoSinRegistros))
             } else {
                 rangoValido = momentExt.range(moment(fechaIni).toDate(), moment(fechaFin).toDate())
+            }
+            if(usuario.fechaBaja) {
+                if(rangoValido.contains(moment(usuario.fechaBaja), {excludeEnd: true})) {
+                    rangoDeBaja = momentExt.range(moment(usuario.fechaBaja).add(1, "day").toDate(), moment(fechaFin).toDate())
+                    rangoValido = momentExt.range(rangoValido.start.toDate(), moment(usuario.fechaBaja).toDate())
+                }
             }
             let feriados: Asueto[] = await Asueto.findBy({
                 fecha: Between(rangoValido.start.toDate(), rangoValido.end.toDate()),
@@ -485,6 +492,10 @@ export const getResumenMarcaciones = async (req: Request, res: Response) => {
                 }
                 infoMarcaciones.push(infoMarcacion)
             }
+            if(rangoDeBaja) {
+                infoMarcaciones.push(... getAvisosDeBaja(rangoDeBaja))
+            }
+            console.log(rangoValido.duration("days") + 1)
             resumenMarcacion.totalCantRetrasos = totalCantRetrasos
             resumenMarcacion.totalMinRetrasos = totalMinRetrasos
             resumenMarcacion.totalSinMarcar = totalSinMarcar
@@ -549,7 +560,23 @@ function getSinRegistros(rangoSinRegistros: DateRange) {
         infoMarcacion.horario = "Sin registros"
         infoMarcacion.estado = EstadoJornada.sin_registros;
         infoMarcacion.activo = false
-        infoMarcacion.mensaje = "Funcionario aún no registrado en biométrico"
+        infoMarcacion.mensaje = "Funcionario aún no registrado en el biométrico"
+        infoMarcaciones.push(infoMarcacion)
+    }
+    return infoMarcaciones;
+}
+
+function getAvisosDeBaja(rangoDeBaja: DateRange) {
+    let infoMarcaciones: InfoMarcacion[] = [];
+    for (let fecha of rangoDeBaja.by("day")) {
+        let infoMarcacion = new InfoMarcacion();
+        let dia = moment(fecha).locale("es").format("ddd DD")
+        dia = dia.charAt(0).toUpperCase() + dia.substring(1)
+        infoMarcacion.dia = dia
+        infoMarcacion.horario = "Sin registros"
+        infoMarcacion.estado = EstadoJornada.sin_registros;
+        infoMarcacion.activo = false
+        infoMarcacion.mensaje = "Funcionario fué dado de baja en el sistema"
         infoMarcaciones.push(infoMarcacion)
     }
     return infoMarcaciones;
