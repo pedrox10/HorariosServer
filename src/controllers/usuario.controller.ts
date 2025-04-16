@@ -157,13 +157,14 @@ export const getResumenMarcaciones = async (req: Request, res: Response) => {
                     rangoValido = momentExt.range(rangoValido.start.toDate(), moment(usuario.fechaBaja).toDate())
                 }
             }
+
             let feriados: Asueto[] = await Asueto.findBy({
                 fecha: Between(rangoValido.start.toDate(), rangoValido.end.toDate()),
                 tipo: TipoAsueto.todos
             })
             if (feriados.length > 0)
                 hayFeriados = true
-
+            
             let excepcionesTickeo: ExcepcionTickeo[] = await ExcepcionTickeo.findBy({
                 fecha: Between(rangoValido.start.toDate(), rangoValido.end.toDate()),
                 usuario: usuario,
