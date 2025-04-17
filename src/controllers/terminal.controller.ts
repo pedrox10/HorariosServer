@@ -90,6 +90,7 @@ export const getTerminal = async (req: Request, res: Response) => {
 export const getFechaPriMarcacion = async (req: Request, res: Response) => {
     const {id} = req.params;
     const terminal = await Terminal.findOne({where: {id: parseInt(id)}, relations: {marcaciones: true}});
+    console.log(terminal?.marcaciones[0].fecha)
     res.send(JSON.stringify(terminal?.marcaciones[0].fecha))
 }
 

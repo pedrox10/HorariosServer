@@ -13,37 +13,8 @@ import {Asueto, TipoAsueto} from "../entity/Asueto";
 import {Between} from "typeorm";
 import mongoose from "mongoose";
 import {Excepcion} from "../models/Excepcion";
+import { obtenerSolicitudesAprobadasPorCI } from './intercomunicacion.controller';
 
-/*
-interface Funcionario {
-    _id: mongoose.Types.ObjectId;
-    ci: number;
-}
-interface Registro {
-    _id: mongoose.Types.ObjectId;
-    id_funcionario: mongoose.Types.ObjectId;
-    estado: boolean;
-}
-interface Dia {
-    fecha: Date;
-    jornada: string;
-    turno: string;
-}
-interface Solicitud {
-    _id: mongoose.Types.ObjectId;
-    id_registro: mongoose.Types.ObjectId;
-    estado: string;
-    dias: Dia[]; // Agregar el tipo correcto
-    tipo: string
-    detalle: string
-    hora_inicio: string
-    hora_fin: string
-}
-mongoose.connect("mongodb://localhost:27017/management");
-const funcionarioModel = mongoose.model<Funcionario>("funcionarios", new mongoose.Schema({}, { strict: false }));
-const registroModel = mongoose.model<Registro>("registros", new mongoose.Schema({}, { strict: false }));
-const solicitudModel = mongoose.model<Solicitud>("solicitudes", new mongoose.Schema({}, { strict: false }));
-*/
 const momentExt = extendMoment(MomentExt);
 
 export const getUsuarios = async (req: Request, res: Response) => {
@@ -170,17 +141,15 @@ export const getResumenMarcaciones = async (req: Request, res: Response) => {
                 usuario: usuario,
                 tipo: TipoExcepcion.rango
             })
-            console.log(excepcionesTickeo)
             if (excepcionesTickeo.length > 0)
                 hayExcepcionesTickeo = true
 
             let excepcionesCompletas: Excepcion[] = [];
             let excepcionesRangoHoras: Excepcion[] = [];
-            /*let solicitudesAprobadas = await obtenerSolicitudesAprobadasPorCI(usuario.ci);
+            let solicitudesAprobadas = await obtenerSolicitudesAprobadasPorCI(usuario.ci);
             if(solicitudesAprobadas) {
                 solicitudesAprobadas.forEach(solicitudDoc => {
                     const solicitud = solicitudDoc.toObject(); // Convertir a objeto JS
-                    console.log(solicitud)
                     solicitud.dias.forEach(dia => {
                         if (dia.fecha >= rangoValido.start.toDate() && dia.fecha <= rangoValido.end.toDate()) {
                             if (dia.jornada === "completa") {
@@ -205,7 +174,9 @@ export const getResumenMarcaciones = async (req: Request, res: Response) => {
                 if (excepcionesCompletas.length > 0) {
                     hayExcepcionesCompletas = true
                 }
-            } */
+            }
+            console.log(excepcionesCompletas)
+            console.log(excepcionesRangoHoras)
 
             let totalCantRetrasos: number = 0
             let totalMinRetrasos: number = 0
@@ -244,8 +215,9 @@ export const getResumenMarcaciones = async (req: Request, res: Response) => {
                                 case "Vacacion":
                                     jornada.estado = EstadoJornada.vacacion
                                     break;
-                                case "Permiso":
+                                case "PO":
                                     jornada.estado = EstadoJornada.permiso
+                                    console.log("PO detectado")
                                     break;
                                 case "Baja Medica":
                                     jornada.estado = EstadoJornada.baja_medica
@@ -496,12 +468,12 @@ export const getResumenMarcaciones = async (req: Request, res: Response) => {
             if(rangoDeBaja) {
                 infoMarcaciones.push(... getAvisosDeBaja(rangoDeBaja))
             }
-            console.log(rangoValido.duration("days") + 1)
             resumenMarcacion.totalCantRetrasos = totalCantRetrasos
             resumenMarcacion.totalMinRetrasos = totalMinRetrasos
             resumenMarcacion.totalSinMarcar = totalSinMarcar
             resumenMarcacion.totalAusencias = totalAusencias
             resumenMarcacion.infoMarcaciones = infoMarcaciones
+            resumenMarcacion.diasComputados = rangoValido.duration("days") + 1
             res.send(resumenMarcacion)
         }
     }
@@ -602,25 +574,4 @@ export async function ultJornadaAsignadaMes(usuarioId: number) {
     });
     return ultimaJornada;
 }
-/*
-async function obtenerSolicitudesAprobadasPorCI(ci: number) {
-    try {
-        // 1. Buscar funcionario por CI
-        const funcionario = await funcionarioModel.findOne({ ci });
-        if (!funcionario) {
-            console.log("Funcionario no encontrado");
-            return;
-        }
-        // 2. Buscar registro activo del funcionario
-        const registro = await registroModel.findOne({ id_funcionario: funcionario._id, estado: true });
-        if (!registro) {
-            console.log("No hay registro activo para este funcionario");
-            return;
-        }
-        // 3. Buscar solicitudes aprobadas con el id_registro encontrado
-        const solicitudesAprobadas = await solicitudModel.find({ id_registro: registro._id, estado: "APROBADO" });
-        return solicitudesAprobadas;
-    } catch (error) {
-        console.error("Error al obtener solicitudes aprobadas:", error);
-    }
-}*/
+

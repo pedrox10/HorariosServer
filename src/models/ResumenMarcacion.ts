@@ -7,6 +7,7 @@ export class ResumenMarcacion{
     totalMinRetrasos: number;
     totalSinMarcar: number;
     totalAusencias: number;
+    diasComputados: number;
     infoMarcaciones: InfoMarcacion[];
 
     constructor() {
