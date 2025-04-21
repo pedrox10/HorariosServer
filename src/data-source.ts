@@ -10,6 +10,7 @@ import {Jornada} from "./entity/Jornada";
 import {Asueto} from "./entity/Asueto";
 import {Licencia} from "./entity/Licencia";
 import {ExcepcionTickeo} from "./entity/ExcepcionTickeo";
+import {Sincronizacion} from "./entity/Sincronizacion";
 
 export const AppDataSource = new DataSource({
     type: "mysql",
@@ -20,7 +21,8 @@ export const AppDataSource = new DataSource({
     database: "horarios",
     synchronize: true,
     logging: false,
-    entities: [Terminal, Usuario, Marcacion, JornadaDia, Horario, Jornada, Turno, Asueto, Licencia, ExcepcionTickeo],
+    entities: [Terminal, Usuario, Marcacion, JornadaDia, Horario, Jornada, Turno, Asueto,
+                Licencia, ExcepcionTickeo, Sincronizacion],
     subscribers: [],
     migrations: [],
 })

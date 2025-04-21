@@ -384,7 +384,6 @@ export const getResumenMarcaciones = async (req: Request, res: Response) => {
                             if (numTurnos == 1) {
                                 let priEntradasM: Moment[] = [];
                                 let priSalidasM: Moment[] = [];
-
                                 //Genero los rangos para entradas y salidas:
                                 let priEntIni = moment(jornada.fecha + " " + "00:00").format('YYYY-MM-DD HH:mm')
                                 let priEntFin = moment(jornada.fecha + " " + jornada.priTurno.horaSalida).subtract(1, "hours").format('YYYY-MM-DD HH:mm')
