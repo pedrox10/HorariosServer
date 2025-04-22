@@ -13,9 +13,23 @@ import {Asueto, TipoAsueto} from "../entity/Asueto";
 import {Between} from "typeorm";
 import mongoose from "mongoose";
 import {Excepcion} from "../models/Excepcion";
-import { obtenerSolicitudesAprobadasPorCI } from './intercomunicacion.controller';
+import axios from "axios";
 
 const momentExt = extendMoment(MomentExt);
+
+export interface SolicitudAprobada {
+    _id: string;
+    tipo: string;
+    detalle: string;
+    estado: string;
+    fecha_inicio: string;
+    fecha_fin: string;
+    dias: Array<{
+        fecha: string;     // ISO date string
+        jornada: 'completa' | 'media';
+        turno?: string;
+    }>;
+}
 
 export const getUsuarios = async (req: Request, res: Response) => {
     const {id} = req.params;
@@ -146,35 +160,45 @@ export const getResumenMarcaciones = async (req: Request, res: Response) => {
 
             let excepcionesCompletas: Excepcion[] = [];
             let excepcionesRangoHoras: Excepcion[] = [];
-            let solicitudesAprobadas = await obtenerSolicitudesAprobadasPorCI(usuario.ci);
-            if(solicitudesAprobadas) {
-                solicitudesAprobadas.forEach(solicitudDoc => {
-                    const solicitud = solicitudDoc.toObject(); // Convertir a objeto JS
-                    solicitud.dias.forEach(dia => {
-                        if (dia.fecha >= rangoValido.start.toDate() && dia.fecha <= rangoValido.end.toDate()) {
-                            if (dia.jornada === "completa") {
-                                let excepcionCompleta: Excepcion = new Excepcion();
-                                excepcionCompleta.fecha = dia.fecha;
-                                excepcionCompleta.jornada = dia.jornada
-                                excepcionCompleta.detalle = solicitud.detalle
-                                excepcionCompleta.licencia = solicitud.tipo
-                                excepcionesCompletas.push(excepcionCompleta);
-                            } else if (dia.jornada === "media") {
-                                let excepcionRangoHoras: Excepcion = new Excepcion();
-                                excepcionRangoHoras.fecha = dia.fecha;
-                                excepcionRangoHoras.jornada = dia.jornada
-                                excepcionRangoHoras.turno = dia.turno
-                                excepcionRangoHoras.detalle = solicitud.detalle
-                                excepcionRangoHoras.licencia = solicitud.tipo
-                                excepcionesRangoHoras.push(excepcionRangoHoras);
-                            }
+            const solicitudesAprobadas = await obtenerSolicitudesAprobadasPorCI(usuario.ci) ?? [];
+
+            for (const solicitud of solicitudesAprobadas) {
+                for (const diaObj of solicitud.dias) {
+                    // 1) convierte el ISO-string a Date
+                    const fechaDia = new Date(diaObj.fecha);
+                    // 2) comprueba el rango
+                    if (fechaDia < rangoValido.start.toDate() || fechaDia > rangoValido.end.toDate()) {
+                        continue;
+                    }
+                    // 3) clasifica
+                    if (diaObj.jornada === 'completa') {
+                        let excepcion = new Excepcion();
+                        excepcion.fecha    = fechaDia;
+                        excepcion.jornada  = 'completa';
+                        excepcion.detalle  = solicitud.detalle;
+                        excepcion.licencia = solicitud.tipo;
+                        excepcionesCompletas.push(excepcion);
+
+                    } else { // media
+                        let excepcion = new Excepcion();
+                        excepcion.fecha    = fechaDia;
+                        excepcion.jornada  = 'media';
+                        excepcion.turno    = diaObj.turno!;
+                        if(diaObj.turno === "mañana") {
+                            excepcion.horaIni = "08:00"
+                            excepcion.horaFin = "12:00"
+                        } else {
+                            excepcion.horaIni = "14:00"
+                            excepcion.horaFin = "18:00"
                         }
-                    });
-                });
-                if (excepcionesCompletas.length > 0) {
-                    hayExcepcionesCompletas = true
+                        excepcion.detalle  = solicitud.detalle;
+                        excepcion.licencia = solicitud.tipo;
+                        excepcionesRangoHoras.push(excepcion);
+                    }
                 }
             }
+            if (excepcionesCompletas.length > 0)
+                hayExcepcionesCompletas = true
             console.log(excepcionesCompletas)
             console.log(excepcionesRangoHoras)
 
@@ -182,6 +206,7 @@ export const getResumenMarcaciones = async (req: Request, res: Response) => {
             let totalMinRetrasos: number = 0
             let totalSinMarcar: number = 0
             let totalAusencias: number = 0
+            let diasComputados: number = 0
 
             for (let fecha of rangoValido.by("day")) {
                 let jornada = await getJornadaPor(usuario, fecha.format("YYYY-MM-DD"))
@@ -200,6 +225,7 @@ export const getResumenMarcaciones = async (req: Request, res: Response) => {
                     infoMarcacion.esInvierno = jornada.esInvierno
                     infoMarcacion.esLactancia = jornada.esLactancia
                     infoMarcacion.esJornadaDosDias = jornada.horario.jornadasDosDias
+                    diasComputados++;
 
                     let feriado: Asueto | any;
                     let excepcionCompleta: ExcepcionTickeo | any;
@@ -215,9 +241,9 @@ export const getResumenMarcaciones = async (req: Request, res: Response) => {
                                 case "Vacacion":
                                     jornada.estado = EstadoJornada.vacacion
                                     break;
-                                case "PO":
+                                case "PE":
                                     jornada.estado = EstadoJornada.permiso
-                                    console.log("PO detectado")
+                                    console.log("PE detectado")
                                     break;
                                 case "Baja Medica":
                                     jornada.estado = EstadoJornada.baja_medica
@@ -472,7 +498,7 @@ export const getResumenMarcaciones = async (req: Request, res: Response) => {
             resumenMarcacion.totalSinMarcar = totalSinMarcar
             resumenMarcacion.totalAusencias = totalAusencias
             resumenMarcacion.infoMarcaciones = infoMarcaciones
-            resumenMarcacion.diasComputados = rangoValido.duration("days") + 1
+            resumenMarcacion.diasComputados = diasComputados
             res.send(resumenMarcacion)
         }
     }
@@ -572,5 +598,55 @@ export async function ultJornadaAsignadaMes(usuarioId: number) {
         },
     });
     return ultimaJornada;
+}
+
+export async function obtenerSolicitudesAprobadasPorCI(ci: number) {
+    const ACCESS_CODE =
+        "ga8f0051d6ff90ff485359f626060aa0fe38fc2c451c184f337ae146e4cd7eefcb8497011ee63534e4afd7eedf65fc1d9017f67c2385bc85b392b862a7bedfd6g";
+    const BASE_URL = "http://190.181.22.149:3310";
+    const HEADERS = {
+        headers: {
+            "X-Access-Code": ACCESS_CODE,
+        },
+    };
+
+    try {
+        // 1. Buscar funcionario por CI
+        const { data: funcionarios } = await axios.get(
+            `${BASE_URL}/funcionario/filtro/ci/${ci}`,
+            HEADERS
+        );
+
+        const funcionario = funcionarios?.[0];
+        if (!funcionario || !funcionario.estado) {
+            console.log("Funcionario no encontrado o inactivo");
+            return;
+        }
+
+        // 2. Buscar registros del funcionario
+        const { data: registros } = await axios.get(
+            `${BASE_URL}/registro/filtro/id_funcionario/${funcionario._id}`,
+            HEADERS
+        );
+
+        const registroActivo = registros.find((r: { estado: boolean }) => r.estado === true);
+        if (!registroActivo) {
+            console.log("No se encontró un registro activo");
+            return;
+        }
+
+        const { data: solicitudes } = await axios.get<SolicitudAprobada[]>(
+            `${BASE_URL}/solicitud/filtro/id_registro/${registroActivo._id}`,
+            HEADERS
+        );
+
+        // 3) Filtra por estado y devuelve todas las propiedades:
+        return solicitudes.filter(s => s.estado === 'APROBADO');
+    } catch (error: any) {
+        console.error(
+            "Error al obtener solicitudes aprobadas:",
+            error.response?.data || error.message
+        );
+    }
 }
 

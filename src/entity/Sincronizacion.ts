@@ -2,7 +2,7 @@ import {BaseEntity, Column, Entity, ManyToOne, OneToMany, PrimaryGeneratedColumn
 import {Terminal} from "./Terminal";
 
 @Entity()
-export class Sincronizacion extends BaseEntity{
+export class Sincronizacion extends BaseEntity {
     @PrimaryGeneratedColumn()
     id:number;
     @Column({type: 'datetime', nullable: true})

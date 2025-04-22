@@ -2,6 +2,7 @@ import {Entity, Column, PrimaryGeneratedColumn, BaseEntity, OneToMany} from "typ
 import {Marcacion} from "./Marcacion";
 import {Usuario} from "./Usuario";
 import {Sincronizacion} from "./Sincronizacion";
+import {Interrupcion} from "./Interrupcion";
 
 @Entity()
 export class  Terminal extends BaseEntity {
@@ -27,4 +28,7 @@ export class  Terminal extends BaseEntity {
     marcaciones: Marcacion[]
     @OneToMany(() => Sincronizacion, (sincronizacion) => sincronizacion.terminal)
     sincronizaciones: Sincronizacion[]
+    @OneToMany(() => Interrupcion, (interrupcion) => interrupcion.terminal)
+    interrupciones: Interrupcion[]
+
 }
