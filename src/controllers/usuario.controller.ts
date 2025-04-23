@@ -24,6 +24,8 @@ export interface SolicitudAprobada {
     estado: string;
     fecha_inicio: string;
     fecha_fin: string;
+    hora_inicio: string;
+    hora_fin: string;
     dias: Array<{
         fecha: string;     // ISO date string
         jornada: 'completa' | 'media';
@@ -126,7 +128,7 @@ export const getResumenMarcaciones = async (req: Request, res: Response) => {
             let rangoValido: DateRange;
             let hayFeriados = false;
             let hayExcepcionesCompletas = false;
-            let hayExcepcionesTickeo = false;
+            let hayExcepcionesRangoHoras = false;
             let rangoDeBaja: DateRange | any;
 
             if (rango.contains(moment(usuario.fechaAlta), {excludeStart: true})) {
@@ -149,59 +151,60 @@ export const getResumenMarcaciones = async (req: Request, res: Response) => {
             })
             if (feriados.length > 0)
                 hayFeriados = true
-            
-            let excepcionesTickeo: ExcepcionTickeo[] = await ExcepcionTickeo.findBy({
-                fecha: Between(rangoValido.start.toDate(), rangoValido.end.toDate()),
-                usuario: usuario,
-                tipo: TipoExcepcion.rango
-            })
-            if (excepcionesTickeo.length > 0)
-                hayExcepcionesTickeo = true
 
             let excepcionesCompletas: Excepcion[] = [];
             let excepcionesRangoHoras: Excepcion[] = [];
             const solicitudesAprobadas = await obtenerSolicitudesAprobadasPorCI(usuario.ci) ?? [];
-
+            //console.log(solicitudesAprobadas)
             for (const solicitud of solicitudesAprobadas) {
                 for (const diaObj of solicitud.dias) {
-                    // 1) convierte el ISO-string a Date
                     const fechaDia = new Date(diaObj.fecha);
-                    // 2) comprueba el rango
                     if (fechaDia < rangoValido.start.toDate() || fechaDia > rangoValido.end.toDate()) {
                         continue;
                     }
-                    // 3) clasifica
-                    if (diaObj.jornada === 'completa') {
+                    // 3) clasifico primero por tipo, luedo por jornada
+                    if(solicitud.tipo === "ET") {
                         let excepcion = new Excepcion();
-                        excepcion.fecha    = fechaDia;
-                        excepcion.jornada  = 'completa';
-                        excepcion.detalle  = solicitud.detalle;
+                        excepcion.fecha    = new Date(solicitud.fecha_inicio);
+                        excepcion.jornada  = 'rango';
+                        excepcion.detalle  = capitalizar(solicitud.detalle);
                         excepcion.licencia = solicitud.tipo;
-                        excepcionesCompletas.push(excepcion);
-
-                    } else { // media
-                        let excepcion = new Excepcion();
-                        excepcion.fecha    = fechaDia;
-                        excepcion.jornada  = 'media';
-                        excepcion.turno    = diaObj.turno!;
-                        if(diaObj.turno === "mañana") {
-                            excepcion.horaIni = "08:00"
-                            excepcion.horaFin = "12:00"
-                        } else {
-                            excepcion.horaIni = "14:00"
-                            excepcion.horaFin = "18:00"
-                        }
-                        excepcion.detalle  = solicitud.detalle;
-                        excepcion.licencia = solicitud.tipo;
+                        excepcion.horaIni = solicitud.hora_inicio;
+                        excepcion.horaFin = solicitud.hora_fin;
                         excepcionesRangoHoras.push(excepcion);
+                    } else {
+                        if (diaObj.jornada === 'completa') {
+                            let excepcion = new Excepcion();
+                            excepcion.fecha    = fechaDia;
+                            excepcion.jornada  = 'completa';
+                            excepcion.detalle  = capitalizar(solicitud.detalle);
+                            excepcion.licencia = solicitud.tipo;
+                            excepcionesCompletas.push(excepcion);
+
+                        } else { // media
+                            let excepcion = new Excepcion();
+                            excepcion.fecha    = fechaDia;
+                            excepcion.jornada  = 'media';
+                            excepcion.turno    = diaObj.turno!;
+                            if(diaObj.turno === "mañana") {
+                                excepcion.horaIni = "08:00"
+                                excepcion.horaFin = "12:00"
+                            } else {
+                                excepcion.horaIni = "14:00"
+                                excepcion.horaFin = "18:00"
+                            }
+                            excepcion.detalle  = capitalizar(solicitud.detalle);
+                            excepcion.licencia = solicitud.tipo;
+                            excepcionesRangoHoras.push(excepcion);
+                        }
                     }
                 }
             }
             if (excepcionesCompletas.length > 0)
                 hayExcepcionesCompletas = true
-            console.log(excepcionesCompletas)
-            console.log(excepcionesRangoHoras)
-
+            if (excepcionesRangoHoras.length > 0)
+                hayExcepcionesRangoHoras = true
+            //console.log(excepcionesRangoHoras)
             let totalCantRetrasos: number = 0
             let totalMinRetrasos: number = 0
             let totalSinMarcar: number = 0
@@ -221,31 +224,33 @@ export const getResumenMarcaciones = async (req: Request, res: Response) => {
                 dia = dia.charAt(0).toUpperCase() + dia.substring(1)
                 infoMarcacion.fecha = moment(fecha).toDate();
                 infoMarcacion.dia = dia
+
                 if (jornada) {
                     infoMarcacion.esInvierno = jornada.esInvierno
                     infoMarcacion.esLactancia = jornada.esLactancia
                     infoMarcacion.esJornadaDosDias = jornada.horario.jornadasDosDias
                     diasComputados++;
-
+                    //Si hay feriados, verificamos si la jornada actual es feriado
                     let feriado: Asueto | any;
-                    let excepcionCompleta: ExcepcionTickeo | any;
                     if (hayFeriados) {
                         feriado = getFeriado(jornada, feriados);
                         if (feriado)
                             jornada.estado = EstadoJornada.feriado;
                     }
+                    //Si hay excepciones de jornada, verificamos si la jornada actual es vacacion, permiso, baja medica. etc
+                    let excepcionCompleta: Excepcion | any;
                     if (hayExcepcionesCompletas) {
                         excepcionCompleta = getExcepcionCompleta(jornada, excepcionesCompletas)
                         if (excepcionCompleta) {
                             switch (excepcionCompleta.licencia) {
-                                case "Vacacion":
+                                case "VA":
                                     jornada.estado = EstadoJornada.vacacion
                                     break;
                                 case "PE":
                                     jornada.estado = EstadoJornada.permiso
                                     console.log("PE detectado")
                                     break;
-                                case "Baja Medica":
+                                case "BM":
                                     jornada.estado = EstadoJornada.baja_medica
                                     break;
                                 case "LI":
@@ -267,32 +272,62 @@ export const getResumenMarcaciones = async (req: Request, res: Response) => {
                             infoMarcacion.estado = EstadoJornada.feriado
                         } else {
                             infoMarcacion.horario =  {nombre: "", color: ""};
-                            infoMarcacion.horario.nombre = excepcionCompleta.licencia
                             infoMarcacion.mensaje = excepcionCompleta.detalle;
                             switch (jornada.estado) {
                                 case EstadoJornada.vacacion:
                                     infoMarcacion.horario.color =  "#6cfd98";
+                                    infoMarcacion.horario.nombre = "Vacacion"
                                     infoMarcacion.estado = EstadoJornada.vacacion
                                     break;
                                 case EstadoJornada.permiso:
                                     infoMarcacion.horario.color =  "#7fd5fa";
+                                    infoMarcacion.horario.nombre = "Permiso"
                                     infoMarcacion.estado = EstadoJornada.permiso
                                     break;
                                 case EstadoJornada.baja_medica:
                                     infoMarcacion.horario.color =  "#fc7b7d";
+                                    infoMarcacion.horario.nombre = "Baja Médica"
                                     infoMarcacion.estado = EstadoJornada.baja_medica
                                     break;
                                 case EstadoJornada.licencia:
                                     infoMarcacion.horario.color =  "#a7c454";
+                                    infoMarcacion.horario.nombre = "Licencia"
                                     infoMarcacion.estado = EstadoJornada.licencia
                                     break;
                                 case EstadoJornada.otro:
                                     infoMarcacion.horario.color =  "#939393";
+                                    infoMarcacion.horario.nombre = "Otros"
                                     infoMarcacion.estado = EstadoJornada.otro
                                     break;
                             }
                         }
                     } else {
+                        //Si hay excepciones de tickeo, verificamos si la jornada actual es excepcion de tickeo
+                        let hayPriEntExcepcion: boolean = false
+                        let hayPriSalExcepcion: boolean = false
+                        let haySegEntExcepcion: boolean = false
+                        let haySegSalExcepcion: boolean = false
+                        let excepcionTickeo: Excepcion | any;
+                        if(hayExcepcionesRangoHoras) {
+                            excepcionTickeo = getExcepcionTickeo(jornada, excepcionesRangoHoras)
+                            if (excepcionTickeo) {
+                                let rangoTickeo: DateRange;
+                                let [hora, minuto] = excepcionTickeo.horaIni.split(':').map(Number);
+                                let inicio = moment(excepcionTickeo.fecha).utc().set({ hour: hora, minute: minuto, second: 0, millisecond: 0 });
+                                let [horaFin, minutoFin] = excepcionTickeo.horaFin.split(':').map(Number);
+                                let fin = moment(excepcionTickeo.fecha).utc().set({ hour: horaFin, minute: minutoFin, second: 0, millisecond: 0 });
+                                rangoTickeo = momentExt.range(moment(inicio), moment(fin))
+                                //console.log(rangoTickeo)
+                                let priHoraEntrada = moment(jornada.fecha + " " + jornada.priTurno.horaEntrada).format('YYYY-MM-DD HH:mm')
+                                console.log(priHoraEntrada)
+                                if(rangoTickeo.contains(moment(priHoraEntrada))) {
+                                    console.log("voila "  + priHoraEntrada)
+                                    hayPriEntExcepcion = true
+                                }
+
+                            }
+                        }
+
                         infoMarcacion.horario = {nombre: jornada.horario.nombre, color: jornada.horario.color};
                         infoMarcacion.numTurnos = jornada.getNumTurnos();
                         let numTurnos = jornada.getNumTurnos();
@@ -330,25 +365,27 @@ export const getResumenMarcaciones = async (req: Request, res: Response) => {
                             let segEntradas: string[] = [];
                             let segSalidas: string[] = [];
 
-                            if (priEntradasM.length > 0) {
-                                priEntradasM.sort((a, b) => a.diff(b));
-                                priEntradasM.map(entrada => {
-                                    priEntradas.push(entrada.format("HH:mm"))
-                                })
-                                infoMarcacion.priEntradas = priEntradas
-                                let retraso = priEntradasM.at(0)?.diff(moment(jornada.fecha + " " + jornada.priTurno.horaEntrada), "minutes")
-                                if (retraso) {
-                                    if (retraso > jornada.horario.tolerancia) {
-                                        cantRetrasos++;
-                                        totalCantRetrasos++;
-                                        minRetrasos = minRetrasos + retraso
-                                        totalMinRetrasos = totalMinRetrasos + retraso;
-                                        hayPriRetraso = true
+                            if(!hayPriEntExcepcion) {
+                                if (priEntradasM.length > 0) {
+                                    priEntradasM.sort((a, b) => a.diff(b));
+                                    priEntradasM.map(entrada => {
+                                        priEntradas.push(entrada.format("HH:mm"))
+                                    })
+                                    infoMarcacion.priEntradas = priEntradas
+                                    let retraso = priEntradasM.at(0)?.diff(moment(jornada.fecha + " " + jornada.priTurno.horaEntrada), "minutes")
+                                    if (retraso) {
+                                        if (retraso > jornada.horario.tolerancia) {
+                                            cantRetrasos++;
+                                            totalCantRetrasos++;
+                                            minRetrasos = minRetrasos + retraso
+                                            totalMinRetrasos = totalMinRetrasos + retraso;
+                                            hayPriRetraso = true
+                                        }
                                     }
+                                } else {
+                                    sinMarcar++
+                                    totalSinMarcar++
                                 }
-                            } else {
-                                sinMarcar++
-                                totalSinMarcar++
                             }
 
                             if (priSalidasM.length > 0) {
@@ -548,6 +585,19 @@ function getExcepcionCompleta(jornada: Jornada, excepcionesCompletas: Excepcion[
     return res;
 }
 
+function getExcepcionTickeo(jornada: Jornada, excepcionesRangoHoras: Excepcion[]) {
+    let res: Excepcion | null = null;
+    for (let excepcionTickeo of excepcionesRangoHoras) {
+        const fechaExcepcion = moment(excepcionTickeo.fecha).utc().startOf('day').toDate();
+        const fechaJornada = moment(jornada.fecha).utc().startOf('day').toDate();
+        if (fechaExcepcion.getTime() === fechaJornada.getTime()) { // Comparación con timestamps
+            res = excepcionTickeo;
+            break;
+        }
+    }
+    return res;
+}
+
 function getSinRegistros(rangoSinRegistros: DateRange) {
     let infoMarcaciones: InfoMarcacion[] = [];
     for (let fecha of rangoSinRegistros.by("day")) {
@@ -648,5 +698,10 @@ export async function obtenerSolicitudesAprobadasPorCI(ci: number) {
             error.response?.data || error.message
         );
     }
+}
+
+function capitalizar(cadena: string): string {
+    if (!cadena) return "";
+    return cadena.charAt(0).toUpperCase() + cadena.slice(1).toLowerCase();
 }
 

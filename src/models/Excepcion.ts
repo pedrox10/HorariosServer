@@ -8,7 +8,6 @@ export class Excepcion {
     horaFin: string
     detalle: string
     licencia: string
-    usuario: Usuario
 
     constructor() {
     }
