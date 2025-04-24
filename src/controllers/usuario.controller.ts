@@ -487,6 +487,8 @@ export const getResumenMarcaciones = async (req: Request, res: Response) => {
                             infoMarcacion.minRetrasos = minRetrasos;
                             infoMarcacion.hayPriEntExcepcion = hayPriEntExcepcion;
                             infoMarcacion.hayPriSalExcepcion = hayPriSalExcepcion;
+                            infoMarcacion.haySegEntExcepcion = haySegEntExcepcion;
+                            infoMarcacion.haySegSalExcepcion = haySegSalExcepcion;
                             infoMarcacion.hayPriRetraso = hayPriRetraso;
                             infoMarcacion.haySegRetraso = haySegRetraso;
                         } else {
