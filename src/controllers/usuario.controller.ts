@@ -308,10 +308,12 @@ export const getResumenMarcaciones = async (req: Request, res: Response) => {
                         }
                     } else {
                         //Si hay excepciones de tickeo, verificamos si la jornada actual es excepcion de tickeo
-                        let hayPriEntExcepcion: boolean = false
-                        let hayPriSalExcepcion: boolean = false
-                        let haySegEntExcepcion: boolean = false
-                        let haySegSalExcepcion: boolean = false
+                        let hayPriEntExcepcion: any = {existe: false}
+                        let hayPriSalExcepcion: any = {existe: false}
+                        let haySegEntExcepcion: any = {existe: false}
+                        let haySegSalExcepcion: any = {existe: false}
+                        let numTurnos = jornada.getNumTurnos();
+
                         let excepcionTickeo: Excepcion | any;
                         if (hayExcepcionesRangoHoras) {
                             excepcionTickeo = getExcepcionTickeo(jornada, excepcionesRangoHoras)
@@ -332,18 +334,41 @@ export const getResumenMarcaciones = async (req: Request, res: Response) => {
                                     millisecond: 0
                                 });
                                 rangoTickeo = momentExt.range(moment(inicio), moment(fin))
-                                console.log(rangoTickeo)
                                 let priHoraEntrada = moment(jornada.fecha + " " + jornada.priTurno.horaEntrada).format("YYYY-MM-DDTHH:mm:ss[Z]")
-                                console.log(priHoraEntrada)
                                 if (rangoTickeo.contains(moment(priHoraEntrada))) {
-                                    hayPriEntExcepcion = true
+                                    hayPriEntExcepcion = {
+                                        existe: true, licencia: getLicencia(excepcionTickeo), jornada: capitalizar(excepcionTickeo.jornada),
+                                        horaIni: excepcionTickeo.horaIni, horaFin: excepcionTickeo.horaFin, detalle: excepcionTickeo.detalle
+                                    }
+                                }
+                                let priHoraSalida = moment(jornada.fecha + " " + jornada.priTurno.horaSalida).format("YYYY-MM-DDTHH:mm:ss[Z]")
+                                if (rangoTickeo.contains(moment(priHoraSalida))) {
+                                    hayPriSalExcepcion = {
+                                        existe: true, licencia: getLicencia(excepcionTickeo), jornada: capitalizar(excepcionTickeo.jornada),
+                                        horaIni: excepcionTickeo.horaIni, horaFin: excepcionTickeo.horaFin, detalle: excepcionTickeo.detalle
+                                    }
+                                }
+                                if(numTurnos == 2) {
+                                    let segHoraEntrada = moment(jornada.fecha + " " + jornada.segTurno.horaEntrada).format("YYYY-MM-DDTHH:mm:ss[Z]")
+                                    if (rangoTickeo.contains(moment(segHoraEntrada))) {
+                                        haySegEntExcepcion = {
+                                            existe: true, licencia: getLicencia(excepcionTickeo), jornada: capitalizar(excepcionTickeo.jornada),
+                                            horaIni: excepcionTickeo.horaIni, horaFin: excepcionTickeo.horaFin, detalle: excepcionTickeo.detalle
+                                        }
+                                    }
+                                    let segHoraSalida = moment(jornada.fecha + " " + jornada.segTurno.horaSalida).format("YYYY-MM-DDTHH:mm:ss[Z]")
+                                    if (rangoTickeo.contains(moment(segHoraSalida))) {
+                                        haySegSalExcepcion = {
+                                            existe: true, licencia: getLicencia(excepcionTickeo), jornada: capitalizar(excepcionTickeo.jornada),
+                                            horaIni: excepcionTickeo.horaIni, horaFin: excepcionTickeo.horaFin, detalle: excepcionTickeo.detalle
+                                        }
+                                    }
                                 }
                             }
                         }
-
                         infoMarcacion.horario = {nombre: jornada.horario.nombre, color: jornada.horario.color};
                         infoMarcacion.numTurnos = jornada.getNumTurnos();
-                        let numTurnos = jornada.getNumTurnos();
+
                         if (numTurnos == 2) {
                             let priEntradasM: Moment[] = [];
                             let priSalidasM: Moment[] = [];
@@ -378,7 +403,7 @@ export const getResumenMarcaciones = async (req: Request, res: Response) => {
                             let segEntradas: string[] = [];
                             let segSalidas: string[] = [];
 
-                            if (!hayPriEntExcepcion) {
+                            if (!hayPriEntExcepcion.existe) {
                                 if (priEntradasM.length > 0) {
                                     priEntradasM.sort((a, b) => a.diff(b));
                                     priEntradasM.map(entrada => {
@@ -401,47 +426,53 @@ export const getResumenMarcaciones = async (req: Request, res: Response) => {
                                 }
                             }
 
-                            if (priSalidasM.length > 0) {
-                                priSalidasM.sort((a, b) => a.diff(b));
-                                priSalidasM.map(salida => {
-                                    priSalidas.push(salida.format("HH:mm"))
-                                })
-                                infoMarcacion.priSalidas = priSalidas
-                            } else {
-                                sinMarcar++
-                                totalSinMarcar++
-                            }
-
-                            if (segEntradasM.length > 0) {
-                                segEntradasM.sort((a, b) => a.diff(b));
-                                segEntradasM.map(entrada => {
-                                    segEntradas.push(entrada.format("HH:mm"))
-                                })
-                                infoMarcacion.segEntradas = segEntradas
-                                let retraso = segEntradasM.at(0)?.diff(moment(jornada.fecha + " " + jornada.segTurno.horaEntrada), "minutes")
-                                if (retraso) {
-                                    if (retraso > jornada.horario.tolerancia) {
-                                        cantRetrasos++;
-                                        totalCantRetrasos++
-                                        minRetrasos = minRetrasos + retraso
-                                        totalMinRetrasos = totalMinRetrasos + retraso
-                                        haySegRetraso = true
-                                    }
+                            if (!hayPriSalExcepcion.existe) {
+                                if (priSalidasM.length > 0) {
+                                    priSalidasM.sort((a, b) => a.diff(b));
+                                    priSalidasM.map(salida => {
+                                        priSalidas.push(salida.format("HH:mm"))
+                                    })
+                                    infoMarcacion.priSalidas = priSalidas
+                                } else {
+                                    sinMarcar++
+                                    totalSinMarcar++
                                 }
-                            } else {
-                                sinMarcar++
-                                totalSinMarcar++
                             }
 
-                            if (segSalidasM.length > 0) {
-                                segSalidasM.sort((a, b) => a.diff(b));
-                                segSalidasM.map(salida => {
-                                    segSalidas.push(salida.format("HH:mm"))
-                                })
-                                infoMarcacion.segSalidas = segSalidas
-                            } else {
-                                sinMarcar++
-                                totalSinMarcar++
+                            if (!haySegEntExcepcion.existe) {
+                                if (segEntradasM.length > 0) {
+                                    segEntradasM.sort((a, b) => a.diff(b));
+                                    segEntradasM.map(entrada => {
+                                        segEntradas.push(entrada.format("HH:mm"))
+                                    })
+                                    infoMarcacion.segEntradas = segEntradas
+                                    let retraso = segEntradasM.at(0)?.diff(moment(jornada.fecha + " " + jornada.segTurno.horaEntrada), "minutes")
+                                    if (retraso) {
+                                        if (retraso > jornada.horario.tolerancia) {
+                                            cantRetrasos++;
+                                            totalCantRetrasos++
+                                            minRetrasos = minRetrasos + retraso
+                                            totalMinRetrasos = totalMinRetrasos + retraso
+                                            haySegRetraso = true
+                                        }
+                                    }
+                                } else {
+                                    sinMarcar++
+                                    totalSinMarcar++
+                                }
+                            }
+
+                            if (!haySegSalExcepcion.existe) {
+                                if (segSalidasM.length > 0) {
+                                    segSalidasM.sort((a, b) => a.diff(b));
+                                    segSalidasM.map(salida => {
+                                        segSalidas.push(salida.format("HH:mm"))
+                                    })
+                                    infoMarcacion.segSalidas = segSalidas
+                                } else {
+                                    sinMarcar++
+                                    totalSinMarcar++
+                                }
                             }
                             infoMarcacion.activo = true;
                             if (sinMarcar == numTurnos * 2) {
@@ -455,6 +486,7 @@ export const getResumenMarcaciones = async (req: Request, res: Response) => {
                             infoMarcacion.cantRetrasos = cantRetrasos;
                             infoMarcacion.minRetrasos = minRetrasos;
                             infoMarcacion.hayPriEntExcepcion = hayPriEntExcepcion;
+                            infoMarcacion.hayPriSalExcepcion = hayPriSalExcepcion;
                             infoMarcacion.hayPriRetraso = hayPriRetraso;
                             infoMarcacion.haySegRetraso = haySegRetraso;
                         } else {
@@ -480,6 +512,7 @@ export const getResumenMarcaciones = async (req: Request, res: Response) => {
 
                                 let priEntradas: string[] = [];
                                 let priSalidas: string[] = [];
+
                                 if (priEntradasM.length > 0) {
                                     priEntradasM.sort((a, b) => a.diff(b));
                                     priEntradasM.map(entrada => {
@@ -501,15 +534,17 @@ export const getResumenMarcaciones = async (req: Request, res: Response) => {
                                     totalSinMarcar++
                                 }
 
-                                if (priSalidasM.length > 0) {
-                                    priSalidasM.sort((a, b) => a.diff(b));
-                                    priSalidasM.map(salida => {
-                                        priSalidas.push(salida.format("HH:mm"))
-                                    })
-                                    infoMarcacion.priSalidas = priSalidas
-                                } else {
-                                    sinMarcar++
-                                    totalSinMarcar++
+                                if (!hayPriSalExcepcion.existe) {
+                                    if (priSalidasM.length > 0) {
+                                        priSalidasM.sort((a, b) => a.diff(b));
+                                        priSalidasM.map(salida => {
+                                            priSalidas.push(salida.format("HH:mm"))
+                                        })
+                                        infoMarcacion.priSalidas = priSalidas
+                                    } else {
+                                        sinMarcar++
+                                        totalSinMarcar++
+                                    }
                                 }
                                 infoMarcacion.activo = true;
                                 if (sinMarcar == numTurnos * 2) {
@@ -522,6 +557,8 @@ export const getResumenMarcaciones = async (req: Request, res: Response) => {
                                 }
                                 infoMarcacion.cantRetrasos = cantRetrasos;
                                 infoMarcacion.minRetrasos = minRetrasos;
+                                infoMarcacion.hayPriEntExcepcion = hayPriEntExcepcion;
+                                infoMarcacion.hayPriSalExcepcion = hayPriSalExcepcion;
                                 infoMarcacion.hayPriRetraso = hayPriRetraso;
                             } else {
                                 if (jornada.estado === EstadoJornada.teletrabajo) {
@@ -717,5 +754,20 @@ export async function obtenerSolicitudesAprobadasPorCI(ci: number) {
 function capitalizar(cadena: string): string {
     if (!cadena) return "";
     return cadena.charAt(0).toUpperCase() + cadena.slice(1).toLowerCase();
+}
+
+function getLicencia(excepcion: Excepcion): string {
+    let res: string;
+    switch (excepcion.licencia) {
+        case "ET":
+            res = "Excepción de Tickeo"
+            break;
+        case "PE":
+            res = "Permiso"
+            break;
+        default:
+            res = "Otros"
+    }
+    return res;
 }
 

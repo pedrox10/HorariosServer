@@ -9,6 +9,7 @@ import moment from 'moment';
 import {Turno} from "../entity/Turno";
 import {Jornada} from "../entity/Jornada";
 import {Between, EntityManager, QueryRunner} from "typeorm";
+import {Sincronizacion} from "../entity/Sincronizacion";
 
 const envPython = path.join(__dirname, "../scriptpy/envpy", "bin", "python3");
 const spawn = require('await-spawn');
@@ -79,6 +80,17 @@ export const getUsuarios = async (req: Request, res: Response) => {
         }
         res.send(usuarios)
     }
+}
+
+export const getSincronizaciones = async (req: Request, res: Response) => {
+    const {id} = req.params;
+    const terminal = await Terminal.findOne({
+        where: {id: parseInt(id)}, relations: {
+            sincronizaciones: true,
+        }
+    });
+    let sincronizaciones = terminal?.sincronizaciones;
+    res.send(sincronizaciones)
 }
 
 export const getTerminal = async (req: Request, res: Response) => {
@@ -266,16 +278,17 @@ export const sincronizarTerminal = async (req: Request, res: Response) => {
                 }
             }
         }
-        console.log({
-            mensaje: "¡Sincronización exitosa!",
-            nuevas_marcaciones: marcacionesNuevas.length,
-            usuarios_agregados: usuariosNuevos.length,
-            usuarios_editados: usuariosEditados.length,
-            usuarios_eliminados: usuariosEliminados.length,
-            numero_serie: numeroSerie,
-            hora_terminal: horaTerminal,
-            total_marcaciones: totalMarcaciones
-        });
+        let sincronizacion:Sincronizacion  = new Sincronizacion()
+        sincronizacion.fecha = horaTerminal;
+        sincronizacion.horaServidor = moment().toDate();
+        sincronizacion.nuevasMarcaciones = marcacionesNuevas.length
+        sincronizacion.totalMarcaciones = totalMarcaciones
+        sincronizacion.usuariosAgregados = usuariosNuevos.length
+        sincronizacion.usuariosEditados = usuariosEditados.length
+        sincronizacion.usuariosEliminados = usuariosEliminados.length
+        sincronizacion.terminal = terminal
+        await sincronizacion.save()
+        console.log(sincronizacion)
         return res.status(200).json({
             mensaje: "Sincronización exitosa",
             nuevas_marcaciones: marcacionesNuevas.length,

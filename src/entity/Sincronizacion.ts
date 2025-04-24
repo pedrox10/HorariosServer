@@ -12,6 +12,8 @@ export class Sincronizacion extends BaseEntity {
     @Column()
     nuevasMarcaciones: number
     @Column()
+    totalMarcaciones: number
+    @Column()
     usuariosAgregados: number
     @Column()
     usuariosEditados: number
