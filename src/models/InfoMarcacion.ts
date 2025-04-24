@@ -11,6 +11,7 @@ export class InfoMarcacion{
   cantRetrasos: number
   minRetrasos: number
   noMarcados: number
+  hayPriEntExcepcion: boolean
   hayPriRetraso: boolean
   haySegRetraso: boolean
   activo:boolean

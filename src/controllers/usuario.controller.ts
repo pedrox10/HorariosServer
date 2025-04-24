@@ -138,8 +138,8 @@ export const getResumenMarcaciones = async (req: Request, res: Response) => {
             } else {
                 rangoValido = momentExt.range(moment(fechaIni).toDate(), moment(fechaFin).toDate())
             }
-            if(usuario.fechaBaja) {
-                if(rangoValido.contains(moment(usuario.fechaBaja), {excludeEnd: true})) {
+            if (usuario.fechaBaja) {
+                if (rangoValido.contains(moment(usuario.fechaBaja), {excludeEnd: true})) {
                     rangoDeBaja = momentExt.range(moment(usuario.fechaBaja).add(1, "day").toDate(), moment(fechaFin).toDate())
                     rangoValido = momentExt.range(rangoValido.start.toDate(), moment(usuario.fechaBaja).toDate())
                 }
@@ -157,54 +157,59 @@ export const getResumenMarcaciones = async (req: Request, res: Response) => {
             const solicitudesAprobadas = await obtenerSolicitudesAprobadasPorCI(usuario.ci) ?? [];
             //console.log(solicitudesAprobadas)
             for (const solicitud of solicitudesAprobadas) {
-                for (const diaObj of solicitud.dias) {
-                    const fechaDia = new Date(diaObj.fecha);
-                    if (fechaDia < rangoValido.start.toDate() || fechaDia > rangoValido.end.toDate()) {
-                        continue;
-                    }
-                    // 3) clasifico primero por tipo, luedo por jornada
-                    if(solicitud.tipo === "ET") {
+                if (solicitud.tipo === "ET") {
+                    let fechaInicio = new Date(solicitud.fecha_inicio);
+                    if (fechaInicio >= rangoValido.start.toDate() && fechaInicio <= rangoValido.end.toDate()) {
                         let excepcion = new Excepcion();
-                        excepcion.fecha    = new Date(solicitud.fecha_inicio);
-                        excepcion.jornada  = 'rango';
-                        excepcion.detalle  = capitalizar(solicitud.detalle);
+                        excepcion.fecha = fechaInicio;
+                        excepcion.jornada = 'rango';
+                        excepcion.detalle = capitalizar(solicitud.detalle);
                         excepcion.licencia = solicitud.tipo;
                         excepcion.horaIni = solicitud.hora_inicio;
                         excepcion.horaFin = solicitud.hora_fin;
                         excepcionesRangoHoras.push(excepcion);
-                    } else {
+                    }
+                } else {
+                    for (const diaObj of solicitud.dias) {
+                        const fechaDia = new Date(diaObj.fecha);
+                        //console.log(fechaDia)
+                        if (fechaDia < rangoValido.start.toDate() || fechaDia > rangoValido.end.toDate()) {
+                            continue;
+                        }
                         if (diaObj.jornada === 'completa') {
                             let excepcion = new Excepcion();
-                            excepcion.fecha    = fechaDia;
-                            excepcion.jornada  = 'completa';
-                            excepcion.detalle  = capitalizar(solicitud.detalle);
+                            excepcion.fecha = fechaDia;
+                            excepcion.jornada = 'completa';
+                            excepcion.detalle = capitalizar(solicitud.detalle);
                             excepcion.licencia = solicitud.tipo;
                             excepcionesCompletas.push(excepcion);
 
                         } else { // media
                             let excepcion = new Excepcion();
-                            excepcion.fecha    = fechaDia;
-                            excepcion.jornada  = 'media';
-                            excepcion.turno    = diaObj.turno!;
-                            if(diaObj.turno === "mañana") {
+                            excepcion.fecha = fechaDia;
+                            excepcion.jornada = 'media';
+                            excepcion.turno = diaObj.turno!;
+                            if (diaObj.turno === "mañana") {
                                 excepcion.horaIni = "08:00"
                                 excepcion.horaFin = "12:00"
                             } else {
                                 excepcion.horaIni = "14:00"
                                 excepcion.horaFin = "18:00"
                             }
-                            excepcion.detalle  = capitalizar(solicitud.detalle);
+                            excepcion.detalle = capitalizar(solicitud.detalle);
                             excepcion.licencia = solicitud.tipo;
                             excepcionesRangoHoras.push(excepcion);
                         }
                     }
                 }
             }
+            console.log(excepcionesCompletas)
+            console.log(excepcionesRangoHoras)
             if (excepcionesCompletas.length > 0)
                 hayExcepcionesCompletas = true
             if (excepcionesRangoHoras.length > 0)
                 hayExcepcionesRangoHoras = true
-            //console.log(excepcionesRangoHoras)
+            console.log(excepcionesRangoHoras)
             let totalCantRetrasos: number = 0
             let totalMinRetrasos: number = 0
             let totalSinMarcar: number = 0
@@ -267,35 +272,35 @@ export const getResumenMarcaciones = async (req: Request, res: Response) => {
                     if (jornada.estado != EstadoJornada.dia_libre && jornada.estado != EstadoJornada.activa && jornada.estado != EstadoJornada.teletrabajo) {
                         infoMarcacion.activo = false
                         if (jornada.estado == EstadoJornada.feriado) {
-                            infoMarcacion.horario =  {nombre: "Feriado", color: "#9da3fd"};
+                            infoMarcacion.horario = {nombre: "Feriado", color: "#9da3fd"};
                             infoMarcacion.mensaje = feriado.nombre;
                             infoMarcacion.estado = EstadoJornada.feriado
                         } else {
-                            infoMarcacion.horario =  {nombre: "", color: ""};
+                            infoMarcacion.horario = {nombre: "", color: ""};
                             infoMarcacion.mensaje = excepcionCompleta.detalle;
                             switch (jornada.estado) {
                                 case EstadoJornada.vacacion:
-                                    infoMarcacion.horario.color =  "#6cfd98";
+                                    infoMarcacion.horario.color = "#6cfd98";
                                     infoMarcacion.horario.nombre = "Vacacion"
                                     infoMarcacion.estado = EstadoJornada.vacacion
                                     break;
                                 case EstadoJornada.permiso:
-                                    infoMarcacion.horario.color =  "#7fd5fa";
+                                    infoMarcacion.horario.color = "#7fd5fa";
                                     infoMarcacion.horario.nombre = "Permiso"
                                     infoMarcacion.estado = EstadoJornada.permiso
                                     break;
                                 case EstadoJornada.baja_medica:
-                                    infoMarcacion.horario.color =  "#fc7b7d";
+                                    infoMarcacion.horario.color = "#fc7b7d";
                                     infoMarcacion.horario.nombre = "Baja Médica"
                                     infoMarcacion.estado = EstadoJornada.baja_medica
                                     break;
                                 case EstadoJornada.licencia:
-                                    infoMarcacion.horario.color =  "#a7c454";
+                                    infoMarcacion.horario.color = "#a7c454";
                                     infoMarcacion.horario.nombre = "Licencia"
                                     infoMarcacion.estado = EstadoJornada.licencia
                                     break;
                                 case EstadoJornada.otro:
-                                    infoMarcacion.horario.color =  "#939393";
+                                    infoMarcacion.horario.color = "#939393";
                                     infoMarcacion.horario.nombre = "Otros"
                                     infoMarcacion.estado = EstadoJornada.otro
                                     break;
@@ -308,23 +313,31 @@ export const getResumenMarcaciones = async (req: Request, res: Response) => {
                         let haySegEntExcepcion: boolean = false
                         let haySegSalExcepcion: boolean = false
                         let excepcionTickeo: Excepcion | any;
-                        if(hayExcepcionesRangoHoras) {
+                        if (hayExcepcionesRangoHoras) {
                             excepcionTickeo = getExcepcionTickeo(jornada, excepcionesRangoHoras)
                             if (excepcionTickeo) {
                                 let rangoTickeo: DateRange;
                                 let [hora, minuto] = excepcionTickeo.horaIni.split(':').map(Number);
-                                let inicio = moment(excepcionTickeo.fecha).utc().set({ hour: hora, minute: minuto, second: 0, millisecond: 0 });
+                                let inicio = moment(excepcionTickeo.fecha).utc().set({
+                                    hour: hora,
+                                    minute: minuto,
+                                    second: 0,
+                                    millisecond: 0
+                                });
                                 let [horaFin, minutoFin] = excepcionTickeo.horaFin.split(':').map(Number);
-                                let fin = moment(excepcionTickeo.fecha).utc().set({ hour: horaFin, minute: minutoFin, second: 0, millisecond: 0 });
+                                let fin = moment(excepcionTickeo.fecha).utc().set({
+                                    hour: horaFin,
+                                    minute: minutoFin,
+                                    second: 0,
+                                    millisecond: 0
+                                });
                                 rangoTickeo = momentExt.range(moment(inicio), moment(fin))
-                                //console.log(rangoTickeo)
-                                let priHoraEntrada = moment(jornada.fecha + " " + jornada.priTurno.horaEntrada).format('YYYY-MM-DD HH:mm')
+                                console.log(rangoTickeo)
+                                let priHoraEntrada = moment(jornada.fecha + " " + jornada.priTurno.horaEntrada).format("YYYY-MM-DDTHH:mm:ss[Z]")
                                 console.log(priHoraEntrada)
-                                if(rangoTickeo.contains(moment(priHoraEntrada))) {
-                                    console.log("voila "  + priHoraEntrada)
+                                if (rangoTickeo.contains(moment(priHoraEntrada))) {
                                     hayPriEntExcepcion = true
                                 }
-
                             }
                         }
 
@@ -365,7 +378,7 @@ export const getResumenMarcaciones = async (req: Request, res: Response) => {
                             let segEntradas: string[] = [];
                             let segSalidas: string[] = [];
 
-                            if(!hayPriEntExcepcion) {
+                            if (!hayPriEntExcepcion) {
                                 if (priEntradasM.length > 0) {
                                     priEntradasM.sort((a, b) => a.diff(b));
                                     priEntradasM.map(entrada => {
@@ -441,6 +454,7 @@ export const getResumenMarcaciones = async (req: Request, res: Response) => {
                             }
                             infoMarcacion.cantRetrasos = cantRetrasos;
                             infoMarcacion.minRetrasos = minRetrasos;
+                            infoMarcacion.hayPriEntExcepcion = hayPriEntExcepcion;
                             infoMarcacion.hayPriRetraso = hayPriRetraso;
                             infoMarcacion.haySegRetraso = haySegRetraso;
                         } else {
@@ -510,7 +524,7 @@ export const getResumenMarcaciones = async (req: Request, res: Response) => {
                                 infoMarcacion.minRetrasos = minRetrasos;
                                 infoMarcacion.hayPriRetraso = hayPriRetraso;
                             } else {
-                                if(jornada.estado === EstadoJornada.teletrabajo) {
+                                if (jornada.estado === EstadoJornada.teletrabajo) {
                                     infoMarcacion.estado = EstadoJornada.teletrabajo
                                     infoMarcacion.mensaje = "Trabajo a distancia (desde casa)"
                                 } else {
@@ -527,8 +541,8 @@ export const getResumenMarcaciones = async (req: Request, res: Response) => {
                 }
                 infoMarcaciones.push(infoMarcacion)
             }
-            if(rangoDeBaja) {
-                infoMarcaciones.push(... getAvisosDeBaja(rangoDeBaja))
+            if (rangoDeBaja) {
+                infoMarcaciones.push(...getAvisosDeBaja(rangoDeBaja))
             }
             resumenMarcacion.totalCantRetrasos = totalCantRetrasos
             resumenMarcacion.totalMinRetrasos = totalMinRetrasos
@@ -662,7 +676,7 @@ export async function obtenerSolicitudesAprobadasPorCI(ci: number) {
 
     try {
         // 1. Buscar funcionario por CI
-        const { data: funcionarios } = await axios.get(
+        const {data: funcionarios} = await axios.get(
             `${BASE_URL}/funcionario/filtro/ci/${ci}`,
             HEADERS
         );
@@ -674,7 +688,7 @@ export async function obtenerSolicitudesAprobadasPorCI(ci: number) {
         }
 
         // 2. Buscar registros del funcionario
-        const { data: registros } = await axios.get(
+        const {data: registros} = await axios.get(
             `${BASE_URL}/registro/filtro/id_funcionario/${funcionario._id}`,
             HEADERS
         );
@@ -685,7 +699,7 @@ export async function obtenerSolicitudesAprobadasPorCI(ci: number) {
             return;
         }
 
-        const { data: solicitudes } = await axios.get<SolicitudAprobada[]>(
+        const {data: solicitudes} = await axios.get<SolicitudAprobada[]>(
             `${BASE_URL}/solicitud/filtro/id_registro/${registroActivo._id}`,
             HEADERS
         );
