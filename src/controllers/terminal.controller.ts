@@ -297,6 +297,7 @@ export const sincronizarTerminal = async (req: Request, res: Response) => {
             usuarios_eliminados: usuariosEliminados.length,
             numero_serie: numeroSerie,
             hora_terminal: horaTerminal,
+            hora_servidor: moment().utc().toDate(),
             total_marcaciones: totalMarcaciones,
             usuarios: usuarios || []
         });
