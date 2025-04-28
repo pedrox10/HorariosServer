@@ -9,6 +9,7 @@ export class ResumenMarcacion{
     totalAusencias: number;
     diasComputados: number;
     infoMarcaciones: InfoMarcacion[];
+    mensajeError?: string | any
 
     constructor() {
     }

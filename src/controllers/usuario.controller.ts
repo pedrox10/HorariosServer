@@ -154,57 +154,62 @@ export const getResumenMarcaciones = async (req: Request, res: Response) => {
 
             let excepcionesCompletas: Excepcion[] = [];
             let excepcionesRangoHoras: Excepcion[] = [];
-            const solicitudesAprobadas = await obtenerSolicitudesAprobadasPorCI(usuario.ci) ?? [];
-            //console.log(solicitudesAprobadas)
-            for (const solicitud of solicitudesAprobadas) {
-                if (solicitud.tipo === "ET") {
-                    let fechaInicio = new Date(solicitud.fecha_inicio);
-                    if (fechaInicio >= rangoValido.start.toDate() && fechaInicio <= rangoValido.end.toDate()) {
-                        let excepcion = new Excepcion();
-                        excepcion.fecha = fechaInicio;
-                        excepcion.jornada = 'rango';
-                        excepcion.detalle = capitalizar(solicitud.detalle);
-                        excepcion.licencia = solicitud.tipo;
-                        excepcion.horaIni = solicitud.hora_inicio;
-                        excepcion.horaFin = solicitud.hora_fin;
-                        excepcionesRangoHoras.push(excepcion);
-                    }
-                } else {
-                    for (const diaObj of solicitud.dias) {
-                        const fechaDia = new Date(diaObj.fecha);
-                        //console.log(fechaDia)
-                        if (fechaDia < rangoValido.start.toDate() || fechaDia > rangoValido.end.toDate()) {
-                            continue;
-                        }
-                        if (diaObj.jornada === 'completa') {
+            const respuesta = await obtenerSolicitudesAprobadasPorCI(usuario.ci);
+            if(respuesta.success) {
+                const solicitudesAprobadas = respuesta.solicitudes ?? [];
+                for (const solicitud of solicitudesAprobadas) {
+                    if (solicitud.tipo === "ET") {
+                        let fechaInicio = new Date(solicitud.fecha_inicio);
+                        if (fechaInicio >= rangoValido.start.toDate() && fechaInicio <= rangoValido.end.toDate()) {
                             let excepcion = new Excepcion();
-                            excepcion.fecha = fechaDia;
-                            excepcion.jornada = 'completa';
+                            excepcion.fecha = fechaInicio;
+                            excepcion.jornada = 'rango';
                             excepcion.detalle = capitalizar(solicitud.detalle);
                             excepcion.licencia = solicitud.tipo;
-                            excepcionesCompletas.push(excepcion);
-
-                        } else { // media
-                            let excepcion = new Excepcion();
-                            excepcion.fecha = fechaDia;
-                            excepcion.jornada = 'media';
-                            excepcion.turno = diaObj.turno!;
-                            if (diaObj.turno === "mañana") {
-                                excepcion.horaIni = "08:00"
-                                excepcion.horaFin = "12:00"
-                            } else {
-                                excepcion.horaIni = "14:00"
-                                excepcion.horaFin = "18:00"
-                            }
-                            excepcion.detalle = capitalizar(solicitud.detalle);
-                            excepcion.licencia = solicitud.tipo;
+                            excepcion.horaIni = solicitud.hora_inicio;
+                            excepcion.horaFin = solicitud.hora_fin;
                             excepcionesRangoHoras.push(excepcion);
+                        }
+                    } else {
+                        for (const diaObj of solicitud.dias) {
+                            const fechaDia = new Date(diaObj.fecha);
+                            //console.log(fechaDia)
+                            if (fechaDia < rangoValido.start.toDate() || fechaDia > rangoValido.end.toDate()) {
+                                continue;
+                            }
+                            if (diaObj.jornada === 'completa') {
+                                let excepcion = new Excepcion();
+                                excepcion.fecha = fechaDia;
+                                excepcion.jornada = 'completa';
+                                excepcion.detalle = capitalizar(solicitud.detalle);
+                                excepcion.licencia = solicitud.tipo;
+                                excepcionesCompletas.push(excepcion);
+
+                            } else { // media
+                                let excepcion = new Excepcion();
+                                excepcion.fecha = fechaDia;
+                                excepcion.jornada = 'media';
+                                excepcion.turno = diaObj.turno!;
+                                if (diaObj.turno === "mañana") {
+                                    excepcion.horaIni = "08:00"
+                                    excepcion.horaFin = "12:00"
+                                } else {
+                                    excepcion.horaIni = "14:00"
+                                    excepcion.horaFin = "18:00"
+                                }
+                                excepcion.detalle = capitalizar(solicitud.detalle);
+                                excepcion.licencia = solicitud.tipo;
+                                excepcionesRangoHoras.push(excepcion);
+                            }
                         }
                     }
                 }
+                console.log(excepcionesCompletas)
+                console.log(excepcionesRangoHoras)
+            } else {
+                resumenMarcacion.mensajeError = respuesta.error;
             }
-            console.log(excepcionesCompletas)
-            console.log(excepcionesRangoHoras)
+
             if (excepcionesCompletas.length > 0)
                 hayExcepcionesCompletas = true
             if (excepcionesRangoHoras.length > 0)
@@ -723,7 +728,7 @@ export async function obtenerSolicitudesAprobadasPorCI(ci: number) {
         const funcionario = funcionarios?.[0];
         if (!funcionario || !funcionario.estado) {
             console.log("Funcionario no encontrado o inactivo");
-            return;
+            return {success: false, error: "CI no encontrado o dado de baja"}
         }
 
         // 2. Buscar registros del funcionario
@@ -735,21 +740,22 @@ export async function obtenerSolicitudesAprobadasPorCI(ci: number) {
         const registroActivo = registros.find((r: { estado: boolean }) => r.estado === true);
         if (!registroActivo) {
             console.log("No se encontró un registro activo");
-            return;
+            return {success: false, error: "Registro de usuario marca como inactivo"}
         }
 
         const {data: solicitudes} = await axios.get<SolicitudAprobada[]>(
             `${BASE_URL}/solicitud/filtro/id_registro/${registroActivo._id}`,
             HEADERS
         );
-
         // 3) Filtra por estado y devuelve todas las propiedades:
-        return solicitudes.filter(s => s.estado === 'APROBADO');
+        let solicitudesAprobadas = solicitudes.filter(s => s.estado === 'APROBADO');
+        return {success: true, solicitudes: solicitudesAprobadas}
     } catch (error: any) {
         console.error(
             "Error al obtener solicitudes aprobadas:",
             error.response?.data || error.message
         );
+        return {success: false, error: "Servidor remoto no responde"}
     }
 }
 
