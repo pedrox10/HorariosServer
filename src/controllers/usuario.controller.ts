@@ -317,10 +317,10 @@ export const getResumenMarcaciones = async (req: Request, res: Response) => {
                             }
                         } else {
                             //Si hay excepciones de tickeo, verificamos si la jornada actual es excepcion de tickeo
-                            let hayPriEntExcepcion: any = {existe: false}
-                            let hayPriSalExcepcion: any = {existe: false}
-                            let haySegEntExcepcion: any = {existe: false}
-                            let haySegSalExcepcion: any = {existe: false}
+                            let priEntExcepcion: any = {existe: false}
+                            let priSalExcepcion: any = {existe: false}
+                            let segEntExcepcion: any = {existe: false}
+                            let segSalExcepcion: any = {existe: false}
                             let numTurnos = jornada.getNumTurnos();
 
                             let excepcionTickeo: Excepcion | any;
@@ -345,14 +345,14 @@ export const getResumenMarcaciones = async (req: Request, res: Response) => {
                                     rangoTickeo = momentExt.range(moment(inicio), moment(fin))
                                     let priHoraEntrada = moment(jornada.fecha + " " + jornada.priTurno.horaEntrada).format("YYYY-MM-DDTHH:mm:ss[Z]")
                                     if (rangoTickeo.contains(moment(priHoraEntrada))) {
-                                        hayPriEntExcepcion = {
+                                        priEntExcepcion = {
                                             existe: true, licencia: getLicencia(excepcionTickeo), jornada: capitalizar(excepcionTickeo.jornada),
                                             horaIni: excepcionTickeo.horaIni, horaFin: excepcionTickeo.horaFin, detalle: excepcionTickeo.detalle
                                         }
                                     }
                                     let priHoraSalida = moment(jornada.fecha + " " + jornada.priTurno.horaSalida).format("YYYY-MM-DDTHH:mm:ss[Z]")
                                     if (rangoTickeo.contains(moment(priHoraSalida))) {
-                                        hayPriSalExcepcion = {
+                                        priSalExcepcion = {
                                             existe: true, licencia: getLicencia(excepcionTickeo), jornada: capitalizar(excepcionTickeo.jornada),
                                             horaIni: excepcionTickeo.horaIni, horaFin: excepcionTickeo.horaFin, detalle: excepcionTickeo.detalle
                                         }
@@ -360,14 +360,14 @@ export const getResumenMarcaciones = async (req: Request, res: Response) => {
                                     if(numTurnos == 2) {
                                         let segHoraEntrada = moment(jornada.fecha + " " + jornada.segTurno.horaEntrada).format("YYYY-MM-DDTHH:mm:ss[Z]")
                                         if (rangoTickeo.contains(moment(segHoraEntrada))) {
-                                            haySegEntExcepcion = {
+                                            segEntExcepcion = {
                                                 existe: true, licencia: getLicencia(excepcionTickeo), jornada: capitalizar(excepcionTickeo.jornada),
                                                 horaIni: excepcionTickeo.horaIni, horaFin: excepcionTickeo.horaFin, detalle: excepcionTickeo.detalle
                                             }
                                         }
                                         let segHoraSalida = moment(jornada.fecha + " " + jornada.segTurno.horaSalida).format("YYYY-MM-DDTHH:mm:ss[Z]")
                                         if (rangoTickeo.contains(moment(segHoraSalida))) {
-                                            haySegSalExcepcion = {
+                                            segSalExcepcion = {
                                                 existe: true, licencia: getLicencia(excepcionTickeo), jornada: capitalizar(excepcionTickeo.jornada),
                                                 horaIni: excepcionTickeo.horaIni, horaFin: excepcionTickeo.horaFin, detalle: excepcionTickeo.detalle
                                             }
@@ -412,7 +412,7 @@ export const getResumenMarcaciones = async (req: Request, res: Response) => {
                                 let segEntradas: string[] = [];
                                 let segSalidas: string[] = [];
 
-                                if (!hayPriEntExcepcion.existe) {
+                                if (!priEntExcepcion.existe) {
                                     if (priEntradasM.length > 0) {
                                         priEntradasM.sort((a, b) => a.diff(b));
                                         priEntradasM.map(entrada => {
@@ -435,7 +435,7 @@ export const getResumenMarcaciones = async (req: Request, res: Response) => {
                                     }
                                 }
 
-                                if (!hayPriSalExcepcion.existe) {
+                                if (!priSalExcepcion.existe) {
                                     if (priSalidasM.length > 0) {
                                         priSalidasM.sort((a, b) => a.diff(b));
                                         priSalidasM.map(salida => {
@@ -448,7 +448,7 @@ export const getResumenMarcaciones = async (req: Request, res: Response) => {
                                     }
                                 }
 
-                                if (!haySegEntExcepcion.existe) {
+                                if (!segEntExcepcion.existe) {
                                     if (segEntradasM.length > 0) {
                                         segEntradasM.sort((a, b) => a.diff(b));
                                         segEntradasM.map(entrada => {
@@ -471,7 +471,7 @@ export const getResumenMarcaciones = async (req: Request, res: Response) => {
                                     }
                                 }
 
-                                if (!haySegSalExcepcion.existe) {
+                                if (!segSalExcepcion.existe) {
                                     if (segSalidasM.length > 0) {
                                         segSalidasM.sort((a, b) => a.diff(b));
                                         segSalidasM.map(salida => {
@@ -494,10 +494,10 @@ export const getResumenMarcaciones = async (req: Request, res: Response) => {
                                 }
                                 infoMarcacion.cantRetrasos = cantRetrasos;
                                 infoMarcacion.minRetrasos = minRetrasos;
-                                infoMarcacion.hayPriEntExcepcion = hayPriEntExcepcion;
-                                infoMarcacion.hayPriSalExcepcion = hayPriSalExcepcion;
-                                infoMarcacion.haySegEntExcepcion = haySegEntExcepcion;
-                                infoMarcacion.haySegSalExcepcion = haySegSalExcepcion;
+                                infoMarcacion.hayPriEntExcepcion = priEntExcepcion;
+                                infoMarcacion.hayPriSalExcepcion = priSalExcepcion;
+                                infoMarcacion.haySegEntExcepcion = segEntExcepcion;
+                                infoMarcacion.haySegSalExcepcion = segSalExcepcion;
                                 infoMarcacion.hayPriRetraso = hayPriRetraso;
                                 infoMarcacion.haySegRetraso = haySegRetraso;
                             } else {
@@ -506,10 +506,17 @@ export const getResumenMarcaciones = async (req: Request, res: Response) => {
                                     let priSalidasM: Moment[] = [];
                                     //Genero los rangos para entradas y salidas:
                                     let priEntIni = moment(jornada.fecha + " " + "00:00").format('YYYY-MM-DD HH:mm')
-                                    let priEntFin = moment(jornada.fecha + " " + jornada.priTurno.horaSalida).subtract(1, "hours").format('YYYY-MM-DD HH:mm')
+                                    let priEntFin;
+                                    let priSalFin;
+                                    if(jornada.horario.jornadasDosDias) {
+                                        priEntFin = moment(jornada.fecha + " " + jornada.priTurno.horaSalida).add(1, "day").subtract(1, "hours").format('YYYY-MM-DD HH:mm')
+                                        priSalFin = moment(jornada.fecha + " " + "11:59").add(1, "day").format('YYYY-MM-DD HH:mm')
+                                    }
+                                    else {
+                                        priEntFin = moment(jornada.fecha + " " + jornada.priTurno.horaSalida).subtract(1, "hours").format('YYYY-MM-DD HH:mm')
+                                        priSalFin = moment(jornada.fecha + " " + "23:59").format('YYYY-MM-DD HH:mm')
+                                    }
                                     let priEntRango = momentExt.range(moment(priEntIni).toDate(), moment(priEntFin).toDate())
-
-                                    let priSalFin = moment(jornada.fecha + " " + "23:59").format('YYYY-MM-DD HH:mm')
                                     let priSalRango = momentExt.range(moment(priEntFin).toDate(), moment(priSalFin).toDate())
                                     //Obtengo las marcaciones segun fecha y clasifico segun rangos
                                     let marcaciones = await getMarcacionesPor(usuario, fecha.format("YYYY-MM-DD"))
@@ -523,29 +530,30 @@ export const getResumenMarcaciones = async (req: Request, res: Response) => {
 
                                     let priEntradas: string[] = [];
                                     let priSalidas: string[] = [];
-
-                                    if (priEntradasM.length > 0) {
-                                        priEntradasM.sort((a, b) => a.diff(b));
-                                        priEntradasM.map(entrada => {
-                                            priEntradas.push(entrada.format("HH:mm"))
-                                        })
-                                        infoMarcacion.priEntradas = priEntradas
-                                        let retraso = priEntradasM.at(0)?.diff(moment(jornada.fecha + " " + jornada.priTurno.horaEntrada), "minutes")
-                                        if (retraso) {
-                                            if (retraso > jornada.horario.tolerancia) {
-                                                cantRetrasos++;
-                                                totalCantRetrasos++
-                                                minRetrasos = minRetrasos + retraso
-                                                totalMinRetrasos = totalMinRetrasos + retraso
-                                                hayPriRetraso = true
+                                    if (!priEntExcepcion.existe) {
+                                        if (priEntradasM.length > 0) {
+                                            priEntradasM.sort((a, b) => a.diff(b));
+                                            priEntradasM.map(entrada => {
+                                                priEntradas.push(entrada.format("HH:mm"))
+                                            })
+                                            infoMarcacion.priEntradas = priEntradas
+                                            let retraso = priEntradasM.at(0)?.diff(moment(jornada.fecha + " " + jornada.priTurno.horaEntrada), "minutes")
+                                            if (retraso) {
+                                                if (retraso > jornada.horario.tolerancia) {
+                                                    cantRetrasos++;
+                                                    totalCantRetrasos++
+                                                    minRetrasos = minRetrasos + retraso
+                                                    totalMinRetrasos = totalMinRetrasos + retraso
+                                                    hayPriRetraso = true
+                                                }
                                             }
+                                        } else {
+                                            sinMarcar++
+                                            totalSinMarcar++
                                         }
-                                    } else {
-                                        sinMarcar++
-                                        totalSinMarcar++
                                     }
 
-                                    if (!hayPriSalExcepcion.existe) {
+                                    if (!priSalExcepcion.existe) {
                                         if (priSalidasM.length > 0) {
                                             priSalidasM.sort((a, b) => a.diff(b));
                                             priSalidasM.map(salida => {
@@ -568,8 +576,8 @@ export const getResumenMarcaciones = async (req: Request, res: Response) => {
                                     }
                                     infoMarcacion.cantRetrasos = cantRetrasos;
                                     infoMarcacion.minRetrasos = minRetrasos;
-                                    infoMarcacion.hayPriEntExcepcion = hayPriEntExcepcion;
-                                    infoMarcacion.hayPriSalExcepcion = hayPriSalExcepcion;
+                                    infoMarcacion.hayPriEntExcepcion = priEntExcepcion;
+                                    infoMarcacion.hayPriSalExcepcion = priSalExcepcion;
                                     infoMarcacion.hayPriRetraso = hayPriRetraso;
                                 } else {
                                     if (jornada.estado === EstadoJornada.teletrabajo) {

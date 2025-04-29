@@ -42,7 +42,6 @@ export class Jornada extends BaseEntity {
     @ManyToOne(() => Horario)
     horario: Horario
     infoExtra: InfoExtraJornada
-    tieneExcepcion: boolean
 
     getNumTurnos() {
         let res: number = 0;
