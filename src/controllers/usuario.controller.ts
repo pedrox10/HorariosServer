@@ -235,6 +235,12 @@ export const getResumenMarcaciones = async (req: Request, res: Response) => {
                     let hayPriRetraso: boolean = false
                     let haySegRetraso: boolean = false
                     let dia = moment(fecha).locale("es").format("ddd DD")
+                    if (fecha.isSame(rango.start, 'day')) {
+                        infoMarcacion.primerDia = {success: true, mes: capitalizar(moment(fecha).locale("es").format("MMMM"))};
+                    } else {
+                        if(fecha.date() === 1)
+                            infoMarcacion.primerDia = {success: true, mes: capitalizar(moment(fecha).locale("es").format("MMMM"))};
+                    }
                     dia = dia.charAt(0).toUpperCase() + dia.substring(1)
                     infoMarcacion.fecha = moment(fecha).toDate();
                     infoMarcacion.dia = dia

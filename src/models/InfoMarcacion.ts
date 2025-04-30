@@ -24,6 +24,7 @@ export class InfoMarcacion{
   esInvierno:boolean
   esLactancia:boolean
   esJornadaDosDias:boolean
+  primerDia?:any
 
   constructor() {
   }
