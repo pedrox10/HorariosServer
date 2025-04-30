@@ -343,18 +343,25 @@ export const getResumenMarcaciones = async (req: Request, res: Response) => {
                                         millisecond: 0
                                     });
                                     rangoTickeo = momentExt.range(moment(inicio), moment(fin))
-                                    let priHoraEntrada = moment(jornada.fecha + " " + jornada.priTurno.horaEntrada).format("YYYY-MM-DDTHH:mm:ss[Z]")
-                                    if (rangoTickeo.contains(moment(priHoraEntrada))) {
-                                        priEntExcepcion = {
-                                            existe: true, licencia: getLicencia(excepcionTickeo), jornada: capitalizar(excepcionTickeo.jornada),
-                                            horaIni: excepcionTickeo.horaIni, horaFin: excepcionTickeo.horaFin, detalle: excepcionTickeo.detalle
+                                    console.log(rangoTickeo)
+                                    if(numTurnos != 0) {
+                                        let priHoraEntrada = moment(jornada.fecha + " " + jornada.priTurno.horaEntrada).format("YYYY-MM-DDTHH:mm:ss[Z]")
+                                        if (rangoTickeo.contains(moment(priHoraEntrada))) {
+                                            priEntExcepcion = {
+                                                existe: true, licencia: getLicencia(excepcionTickeo), jornada: capitalizar(excepcionTickeo.jornada),
+                                                horaIni: excepcionTickeo.horaIni, horaFin: excepcionTickeo.horaFin, detalle: excepcionTickeo.detalle
+                                            }
                                         }
-                                    }
-                                    let priHoraSalida = moment(jornada.fecha + " " + jornada.priTurno.horaSalida).format("YYYY-MM-DDTHH:mm:ss[Z]")
-                                    if (rangoTickeo.contains(moment(priHoraSalida))) {
-                                        priSalExcepcion = {
-                                            existe: true, licencia: getLicencia(excepcionTickeo), jornada: capitalizar(excepcionTickeo.jornada),
-                                            horaIni: excepcionTickeo.horaIni, horaFin: excepcionTickeo.horaFin, detalle: excepcionTickeo.detalle
+                                        let priHoraSalida;
+                                        if(jornada.horario.jornadasDosDias)
+                                            priHoraSalida = moment(jornada.fecha + " " + jornada.priTurno.horaSalida).add(1, "day").format("YYYY-MM-DDTHH:mm:ss[Z]")
+                                        else
+                                            priHoraSalida = moment(jornada.fecha + " " + jornada.priTurno.horaSalida).format("YYYY-MM-DDTHH:mm:ss[Z]")
+                                        if (rangoTickeo.contains(moment(priHoraSalida))) {
+                                            priSalExcepcion = {
+                                                existe: true, licencia: getLicencia(excepcionTickeo), jornada: capitalizar(excepcionTickeo.jornada),
+                                                horaIni: excepcionTickeo.horaIni, horaFin: excepcionTickeo.horaFin, detalle: excepcionTickeo.detalle
+                                            }
                                         }
                                     }
                                     if(numTurnos == 2) {
@@ -508,9 +515,12 @@ export const getResumenMarcaciones = async (req: Request, res: Response) => {
                                     let priEntIni = moment(jornada.fecha + " " + "00:00").format('YYYY-MM-DD HH:mm')
                                     let priEntFin;
                                     let priSalFin;
+                                    let marcaciones = await getMarcacionesPor(usuario, fecha.format("YYYY-MM-DD"))
                                     if(jornada.horario.jornadasDosDias) {
                                         priEntFin = moment(jornada.fecha + " " + jornada.priTurno.horaSalida).add(1, "day").subtract(1, "hours").format('YYYY-MM-DD HH:mm')
                                         priSalFin = moment(jornada.fecha + " " + "11:59").add(1, "day").format('YYYY-MM-DD HH:mm')
+                                        let marcacionesSigDia = await getMarcacionesPor(usuario, fecha.add(1, "day").format("YYYY-MM-DD"))
+                                        marcaciones.push(... marcacionesSigDia)
                                     }
                                     else {
                                         priEntFin = moment(jornada.fecha + " " + jornada.priTurno.horaSalida).subtract(1, "hours").format('YYYY-MM-DD HH:mm')
@@ -519,7 +529,7 @@ export const getResumenMarcaciones = async (req: Request, res: Response) => {
                                     let priEntRango = momentExt.range(moment(priEntIni).toDate(), moment(priEntFin).toDate())
                                     let priSalRango = momentExt.range(moment(priEntFin).toDate(), moment(priSalFin).toDate())
                                     //Obtengo las marcaciones segun fecha y clasifico segun rangos
-                                    let marcaciones = await getMarcacionesPor(usuario, fecha.format("YYYY-MM-DD"))
+
                                     marcaciones.forEach(marcacion => {
                                         let horaMarcaje = moment(marcacion.fecha + " " + marcacion.hora).format('YYYY-MM-DD HH:mm')
                                         if (priEntRango.contains(moment(horaMarcaje), {excludeEnd: true}))
