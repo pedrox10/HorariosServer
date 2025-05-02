@@ -329,10 +329,10 @@ export const getResumenMarcaciones = async (req: Request, res: Response) => {
                             let segSalExcepcion: any = {existe: false}
                             let numTurnos = jornada.getNumTurnos();
 
-                            let excepcionTickeo: Excepcion | any;
+                            let excepcionesTickeo: Excepcion [] = [];
                             if (hayExcepcionesRangoHoras) {
-                                excepcionTickeo = getExcepcionTickeo(jornada, excepcionesRangoHoras)
-                                if (excepcionTickeo) {
+                                excepcionesTickeo = getExcepcionesTickeo(jornada, excepcionesRangoHoras)
+                                for (let excepcionTickeo of excepcionesTickeo) {
                                     let rangoTickeo: DateRange;
                                     let [hora, minuto] = excepcionTickeo.horaIni.split(':').map(Number);
                                     let inicio = moment(excepcionTickeo.fecha).utc().set({
@@ -349,40 +349,63 @@ export const getResumenMarcaciones = async (req: Request, res: Response) => {
                                         millisecond: 0
                                     });
                                     rangoTickeo = momentExt.range(moment(inicio), moment(fin))
-                                    console.log(rangoTickeo)
                                     if(numTurnos != 0) {
-                                        let priHoraEntrada = moment(jornada.fecha + " " + jornada.priTurno.horaEntrada).format("YYYY-MM-DDTHH:mm:ss[Z]")
-                                        if (rangoTickeo.contains(moment(priHoraEntrada))) {
-                                            priEntExcepcion = {
-                                                existe: true, licencia: getLicencia(excepcionTickeo), jornada: capitalizar(excepcionTickeo.jornada),
-                                                horaIni: excepcionTickeo.horaIni, horaFin: excepcionTickeo.horaFin, detalle: excepcionTickeo.detalle
+                                        if (!priEntExcepcion.existe) {
+                                            let priHoraEntrada = moment(jornada.fecha + " " + jornada.priTurno.horaEntrada).format("YYYY-MM-DDTHH:mm:ss[Z]")
+                                            if (rangoTickeo.contains(moment(priHoraEntrada))) {
+                                                priEntExcepcion = {
+                                                    existe: true,
+                                                    licencia: getLicencia(excepcionTickeo),
+                                                    jornada: capitalizar(excepcionTickeo.jornada),
+                                                    horaIni: excepcionTickeo.horaIni,
+                                                    horaFin: excepcionTickeo.horaFin,
+                                                    detalle: excepcionTickeo.detalle
+                                                }
                                             }
                                         }
-                                        let priHoraSalida;
-                                        if(jornada.horario.jornadasDosDias)
-                                            priHoraSalida = moment(jornada.fecha + " " + jornada.priTurno.horaSalida).add(1, "day").format("YYYY-MM-DDTHH:mm:ss[Z]")
-                                        else
-                                            priHoraSalida = moment(jornada.fecha + " " + jornada.priTurno.horaSalida).format("YYYY-MM-DDTHH:mm:ss[Z]")
-                                        if (rangoTickeo.contains(moment(priHoraSalida))) {
-                                            priSalExcepcion = {
-                                                existe: true, licencia: getLicencia(excepcionTickeo), jornada: capitalizar(excepcionTickeo.jornada),
-                                                horaIni: excepcionTickeo.horaIni, horaFin: excepcionTickeo.horaFin, detalle: excepcionTickeo.detalle
+                                        if (!priSalExcepcion.existe) {
+                                            let priHoraSalida;
+                                            if (jornada.horario.jornadasDosDias)
+                                                priHoraSalida = moment(jornada.fecha + " " + jornada.priTurno.horaSalida).add(1, "day").format("YYYY-MM-DDTHH:mm:ss[Z]")
+                                            else
+                                                priHoraSalida = moment(jornada.fecha + " " + jornada.priTurno.horaSalida).format("YYYY-MM-DDTHH:mm:ss[Z]")
+                                            if (rangoTickeo.contains(moment(priHoraSalida))) {
+                                                priSalExcepcion = {
+                                                    existe: true,
+                                                    licencia: getLicencia(excepcionTickeo),
+                                                    jornada: capitalizar(excepcionTickeo.jornada),
+                                                    horaIni: excepcionTickeo.horaIni,
+                                                    horaFin: excepcionTickeo.horaFin,
+                                                    detalle: excepcionTickeo.detalle
+                                                }
                                             }
                                         }
                                     }
                                     if(numTurnos == 2) {
-                                        let segHoraEntrada = moment(jornada.fecha + " " + jornada.segTurno.horaEntrada).format("YYYY-MM-DDTHH:mm:ss[Z]")
-                                        if (rangoTickeo.contains(moment(segHoraEntrada))) {
-                                            segEntExcepcion = {
-                                                existe: true, licencia: getLicencia(excepcionTickeo), jornada: capitalizar(excepcionTickeo.jornada),
-                                                horaIni: excepcionTickeo.horaIni, horaFin: excepcionTickeo.horaFin, detalle: excepcionTickeo.detalle
+                                        if (!segEntExcepcion.existe) {
+                                            let segHoraEntrada = moment(jornada.fecha + " " + jornada.segTurno.horaEntrada).format("YYYY-MM-DDTHH:mm:ss[Z]")
+                                            if (rangoTickeo.contains(moment(segHoraEntrada))) {
+                                                segEntExcepcion = {
+                                                    existe: true,
+                                                    licencia: getLicencia(excepcionTickeo),
+                                                    jornada: capitalizar(excepcionTickeo.jornada),
+                                                    horaIni: excepcionTickeo.horaIni,
+                                                    horaFin: excepcionTickeo.horaFin,
+                                                    detalle: excepcionTickeo.detalle
+                                                }
                                             }
                                         }
-                                        let segHoraSalida = moment(jornada.fecha + " " + jornada.segTurno.horaSalida).format("YYYY-MM-DDTHH:mm:ss[Z]")
-                                        if (rangoTickeo.contains(moment(segHoraSalida))) {
-                                            segSalExcepcion = {
-                                                existe: true, licencia: getLicencia(excepcionTickeo), jornada: capitalizar(excepcionTickeo.jornada),
-                                                horaIni: excepcionTickeo.horaIni, horaFin: excepcionTickeo.horaFin, detalle: excepcionTickeo.detalle
+                                        if (!segSalExcepcion.existe) {
+                                            let segHoraSalida = moment(jornada.fecha + " " + jornada.segTurno.horaSalida).format("YYYY-MM-DDTHH:mm:ss[Z]")
+                                            if (rangoTickeo.contains(moment(segHoraSalida))) {
+                                                segSalExcepcion = {
+                                                    existe: true,
+                                                    licencia: getLicencia(excepcionTickeo),
+                                                    jornada: capitalizar(excepcionTickeo.jornada),
+                                                    horaIni: excepcionTickeo.horaIni,
+                                                    horaFin: excepcionTickeo.horaFin,
+                                                    detalle: excepcionTickeo.detalle
+                                                }
                                             }
                                         }
                                     }
@@ -672,14 +695,13 @@ function getExcepcionCompleta(jornada: Jornada, excepcionesCompletas: Excepcion[
     return res;
 }
 
-function getExcepcionTickeo(jornada: Jornada, excepcionesRangoHoras: Excepcion[]) {
-    let res: Excepcion | null = null;
+function getExcepcionesTickeo(jornada: Jornada, excepcionesRangoHoras: Excepcion[]) {
+    let res: Excepcion [] =[];
     for (let excepcionTickeo of excepcionesRangoHoras) {
         const fechaExcepcion = moment(excepcionTickeo.fecha).utc().startOf('day').toDate();
         const fechaJornada = moment(jornada.fecha).utc().startOf('day').toDate();
         if (fechaExcepcion.getTime() === fechaJornada.getTime()) { // Comparación con timestamps
-            res = excepcionTickeo;
-            break;
+            res.push(excepcionTickeo)
         }
     }
     return res;
