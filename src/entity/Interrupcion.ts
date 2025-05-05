@@ -7,12 +7,12 @@ export class Interrupcion extends BaseEntity {
     id:number;
     @Column({type: 'date', nullable: false})
     fecha: Date;
+    @Column()
+    motivo: string
     @Column({type: 'datetime', nullable: false})
     horaIni: Date;
     @Column({type: 'datetime', nullable: false})
     horaFin: Date;
-    @Column()
-    tipo: string
     @Column({ nullable: true })
     detalle: string
 
