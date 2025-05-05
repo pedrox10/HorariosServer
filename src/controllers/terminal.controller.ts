@@ -10,6 +10,7 @@ import {Turno} from "../entity/Turno";
 import {Jornada} from "../entity/Jornada";
 import {Between, EntityManager, QueryRunner} from "typeorm";
 import {Sincronizacion} from "../entity/Sincronizacion";
+import {Interrupcion} from "../entity/Interrupcion";
 
 const envPython = path.join(__dirname, "../scriptpy/envpy", "bin", "python3");
 const spawn = require('await-spawn');
@@ -23,6 +24,20 @@ export const crearTerminal = async (req: Request, res: Response) => {
     await terminal.save();
     console.log(terminal)
     res.send(terminal)
+}
+
+export const agregarInterrupcion = async (req: Request, res: Response) => {
+    const interrupcion = new Interrupcion()
+    const {fecha, motivo, horaIni, horaFin, detalle} = req.body
+
+    interrupcion.fecha = moment(fecha, "YYYY-MM-DD").toDate()
+    interrupcion.motivo = motivo
+    interrupcion.horaIni = moment(fecha + " " + horaIni!, 'YYYY-MM-DD HH:mm').toDate()
+    interrupcion.horaFin = moment(fecha + " " + horaFin!, 'YYYY-MM-DD HH:mm').toDate()
+    interrupcion.detalle = detalle
+    await interrupcion.save();
+    console.log(interrupcion)
+    res.send(interrupcion)
 }
 
 export const editarTerminal = async (req: Request, res: Response) => {
@@ -84,14 +99,33 @@ export const getUsuarios = async (req: Request, res: Response) => {
 
 export const getSincronizaciones = async (req: Request, res: Response) => {
     const {id} = req.params;
-    const terminal = await Terminal.findOne({
-        where: {id: parseInt(id)}, relations: {
-            sincronizaciones: true,
-        }
-    });
+    const terminal = await Terminal.createQueryBuilder('terminal')
+        .leftJoinAndSelect('terminal.sincronizaciones', 'sincronizacion')
+        .where('terminal.id = :id', { id: parseInt(id) })
+        .orderBy('sincronizacion.fecha', 'DESC')  // Ordena por fecha de mayor a menor
+        .getOne();
     let sincronizaciones = terminal?.sincronizaciones;
     res.send(sincronizaciones)
 }
+
+export const getInterrupciones = async (req: Request, res: Response) => {
+    try {
+        const { id } = req.params;
+        const terminalId = parseInt(id);
+
+        const terminal = await Terminal.findOne({
+            where: { id: terminalId },
+            relations: { interrupciones: true }
+        });
+        if (!terminal) {
+            return res.status(404).json({ error: "Terminal no encontrada" });
+        }
+        return res.json(terminal.interrupciones);
+    } catch (error) {
+        console.error("Error al obtener interrupciones:", error);
+        return res.status(500).json({ error: "Error interno del servidor" });
+    }
+};
 
 export const getTerminal = async (req: Request, res: Response) => {
     const {id} = req.params;

@@ -150,7 +150,6 @@ export const getResumenMarcaciones = async (req: Request, res: Response) => {
                     }
                 }
             }
-
             let feriados: Asueto[] = await Asueto.findBy({
                 fecha: Between(rangoValido.start.toDate(), rangoValido.end.toDate()),
                 tipo: TipoAsueto.todos
@@ -158,6 +157,7 @@ export const getResumenMarcaciones = async (req: Request, res: Response) => {
             if (feriados.length > 0)
                 hayFeriados = true
 
+            console.time("Organigram")
             let excepcionesCompletas: Excepcion[] = [];
             let excepcionesRangoHoras: Excepcion[] = [];
             const respuesta = await obtenerSolicitudesAprobadasPorCI(usuario.ci);
@@ -213,11 +213,12 @@ export const getResumenMarcaciones = async (req: Request, res: Response) => {
             } else {
                 resumenMarcacion.mensajeError = respuesta.error;
             }
-
             if (excepcionesCompletas.length > 0)
                 hayExcepcionesCompletas = true
             if (excepcionesRangoHoras.length > 0)
                 hayExcepcionesRangoHoras = true
+            console.timeEnd("Organigram")
+
             let totalCantRetrasos: number = 0
             let totalMinRetrasos: number = 0
             let totalSinMarcar: number = 0
@@ -226,7 +227,9 @@ export const getResumenMarcaciones = async (req: Request, res: Response) => {
 
             if(hayRangoValido) {
                 for (let fecha of rangoValido.by("day")) {
+                    console.time("Jornada")
                     let jornada = await getJornadaPor(usuario, fecha.format("YYYY-MM-DD"))
+                    console.timeEnd("Jornada")
                     let infoMarcacion = new InfoMarcacion();
                     let cantRetrasos: number = 0
                     let minRetrasos: number = 0
@@ -431,6 +434,7 @@ export const getResumenMarcaciones = async (req: Request, res: Response) => {
                                 let segSalFin = moment(jornada.fecha + " " + "23:59").format('YYYY-MM-DD HH:mm')
                                 let segSalRango = momentExt.range(moment(segEntFin).toDate(), moment(segSalFin).toDate())
                                 //Obtengo las marcaciones segun fecha y clasifico segun rangos
+                                console.time("Marcaciones")
                                 let marcaciones = await getMarcacionesPor(usuario, fecha.format("YYYY-MM-DD"))
                                 marcaciones.forEach(marcacion => {
                                     let horaMarcaje = moment(marcacion.fecha + " " + marcacion.hora).format('YYYY-MM-DD HH:mm')
@@ -443,6 +447,7 @@ export const getResumenMarcaciones = async (req: Request, res: Response) => {
                                     else if (segSalRango.contains(moment(horaMarcaje)))
                                         segSalidasM.push(moment(horaMarcaje))
                                 })
+                                console.timeEnd("Marcaciones")
                                 let priEntradas: string[] = [];
                                 let priSalidas: string[] = [];
                                 let segEntradas: string[] = [];
@@ -544,6 +549,7 @@ export const getResumenMarcaciones = async (req: Request, res: Response) => {
                                     let priEntIni = moment(jornada.fecha + " " + "00:00").format('YYYY-MM-DD HH:mm')
                                     let priEntFin;
                                     let priSalFin;
+                                    console.time("Marcaciones1T")
                                     let marcaciones = await getMarcacionesPor(usuario, fecha.format("YYYY-MM-DD"))
                                     if(jornada.horario.jornadasDosDias) {
                                         priEntFin = moment(jornada.fecha + " " + jornada.priTurno.horaSalida).add(1, "day").subtract(1, "hours").format('YYYY-MM-DD HH:mm')
@@ -566,7 +572,7 @@ export const getResumenMarcaciones = async (req: Request, res: Response) => {
                                         else if (priSalRango.contains(moment(horaMarcaje)))
                                             priSalidasM.push(moment(horaMarcaje))
                                     })
-
+                                    console.timeEnd("Marcaciones1T")
                                     let priEntradas: string[] = [];
                                     let priSalidas: string[] = [];
                                     if (!priEntExcepcion.existe) {

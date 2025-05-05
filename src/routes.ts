@@ -6,9 +6,10 @@ import {
     getUsuarios, getExcepciones, editarUsuario
 } from "./controllers/usuario.controller";
 import {
+    agregarInterrupcion,
     crearTerminal,
     editarTerminal,
-    eliminarTerminal, getFechaPriMarcacion, getSincronizaciones, getTerminal,
+    eliminarTerminal, getFechaPriMarcacion, getInterrupciones, getSincronizaciones, getTerminal,
     getTerminales, getTerminalPorIp,
     sincronizarTerminal
 } from "./controllers/terminal.controller";
@@ -33,7 +34,9 @@ router.get("/terminales",getTerminales);
 router.get("/terminal/sincronizar/:id", sincronizarTerminal);
 router.post("/terminal/sincronizar/:id", sincronizarTerminal);
 router.get("/terminal/:id/pri-marcacion",getFechaPriMarcacion);
-router.get("/terminal/:id/sincronizaciones", getSincronizaciones)
+router.get("/terminal/:id/sincronizaciones", getSincronizaciones);
+router.get("/terminal/:id/interrupciones", getInterrupciones)
+router.post("/terminal/interrupcion/agregar", agregarInterrupcion)
 
 // Rutas para operaciones con Usuarios
 router.get("/terminal/:id/usuarios", getUsuarios)
