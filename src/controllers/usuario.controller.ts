@@ -14,6 +14,7 @@ import {Between} from "typeorm";
 import mongoose from "mongoose";
 import {Excepcion} from "../models/Excepcion";
 import axios from "axios";
+import {Interrupcion} from "../entity/Interrupcion";
 
 const momentExt = extendMoment(MomentExt);
 
@@ -157,9 +158,28 @@ export const getResumenMarcaciones = async (req: Request, res: Response) => {
             if (feriados.length > 0)
                 hayFeriados = true
 
-            console.time("Organigram")
             let excepcionesCompletas: Excepcion[] = [];
             let excepcionesRangoHoras: Excepcion[] = [];
+            let interrupciones: Interrupcion[] = await Interrupcion.findBy({
+                fecha: Between(rangoValido.start.toDate(), rangoValido.end.toDate()),
+                terminal: usuario.terminal
+            })
+            if(interrupciones.length > 0) {
+                for(let interrupcion of interrupciones) {
+                    let excepcion = new Excepcion();
+                    excepcion.fecha = interrupcion.fecha;
+                    excepcion.jornada = 'rango';
+                    excepcion.detalle = capitalizar(interrupcion.detalle);
+                    excepcion.licencia = "ET";
+                    excepcion.horaIni = moment(interrupcion.horaIni).format("HH:mm");
+                    excepcion.horaFin = moment(interrupcion.horaFin).format("HH:mm");
+                    excepcion.esInterrupcion = true
+                    excepcion.motivo = interrupcion.motivo
+                    excepcionesRangoHoras.push(excepcion);
+                }
+            }
+
+            console.time("Organigram")
             const respuesta = await obtenerSolicitudesAprobadasPorCI(usuario.ci);
             if(respuesta.success) {
                 const solicitudesAprobadas = respuesta.solicitudes ?? [];
@@ -179,7 +199,6 @@ export const getResumenMarcaciones = async (req: Request, res: Response) => {
                     } else {
                         for (const diaObj of solicitud.dias) {
                             const fechaDia = new Date(diaObj.fecha);
-                            //console.log(fechaDia)
                             if (fechaDia < rangoValido.start.toDate() || fechaDia > rangoValido.end.toDate()) {
                                 continue;
                             }
@@ -364,6 +383,10 @@ export const getResumenMarcaciones = async (req: Request, res: Response) => {
                                                     horaFin: excepcionTickeo.horaFin,
                                                     detalle: excepcionTickeo.detalle
                                                 }
+                                                if(excepcionTickeo.esInterrupcion) {
+                                                    priEntExcepcion.esInterrupcion = excepcionTickeo.esInterrupcion
+                                                    priEntExcepcion.motivo = excepcionTickeo.motivo
+                                                }
                                             }
                                         }
                                         if (!priSalExcepcion.existe) {
@@ -381,6 +404,10 @@ export const getResumenMarcaciones = async (req: Request, res: Response) => {
                                                     horaFin: excepcionTickeo.horaFin,
                                                     detalle: excepcionTickeo.detalle
                                                 }
+                                                if(excepcionTickeo.esInterrupcion) {
+                                                    priSalExcepcion.esInterrupcion = excepcionTickeo.esInterrupcion
+                                                    priSalExcepcion.motivo = excepcionTickeo.motivo
+                                                }
                                             }
                                         }
                                     }
@@ -396,6 +423,10 @@ export const getResumenMarcaciones = async (req: Request, res: Response) => {
                                                     horaFin: excepcionTickeo.horaFin,
                                                     detalle: excepcionTickeo.detalle
                                                 }
+                                                if(excepcionTickeo.esInterrupcion) {
+                                                    segEntExcepcion.esInterrupcion = excepcionTickeo.esInterrupcion
+                                                    segEntExcepcion.motivo = excepcionTickeo.motivo
+                                                }
                                             }
                                         }
                                         if (!segSalExcepcion.existe) {
@@ -408,6 +439,10 @@ export const getResumenMarcaciones = async (req: Request, res: Response) => {
                                                     horaIni: excepcionTickeo.horaIni,
                                                     horaFin: excepcionTickeo.horaFin,
                                                     detalle: excepcionTickeo.detalle
+                                                }
+                                                if(excepcionTickeo.esInterrupcion) {
+                                                    segSalExcepcion.esInterrupcion = excepcionTickeo.esInterrupcion
+                                                    segSalExcepcion.motivo = excepcionTickeo.motivo
                                                 }
                                             }
                                         }

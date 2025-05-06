@@ -11,6 +11,7 @@ import {Jornada} from "../entity/Jornada";
 import {Between, EntityManager, QueryRunner} from "typeorm";
 import {Sincronizacion} from "../entity/Sincronizacion";
 import {Interrupcion} from "../entity/Interrupcion";
+import {Horario} from "../entity/Horario";
 
 const envPython = path.join(__dirname, "../scriptpy/envpy", "bin", "python3");
 const spawn = require('await-spawn');
@@ -27,17 +28,27 @@ export const crearTerminal = async (req: Request, res: Response) => {
 }
 
 export const agregarInterrupcion = async (req: Request, res: Response) => {
-    const interrupcion = new Interrupcion()
-    const {fecha, motivo, horaIni, horaFin, detalle} = req.body
+    try {
+        const {idTerminal, fecha, motivo, horaIni, horaFin, detalle} = req.body
+        const terminal = await Terminal.findOne({where: {id: parseInt(idTerminal)},});
+        if(terminal) {
+            let interrupcion = new Interrupcion()
+            interrupcion.fecha = moment(fecha, "YYYY-MM-DD").toDate()
+            interrupcion.motivo = motivo
+            interrupcion.horaIni = moment(fecha + " " + horaIni!, 'YYYY-MM-DD HH:mm').toDate()
+            interrupcion.horaFin = moment(fecha + " " + horaFin!, 'YYYY-MM-DD HH:mm').toDate()
+            interrupcion.detalle = detalle
+            interrupcion.terminal = terminal;
+            await interrupcion.save();
+            return res.status(200).json(interrupcion)
+        } else {
+            return res.status(404).json({ info: 'Terminal biométrico no encontrado' })
+        }
 
-    interrupcion.fecha = moment(fecha, "YYYY-MM-DD").toDate()
-    interrupcion.motivo = motivo
-    interrupcion.horaIni = moment(fecha + " " + horaIni!, 'YYYY-MM-DD HH:mm').toDate()
-    interrupcion.horaFin = moment(fecha + " " + horaFin!, 'YYYY-MM-DD HH:mm').toDate()
-    interrupcion.detalle = detalle
-    await interrupcion.save();
-    console.log(interrupcion)
-    res.send(interrupcion)
+    } catch (error) {
+        console.error("Error al guardar interrupción:", error);
+        return res.status(500).json({ info: 'Error interno del servidor' });
+    }
 }
 
 export const editarTerminal = async (req: Request, res: Response) => {
@@ -67,6 +78,12 @@ export const eliminarTerminal = async (req: Request, res: Response) => {
         let aux = await queryRunner.manager.delete(Terminal, { id: terminal.id });
         res.send(aux)
     }
+}
+
+export const eliminarInterrupcion = async (req: Request, res: Response) => {
+    const {id} = req.params;
+    const aux = await Interrupcion.delete({id: parseInt(id)});
+    res.send(aux)
 }
 
 export const getTerminales = async (req: Request, res: Response) => {
