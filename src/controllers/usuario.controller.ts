@@ -241,21 +241,42 @@ export const getResumenMarcaciones = async (req: Request, res: Response) => {
             let totalCantRetrasos: number = 0
             let totalMinRetrasos: number = 0
             let totalSinMarcar: number = 0
+            let totalSalAntes: number = 0
             let totalAusencias: number = 0
             let diasComputados: number = 0
 
             if(hayRangoValido) {
+                //Obtengo toaas las marcaciones del usuario
+                let marcacionesDelRango = await Marcacion.find({
+                    where: {
+                        ci: usuario?.ci,
+                        terminal: usuario?.terminal,
+                        fecha: Between(rango.start.toDate(), rango.end.toDate()),
+                    },
+                })
+                //Clasifico las marcaciones en un hashmap por fecha
+                const marcacionesPorFecha = new Map<string, Marcacion[]>();
+                marcacionesDelRango.forEach(marcacion => {
+                    const fecha = moment(marcacion.fecha).format('YYYY-MM-DD');
+                    if (!marcacionesPorFecha.has(fecha)) {
+                        marcacionesPorFecha.set(fecha, []);
+                    }
+                    marcacionesPorFecha.get(fecha)!.push(marcacion);
+                });
                 for (let fecha of rangoValido.by("day")) {
                     console.time("Jornada")
                     let jornada = await getJornadaPor(usuario, fecha.format("YYYY-MM-DD"))
                     console.timeEnd("Jornada")
                     let infoMarcacion = new InfoMarcacion();
                     let cantRetrasos: number = 0
+                    let cantSalAntes: number = 0
                     let minRetrasos: number = 0
                     let sinMarcar: number = 0
                     infoMarcacion.activo = false
                     let hayPriRetraso: boolean = false
                     let haySegRetraso: boolean = false
+                    let hayPriAntes: boolean = false
+                    let haySegAntes: boolean = false
                     let dia = moment(fecha).locale("es").format("ddd DD")
                     if (fecha.isSame(rango.start, 'day')) {
                         infoMarcacion.primerDia = {success: true, mes: capitalizar(moment(fecha).locale("es").format("MMMM"))};
@@ -470,8 +491,8 @@ export const getResumenMarcaciones = async (req: Request, res: Response) => {
                                 let segSalRango = momentExt.range(moment(segEntFin).toDate(), moment(segSalFin).toDate())
                                 //Obtengo las marcaciones segun fecha y clasifico segun rangos
                                 console.time("Marcaciones")
-                                let marcaciones = await getMarcacionesPor(usuario, fecha.format("YYYY-MM-DD"))
-                                marcaciones.forEach(marcacion => {
+                                let marcacionesDia = marcacionesPorFecha.get(fecha.format('YYYY-MM-DD')) || [];
+                                marcacionesDia.forEach(marcacion => {
                                     let horaMarcaje = moment(marcacion.fecha + " " + marcacion.hora).format('YYYY-MM-DD HH:mm')
                                     if (priEntRango.contains(moment(horaMarcaje), {excludeEnd: true}))
                                         priEntradasM.push(moment(horaMarcaje))
@@ -518,6 +539,12 @@ export const getResumenMarcaciones = async (req: Request, res: Response) => {
                                             priSalidas.push(salida.format("HH:mm"))
                                         })
                                         infoMarcacion.priSalidas = priSalidas
+                                        let ultimo = priSalidasM.length -1
+                                        if(priSalidasM.at(ultimo)?.isBefore(moment(jornada.fecha + " " + jornada.priTurno.horaSalida))) {
+                                            cantSalAntes++
+                                            totalSalAntes++
+                                            hayPriAntes = true
+                                        }
                                     } else {
                                         sinMarcar++
                                         totalSinMarcar++
@@ -554,6 +581,12 @@ export const getResumenMarcaciones = async (req: Request, res: Response) => {
                                             segSalidas.push(salida.format("HH:mm"))
                                         })
                                         infoMarcacion.segSalidas = segSalidas
+                                        let ultimo = segSalidasM.length -1
+                                        if(segSalidasM.at(ultimo)?.isBefore(moment(jornada.fecha + " " + jornada.segTurno.horaSalida))) {
+                                            cantSalAntes++
+                                            totalSalAntes++
+                                            haySegAntes = true
+                                        }
                                     } else {
                                         sinMarcar++
                                         totalSinMarcar++
@@ -570,12 +603,15 @@ export const getResumenMarcaciones = async (req: Request, res: Response) => {
                                 }
                                 infoMarcacion.cantRetrasos = cantRetrasos;
                                 infoMarcacion.minRetrasos = minRetrasos;
+                                infoMarcacion.cantSalAntes = cantSalAntes;
                                 infoMarcacion.hayPriEntExcepcion = priEntExcepcion;
                                 infoMarcacion.hayPriSalExcepcion = priSalExcepcion;
                                 infoMarcacion.haySegEntExcepcion = segEntExcepcion;
                                 infoMarcacion.haySegSalExcepcion = segSalExcepcion;
                                 infoMarcacion.hayPriRetraso = hayPriRetraso;
                                 infoMarcacion.haySegRetraso = haySegRetraso;
+                                infoMarcacion.hayPriAntes = hayPriAntes;
+                                infoMarcacion.haySegAntes = haySegAntes;
                             } else {
                                 if (numTurnos == 1) {
                                     let priEntradasM: Moment[] = [];
@@ -585,12 +621,12 @@ export const getResumenMarcaciones = async (req: Request, res: Response) => {
                                     let priEntFin;
                                     let priSalFin;
                                     console.time("Marcaciones1T")
-                                    let marcaciones = await getMarcacionesPor(usuario, fecha.format("YYYY-MM-DD"))
+                                    let marcacionesDia = marcacionesPorFecha.get(fecha.format('YYYY-MM-DD')) || [];
                                     if(jornada.horario.jornadasDosDias) {
                                         priEntFin = moment(jornada.fecha + " " + jornada.priTurno.horaSalida).add(1, "day").subtract(1, "hours").format('YYYY-MM-DD HH:mm')
                                         priSalFin = moment(jornada.fecha + " " + "11:59").add(1, "day").format('YYYY-MM-DD HH:mm')
-                                        let marcacionesSigDia = await getMarcacionesPor(usuario, fecha.add(1, "day").format("YYYY-MM-DD"))
-                                        marcaciones.push(... marcacionesSigDia)
+                                        let marcacionesSigDia = marcacionesPorFecha.get(fecha.add(1, "day").format('YYYY-MM-DD')) || [];
+                                        marcacionesDia.push(... marcacionesSigDia)
                                     }
                                     else {
                                         priEntFin = moment(jornada.fecha + " " + jornada.priTurno.horaSalida).subtract(1, "hours").format('YYYY-MM-DD HH:mm')
@@ -600,7 +636,7 @@ export const getResumenMarcaciones = async (req: Request, res: Response) => {
                                     let priSalRango = momentExt.range(moment(priEntFin).toDate(), moment(priSalFin).toDate())
                                     //Obtengo las marcaciones segun fecha y clasifico segun rangos
 
-                                    marcaciones.forEach(marcacion => {
+                                    marcacionesDia.forEach(marcacion => {
                                         let horaMarcaje = moment(marcacion.fecha + " " + marcacion.hora).format('YYYY-MM-DD HH:mm')
                                         if (priEntRango.contains(moment(horaMarcaje), {excludeEnd: true}))
                                             priEntradasM.push(moment(horaMarcaje))
@@ -640,6 +676,12 @@ export const getResumenMarcaciones = async (req: Request, res: Response) => {
                                                 priSalidas.push(salida.format("HH:mm"))
                                             })
                                             infoMarcacion.priSalidas = priSalidas
+                                            let ultimo = priSalidasM.length -1
+                                            if(priSalidasM.at(ultimo)?.isBefore(moment(jornada.fecha + " " + jornada.priTurno.horaSalida))) {
+                                                cantSalAntes++
+                                                totalSalAntes++
+                                                hayPriAntes = true
+                                            }
                                         } else {
                                             sinMarcar++
                                             totalSinMarcar++
@@ -656,9 +698,11 @@ export const getResumenMarcaciones = async (req: Request, res: Response) => {
                                     }
                                     infoMarcacion.cantRetrasos = cantRetrasos;
                                     infoMarcacion.minRetrasos = minRetrasos;
+                                    infoMarcacion.cantSalAntes = cantSalAntes;
                                     infoMarcacion.hayPriEntExcepcion = priEntExcepcion;
                                     infoMarcacion.hayPriSalExcepcion = priSalExcepcion;
                                     infoMarcacion.hayPriRetraso = hayPriRetraso;
+                                    infoMarcacion.hayPriAntes = hayPriAntes;
                                 } else {
                                     if (jornada.estado === EstadoJornada.teletrabajo) {
                                         infoMarcacion.estado = EstadoJornada.teletrabajo
@@ -683,6 +727,7 @@ export const getResumenMarcaciones = async (req: Request, res: Response) => {
             }
             resumenMarcacion.totalCantRetrasos = totalCantRetrasos
             resumenMarcacion.totalMinRetrasos = totalMinRetrasos
+            resumenMarcacion.totalSalAntes = totalSalAntes
             resumenMarcacion.totalSinMarcar = totalSinMarcar
             resumenMarcacion.totalAusencias = totalAusencias
             resumenMarcacion.infoMarcaciones = infoMarcaciones

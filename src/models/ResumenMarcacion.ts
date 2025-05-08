@@ -5,6 +5,7 @@ export class ResumenMarcacion{
     usuario: Usuario;
     totalCantRetrasos:number;
     totalMinRetrasos: number;
+    totalSalAntes: number;
     totalSinMarcar: number;
     totalAusencias: number;
     diasComputados: number;

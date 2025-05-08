@@ -9,6 +9,7 @@ export class InfoMarcacion{
   segEntradas: string[]
   segSalidas: string[]
   cantRetrasos: number
+  cantSalAntes: number
   minRetrasos: number
   noMarcados: number
   hayPriEntExcepcion?: any
@@ -17,6 +18,8 @@ export class InfoMarcacion{
   haySegSalExcepcion?: any
   hayPriRetraso: boolean
   haySegRetraso: boolean
+  hayPriAntes: boolean
+  haySegAntes: boolean
   activo:boolean
   mensaje:string
   numTurnos: number
