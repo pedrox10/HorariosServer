@@ -10,7 +10,7 @@ import {
     crearTerminal,
     editarTerminal, eliminarInterrupcion,
     eliminarTerminal, getFechaPriMarcacion, getInterrupciones, getSincronizaciones, getTerminal,
-    getTerminales, getTerminalPorIp,
+    getTerminales, getTerminalPorIp, respaldarTerminales,
     sincronizarTerminal
 } from "./controllers/terminal.controller";
 import {
@@ -38,6 +38,8 @@ router.get("/terminal/:id/sincronizaciones", getSincronizaciones);
 router.get("/terminal/:id/interrupciones", getInterrupciones)
 router.post("/terminal/interrupcion/agregar", agregarInterrupcion)
 router.delete("/terminal/interrupcion/:id/eliminar", eliminarInterrupcion)
+router.get("/terminales/respaldar", respaldarTerminales)
+
 
 // Rutas para operaciones con Usuarios
 router.get("/terminal/:id/usuarios", getUsuarios)

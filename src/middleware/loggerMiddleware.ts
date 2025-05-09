@@ -1,24 +1,27 @@
 import { Request, Response, NextFunction } from 'express';
-import morgan, { StreamOptions } from 'morgan';
+import morgan from 'morgan';
 import logger from '../logger/logger';
 
-// Token personalizado para el cuerpo de la solicitud
+// Token personalizado para el cuerpo
 morgan.token('body', (req: Request) => JSON.stringify(req.body));
 
-// Token personalizado para la IP del cliente
-morgan.token('ip', (req: Request) => {
-    return req.headers['x-forwarded-for'] as string || req.socket.remoteAddress || '';
+morgan.token('client-ip', (req: Request) => {
+    const ip = req.ip || req.connection.remoteAddress || '';
+    return ip.replace(/^::ffff:/, '');
 });
 
-// Formato del log con IP incluida
-const morganFormat = 'IP: :ip :method :url :status :res[content-length] - :response-time ms :body';
-
-// Redirigir logs de Morgan a Winston
-const stream: StreamOptions = {
-    write: (message) => logger.info(message.trim())
-};
-
-// Middleware para registrar las peticiones HTTP
-const requestLogger = morgan(morganFormat, { stream });
+// Define directamente el formato como string
+const requestLogger = morgan(
+    ':client-ip :method :url :status :res[content-length] - :response-time ms :body',
+    {
+        stream: {
+            write: (message) => logger.info(message.trim())
+        },
+        skip: (req: Request) => {
+            // Omitir archivos estáticos
+            return /\.(css|js|png|jpg|jpeg|gif|ico|svg|woff2?|ttf)$/.test(req.url);
+        }
+    }
+);
 
 export default requestLogger;

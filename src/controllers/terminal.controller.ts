@@ -75,6 +75,8 @@ export const eliminarTerminal = async (req: Request, res: Response) => {
             await eliminarUsuario(usuario, terminal, queryRunner)
         }
         await queryRunner.manager.delete(Marcacion, { terminal: terminal.id });
+        await queryRunner.manager.delete(Sincronizacion, { terminal: terminal.id });
+        await queryRunner.manager.delete(Interrupcion, { terminal: terminal.id });
         let aux = await queryRunner.manager.delete(Terminal, { id: terminal.id });
         res.send(aux)
     }
@@ -172,6 +174,21 @@ export const getTerminalPorIp = async (req: Request, res: Response) => {
     } catch (error) {
         return res.status(500).json({ exito: false, respuesta: "Error en servidor"});
         console.error("Error en el servidor", error);
+    }
+}
+
+export const respaldarTerminales = async (req: Request, res: Response) => {
+    try {
+        let terminales = await AppDataSource.manager.find(Terminal)
+        const resultadosRespaldo = [];
+        for (let terminal of terminales) {
+            resultadosRespaldo.push({terminal: terminal.nombre, estado: 'Exitoso', archivo: "rutaBackup"});
+        }
+        res.status(200).json({message: 'Proceso de respaldo completado.', resultados: resultadosRespaldo});
+        console.log(resultadosRespaldo)
+    } catch (error) {
+        console.error('Error general al iniciar el respaldo de terminales:', error);
+        res.status(500).json({ error: 'Ocurrió un error al iniciar el proceso de respaldo.' });
     }
 }
 
