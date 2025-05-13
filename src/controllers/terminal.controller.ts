@@ -184,26 +184,29 @@ export const respaldarTerminales = async (req: Request, res: Response) => {
         const resultados = [];
         for (const terminal of terminales) {
             try {
-                const argsBase = [terminal.ip, terminal.puerto.toString()];
-                const salidaUsuarios = await ejecutarPythonScript(envPython, 'src/scriptpy/usuarios.py', argsBase);
-                const usuarios = JSON.parse(salidaUsuarios);
-                // Marcaciones
-                const argsMarcaciones = [...argsBase];
-                const salidaMarcaciones = await ejecutarPythonScript(envPython, 'src/scriptpy/marcaciones.py', argsMarcaciones);
-                const datosMarcaciones = JSON.parse(salidaMarcaciones);
-                // Armar JSON final
-                const horaTerminal = moment(datosMarcaciones.hora_terminal);
+                //Procesamiento de Marcaciones
+                const pyFileMarcaciones = 'src/scriptpy/marcaciones.py';
+                let argsMarcaciones = [terminal.ip, terminal.puerto];
+                argsMarcaciones.unshift(pyFileMarcaciones);
+                const pyprogMarcaciones = await spawn(envPython, argsMarcaciones);
+                let respuesta = JSON.parse(pyprogMarcaciones.toString())
+                let horaTerminal = moment(respuesta.hora_terminal)
                 const nombreArchivo = `${terminal.nombre.replace(/\s+/g, '_')}_${horaTerminal.format('YYYY-MM-DD_HH-mm-ss')}.json`;
                 const rutaArchivo = path.join(__dirname, '../../respaldos', nombreArchivo);
-
+                //Procesamiento de Usuarios
+                let usuariosT: any;
+                const pyFileUsuarios = 'src/scriptpy/usuarios.py';
+                let argsUsuarios = [terminal.ip, terminal.puerto];
+                argsUsuarios.unshift(pyFileUsuarios);
+                const pyprogUsuarios = await spawn(envPython, argsUsuarios);
+                usuariosT = JSON.parse(pyprogUsuarios.toString());
                 const contenidoRespaldo = {
-                    numero_serie: datosMarcaciones.numero_serie,
-                    hora_terminal: datosMarcaciones.hora_terminal,
-                    total_marcaciones: datosMarcaciones.total_marcaciones,
-                    usuarios,
-                    marcaciones: datosMarcaciones.marcaciones,
+                    numero_serie: respuesta.numero_serie,
+                    hora_terminal: horaTerminal,
+                    total_marcaciones: respuesta.total_marcaciones,
+                    usuariosT,
+                    marcaciones: respuesta.marcaciones,
                 };
-
                 await fs.mkdir(path.dirname(rutaArchivo), { recursive: true });
                 await fs.writeFile(rutaArchivo, JSON.stringify(contenidoRespaldo, null, 2));
                 resultados.push({ terminal: terminal.nombre, estado: 'Exitoso', archivo: rutaArchivo });
@@ -216,28 +219,6 @@ export const respaldarTerminales = async (req: Request, res: Response) => {
         res.status(500).json({ error: 'Fallo general al respaldar terminales' });
     }
 };
-
-export function ejecutarPythonScript(envPython: string, scriptPath: string, args: string[]): Promise<string> {
-    return new Promise((resolve, reject) => {
-        const fullArgs = [scriptPath, ...args];
-        const proceso = spawn(envPython, fullArgs);
-        let salida = '';
-        let errores = '';
-        proceso.stdout.on('data', (data: Buffer) => {
-            salida += data.toString();
-        });
-        proceso.stderr.on('data', (data: Buffer) => {
-            errores += data.toString();
-        });
-        proceso.on('close', (code: number) => {
-            if (code === 0) {
-                resolve(salida);
-            } else {
-                reject(new Error(`Error ejecutando ${scriptPath}: ${errores}`));
-            }
-        });
-    });
-}
 
 export const sincronizarTerminal = async (req: Request, res: Response) => {
     const { id } = req.params;
