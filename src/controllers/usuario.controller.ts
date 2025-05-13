@@ -246,7 +246,15 @@ export const getResumenMarcaciones = async (req: Request, res: Response) => {
             let diasComputados: number = 0
 
             if(hayRangoValido) {
-                //Obtengo toaas las marcaciones del usuario
+                //Obtengo toaas las jornadas y marcaciones del usuario
+                let jornadasDelRango = await Jornada.find({
+                    where: {
+                        usuario: { id: usuario.id },
+                        fecha: Between(rangoValido.start.toDate(), rangoValido.end.toDate()),
+                    }, relations: {
+                    priTurno: true, segTurno: true, horario: true
+                    }
+                });
                 let marcacionesDelRango = await Marcacion.find({
                     where: {
                         ci: usuario?.ci,
@@ -254,8 +262,13 @@ export const getResumenMarcaciones = async (req: Request, res: Response) => {
                         fecha: Between(rango.start.toDate(), rango.end.toDate()),
                     },
                 })
-                //Clasifico las marcaciones en un hashmap por fecha
-                const marcacionesPorFecha = new Map<string, Marcacion[]>();
+                //Clasifico las jornadas y marcaciones en un hashmap por fecha
+                let jornadasPorFecha = new Map<string, Jornada>();
+                jornadasDelRango.forEach(jornada => {
+                    jornadasPorFecha.set(moment(jornada.fecha).format('YYYY-MM-DD'), jornada);
+                });
+
+                let marcacionesPorFecha = new Map<string, Marcacion[]>();
                 marcacionesDelRango.forEach(marcacion => {
                     const fecha = moment(marcacion.fecha).format('YYYY-MM-DD');
                     if (!marcacionesPorFecha.has(fecha)) {
@@ -265,7 +278,9 @@ export const getResumenMarcaciones = async (req: Request, res: Response) => {
                 });
                 for (let fecha of rangoValido.by("day")) {
                     console.time("Jornada")
-                    let jornada = await getJornadaPor(usuario, fecha.format("YYYY-MM-DD"))
+                    const fechaStr = fecha.format('YYYY-MM-DD');
+                    let jornada = jornadasPorFecha.get(fechaStr);
+                    //let jornada = await getJornadaPor(usuario, fecha.format("YYYY-MM-DD"))
                     console.timeEnd("Jornada")
                     let infoMarcacion = new InfoMarcacion();
                     let cantRetrasos: number = 0

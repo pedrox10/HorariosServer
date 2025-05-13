@@ -171,6 +171,7 @@ export const getTerminalPorIp = async (req: Request, res: Response) => {
         if (!terminal) {
             return res.status(404).json({ exito: false, respuesta: "Terminal no encontrado en el servidor.\nSe debe agregar antes"});
         }
+        console.log(terminal)
         return res.status(200).json({ exito: true, respuesta: terminal});
     } catch (error) {
         return res.status(500).json({ exito: false, respuesta: "Error en servidor"});
@@ -202,7 +203,7 @@ export const respaldarTerminales = async (req: Request, res: Response) => {
                 usuariosT = JSON.parse(pyprogUsuarios.toString());
                 const contenidoRespaldo = {
                     numero_serie: respuesta.numero_serie,
-                    hora_terminal: horaTerminal,
+                    hora_terminal: horaTerminal.format("YYYY-MM-DD[T]HH:mm:ss"),
                     total_marcaciones: respuesta.total_marcaciones,
                     usuariosT,
                     marcaciones: respuesta.marcaciones,
