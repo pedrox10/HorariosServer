@@ -20,6 +20,8 @@ export class  Terminal extends BaseEntity {
     numSerie: string
     @Column({ nullable: true})
     totalMarcaciones: number
+    @Column()
+    categoria: string
     @Column({ nullable: true })
     tieneConexion: boolean
     @OneToMany(() => Usuario, (usuario) => usuario.terminal)

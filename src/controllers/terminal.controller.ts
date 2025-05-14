@@ -23,6 +23,7 @@ export const crearTerminal = async (req: Request, res: Response) => {
     terminal.ip = req.body.ip
     terminal.puerto = req.body.puerto
     terminal.tieneConexion = req.body.tieneConexion
+    terminal.categoria = req.body.categoria
     await terminal.save();
     console.log(terminal)
     res.send(terminal)
@@ -54,13 +55,14 @@ export const agregarInterrupcion = async (req: Request, res: Response) => {
 
 export const editarTerminal = async (req: Request, res: Response) => {
     const {id} = req.params;
-    const {nombre, ip, puerto, tieneConexion} = req.body
+    const {nombre, ip, puerto, tieneConexion, categoria} = req.body
     const terminal = await Terminal.findOne({where: {id: parseInt(id)},});
     if (terminal) {
         terminal.nombre = nombre;
         terminal.ip = ip;
         terminal.puerto = puerto
         terminal.tieneConexion = tieneConexion
+        terminal.categoria = categoria
         terminal.save()
         res.send(terminal)
     }
