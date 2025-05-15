@@ -21,7 +21,7 @@ export class  Terminal extends BaseEntity {
     @Column({ nullable: true})
     totalMarcaciones: number
     @Column()
-    categoria: string
+    categoria: number
     @Column({ nullable: true })
     tieneConexion: boolean
     @OneToMany(() => Usuario, (usuario) => usuario.terminal)

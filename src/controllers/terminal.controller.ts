@@ -11,7 +11,6 @@ import {Jornada} from "../entity/Jornada";
 import {Between, EntityManager, QueryRunner} from "typeorm";
 import {Sincronizacion} from "../entity/Sincronizacion";
 import {Interrupcion} from "../entity/Interrupcion";
-import {Horario} from "../entity/Horario";
 import { promises as fs } from 'fs';
 
 const envPython = path.join(__dirname, "../scriptpy/envpy", "bin", "python3");
@@ -21,9 +20,9 @@ export const crearTerminal = async (req: Request, res: Response) => {
     const terminal = new Terminal()
     terminal.nombre = req.body.nombre
     terminal.ip = req.body.ip
-    terminal.puerto = req.body.puerto
+    terminal.puerto = parseInt(req.body.puerto)
     terminal.tieneConexion = req.body.tieneConexion
-    terminal.categoria = req.body.categoria
+    terminal.categoria = parseInt(req.body.categoria)
     await terminal.save();
     console.log(terminal)
     res.send(terminal)
@@ -46,7 +45,6 @@ export const agregarInterrupcion = async (req: Request, res: Response) => {
         } else {
             return res.status(404).json({ info: 'Terminal biométrico no encontrado' })
         }
-
     } catch (error) {
         console.error("Error al guardar interrupción:", error);
         return res.status(500).json({ info: 'Error interno del servidor' });
@@ -60,9 +58,9 @@ export const editarTerminal = async (req: Request, res: Response) => {
     if (terminal) {
         terminal.nombre = nombre;
         terminal.ip = ip;
-        terminal.puerto = puerto
+        terminal.puerto = parseInt(puerto)
         terminal.tieneConexion = tieneConexion
-        terminal.categoria = categoria
+        terminal.categoria = parseInt(categoria)
         terminal.save()
         res.send(terminal)
     }
