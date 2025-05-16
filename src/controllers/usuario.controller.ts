@@ -183,6 +183,7 @@ export const getResumenMarcaciones = async (req: Request, res: Response) => {
             const respuesta = await obtenerSolicitudesAprobadasPorCI(usuario.ci);
             if(respuesta.success) {
                 const solicitudesAprobadas = respuesta.solicitudes ?? [];
+                console.log(solicitudesAprobadas)
                 for (const solicitud of solicitudesAprobadas) {
                     if (solicitud.tipo === "ET") {
                         let fechaInicio = new Date(solicitud.fecha_inicio);
@@ -489,6 +490,11 @@ export const getResumenMarcaciones = async (req: Request, res: Response) => {
                             infoMarcacion.numTurnos = jornada.getNumTurnos();
 
                             if (numTurnos == 2) {
+                                infoMarcacion.horario = {
+                                    nombre: jornada.horario.nombre, color: jornada.horario.color,
+                                    priEntrada: jornada.priTurno.horaEntrada, priSalida: jornada.priTurno.horaSalida,
+                                    segEntrada: jornada.segTurno.horaEntrada, segSalida: jornada.segTurno.horaSalida
+                                };
                                 let priEntradasM: Moment[] = [];
                                 let priSalidasM: Moment[] = [];
                                 let segEntradasM: Moment[] = [];
@@ -629,6 +635,10 @@ export const getResumenMarcaciones = async (req: Request, res: Response) => {
                                 infoMarcacion.haySegAntes = haySegAntes;
                             } else {
                                 if (numTurnos == 1) {
+                                    infoMarcacion.horario = {
+                                        nombre: jornada.horario.nombre, color: jornada.horario.color,
+                                        priEntrada: jornada.priTurno.horaEntrada, priSalida: jornada.priTurno.horaSalida,
+                                    };
                                     let priEntradasM: Moment[] = [];
                                     let priSalidasM: Moment[] = [];
                                     //Genero los rangos para entradas y salidas:
