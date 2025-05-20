@@ -12,6 +12,7 @@ import {Between, EntityManager, QueryRunner} from "typeorm";
 import {Sincronizacion} from "../entity/Sincronizacion";
 import {Interrupcion} from "../entity/Interrupcion";
 import { promises as fs } from 'fs';
+import logger from "../logger/logger";
 
 const envPython = path.join(__dirname, "../scriptpy/envpy", "bin", "python3");
 const spawn = require('await-spawn');
@@ -348,10 +349,7 @@ export const sincronizarTerminal = async (req: Request, res: Response) => {
         }
         // Actualizar la terminal con la fecha de sincronización
         terminal.totalMarcaciones = totalMarcaciones;
-        const fecha = moment("2026-01-01T11:43:00", "YYYY-MM-DD[T]HH:mm:ss");
-        console.log("Con YYYY:", fecha.format("YYYY-MM-DD"));
-        console.log("Con yyyy:", fecha.format("yyyy-MM-DD"));
-        console.log(horaTerminal)
+
         terminal.ultSincronizacion = moment(horaTerminal, "YYYY-MM-DD[T]HH:mm:ss").toDate();
         await queryRunner.manager.save(terminal);
         // Si todo sale bien, hacer commit de la transacción
@@ -471,6 +469,7 @@ async function eliminarUsuario(usuario: Usuario, terminal: Terminal, queryRunner
         await queryRunner.manager.remove(Turno, turnosBorrar);
     }
     //Borramos las jornadas restantes
+    logger.info(`Usuario eliminado: ${usuario.nombre} (CI: ${usuario.ci}) desde terminal "${terminal.nombre}"`);
     await queryRunner.manager.delete(Usuario, { id: usuario.id });
 }
 

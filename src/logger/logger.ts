@@ -23,7 +23,7 @@ const logger = winston.createLogger({
         new DailyRotateFile({
             dirname: 'logs',
             filename: 'app-%DATE%.log',
-            datePattern: 'YYYY-MM', // 👉 un log por mes
+            datePattern: 'YYYY-MM', // un log por mes
             zippedArchive: false,
             maxSize: '20m',
             maxFiles: '12m', // guarda hasta 12 meses
