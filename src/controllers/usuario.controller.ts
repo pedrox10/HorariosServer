@@ -281,7 +281,6 @@ export const getResumenMarcaciones = async (req: Request, res: Response) => {
                     console.time("Jornada")
                     const fechaStr = fecha.format('YYYY-MM-DD');
                     let jornada = jornadasPorFecha.get(fechaStr);
-                    //let jornada = await getJornadaPor(usuario, fecha.format("YYYY-MM-DD"))
                     console.timeEnd("Jornada")
                     let infoMarcacion = new InfoMarcacion();
                     let cantRetrasos: number = 0
@@ -829,6 +828,12 @@ function getSinRegistros(rangoSinRegistros: DateRange) {
         infoMarcacion.estado = EstadoJornada.sin_registros;
         infoMarcacion.activo = false
         infoMarcacion.mensaje = "Funcionario aún no registrado en el biométrico"
+        if (fecha.isSame(rangoSinRegistros.start, 'day')) {
+            infoMarcacion.primerDia = {success: true, mes: capitalizar(moment(fecha).locale("es").format("MMMM"))};
+        } else {
+            if(fecha.date() === 1)
+                infoMarcacion.primerDia = {success: true, mes: capitalizar(moment(fecha).locale("es").format("MMMM"))};
+        }
         infoMarcaciones.push(infoMarcacion)
     }
     return infoMarcaciones;
