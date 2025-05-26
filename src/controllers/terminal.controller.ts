@@ -95,29 +95,6 @@ export const getTerminales = async (req: Request, res: Response) => {
     res.send(terminales)
 }
 
-export const getUsuarios = async (req: Request, res: Response) => {
-    const {id} = req.params;
-    const terminal = await Terminal.findOne({
-        where: {id: parseInt(id)}, relations: {
-            usuarios: true,
-        }
-    });
-    let usuarios = terminal?.usuarios;
-    if (usuarios) {
-        for (const usuario of usuarios) {
-            let jornada = await ultJornadaAsignadaMes(usuario.id);
-            if (jornada) {
-                let dia = moment(jornada.fecha).format("DD");
-                let mes = moment(jornada.fecha).format("MMM");
-                usuario.horarioMes = "Hasta " + dia + " " + mes;
-            } else {
-                usuario.horarioMes = "Sin Asignar"
-            }
-        }
-        res.send(usuarios)
-    }
-}
-
 export const getSincronizaciones = async (req: Request, res: Response) => {
     const {id} = req.params;
     const terminal = await Terminal.createQueryBuilder('terminal')
@@ -474,13 +451,9 @@ async function eliminarUsuario(usuario: Usuario, terminal: Terminal, queryRunner
 }
 
 export async function ultJornadaAsignadaMes(usuarioId: number) {
-    const inicioMes = moment().startOf('month').toDate();
-    const finMes = moment().endOf('month').toDate();
-    // Buscamos la última jornada (fecha más alta) entre inicioMes y finMes
     const ultimaJornada = await Jornada.findOne({
         where: {
             usuario: {id: usuarioId}, // Relación con el usuario
-            fecha: Between(inicioMes, finMes),
         },
         order: {
             fecha: 'DESC', // Orden descendente para tomar la más reciente
@@ -490,5 +463,6 @@ export async function ultJornadaAsignadaMes(usuarioId: number) {
             segTurno: true,
         },
     });
+    console.log(ultimaJornada)
     return ultimaJornada;
 }

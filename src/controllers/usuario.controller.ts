@@ -856,13 +856,10 @@ function getAvisosDeBaja(rangoDeBaja: DateRange) {
 }
 
 export async function ultJornadaAsignadaMes(usuarioId: number) {
-    const inicioMes = moment().startOf('month').toDate();
-    const finMes = moment().endOf('month').toDate();
     // Buscamos la última jornada (fecha más alta) entre inicioMes y finMes
     const ultimaJornada = await Jornada.findOne({
         where: {
             usuario: {id: usuarioId}, // Relación con el usuario
-            fecha: Between(inicioMes, finMes),
         },
         order: {
             fecha: 'DESC', // Orden descendente para tomar la más reciente
