@@ -256,7 +256,7 @@ export const getResumenMarcaciones = async (req: Request, res: Response) => {
                         usuario: { id: usuario.id },
                         fecha: Between(rangoValido.start.toDate(), rangoValido.end.toDate()),
                     }, relations: {
-                    priTurno: true, segTurno: true, horario: true
+                        priTurno: true, segTurno: true, horario: true
                     }
                 });
                 let marcacionesDelRango = await Marcacion.find({
@@ -967,4 +967,3 @@ function getLicencia(excepcion: Excepcion): string {
     }
     return res;
 }
-
