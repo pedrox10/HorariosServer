@@ -331,6 +331,17 @@ export const sincronizarTerminal = async (req: Request, res: Response) => {
         await queryRunner.manager.save(terminal);
         // Si todo sale bien, hacer commit de la transacción
         await queryRunner.commitTransaction();
+        if (metodo === "POST") {
+            try {
+                const nombreArchivo = `${terminal.nombre.replace(/\s+/g, '_')}_${moment(horaTerminal).format('YYYY-MM-DD_HH-mm-ss')}.json`;
+                const rutaArchivo = path.join(__dirname, '../../respaldos', nombreArchivo);
+                await fs.mkdir(path.dirname(rutaArchivo), { recursive: true });
+                await fs.writeFile(rutaArchivo, JSON.stringify(req.body, null, 2));
+            } catch (fileError: any) {
+                console.error(`Error al guardar el archivo de sincronización para Terminal ${terminal.id}:`, fileError.message);
+                // Aquí solo se registra el error; la sincronización de la DB ya fue exitosa.
+            }
+        }
         // Recuperar la terminal con la relación de usuarios para la respuesta
         let t = await Terminal.findOne({
             where: { id: terminal.id },
