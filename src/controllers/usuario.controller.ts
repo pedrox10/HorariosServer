@@ -113,8 +113,8 @@ export const getResumenMarcaciones = async (req: Request, res: Response) => {
         }
     });
     if (usuario) {
-        let fechaIni = moment(ini).format('yyyy-MM-DD')
-        let fechaFin = moment(fin).format('yyyy-MM-DD')
+        let fechaIni = moment(ini).format('YYYY-MM-DD')
+        let fechaFin = moment(fin).format('YYYY-MM-DD')
         let resumenMarcacion: ResumenMarcacion = new ResumenMarcacion();
         resumenMarcacion.usuario = usuario;
         let infoMarcaciones: InfoMarcacion[] = [];
@@ -183,13 +183,15 @@ export const getResumenMarcaciones = async (req: Request, res: Response) => {
             const respuesta = await obtenerSolicitudesAprobadasPorCI(usuario.ci);
             if(respuesta.success) {
                 const solicitudesAprobadas = respuesta.solicitudes ?? [];
-                console.log(solicitudesAprobadas)
+                //console.log(solicitudesAprobadas)
+                //console.log(rangoValido.start.toDate())
                 for (const solicitud of solicitudesAprobadas) {
                     if (solicitud.tipo === "ET") {
-                        let fechaInicio = new Date(solicitud.fecha_inicio);
-                        if (fechaInicio >= rangoValido.start.toDate() && fechaInicio <= rangoValido.end.toDate()) {
+                        let fechaInicio = moment(solicitud.fecha_inicio, "YYYY-MM-DD");
+                        if (fechaInicio.isSameOrAfter(rangoValido.start) && fechaInicio.isSameOrBefore(rangoValido.end)) {
+                            console.log("cumple")
                             let excepcion = new Excepcion();
-                            excepcion.fecha = fechaInicio;
+                            excepcion.fecha = fechaInicio.toDate();
                             excepcion.jornada = 'rango';
                             excepcion.detalle = capitalizar(solicitud.detalle);
                             excepcion.licencia = solicitud.tipo;
@@ -199,13 +201,13 @@ export const getResumenMarcaciones = async (req: Request, res: Response) => {
                         }
                     } else {
                         for (const diaObj of solicitud.dias) {
-                            const fechaDia = new Date(diaObj.fecha);
-                            if (fechaDia < rangoValido.start.toDate() || fechaDia > rangoValido.end.toDate()) {
+                            let fechaDia= moment(diaObj.fecha, "YYYY-MM-DD");
+                            if (fechaDia.isBefore(rangoValido.start) || fechaDia.isAfter(rangoValido.end)) {
                                 continue;
                             }
                             if (diaObj.jornada === 'completa') {
                                 let excepcion = new Excepcion();
-                                excepcion.fecha = fechaDia;
+                                excepcion.fecha = fechaDia.toDate();
                                 excepcion.jornada = 'completa';
                                 excepcion.detalle = capitalizar(solicitud.detalle);
                                 excepcion.licencia = solicitud.tipo;
@@ -213,7 +215,7 @@ export const getResumenMarcaciones = async (req: Request, res: Response) => {
 
                             } else { // media
                                 let excepcion = new Excepcion();
-                                excepcion.fecha = fechaDia;
+                                excepcion.fecha = fechaDia.toDate();
                                 excepcion.jornada = 'media';
                                 excepcion.turno = diaObj.turno!;
                                 if (diaObj.turno === "mañana") {
@@ -237,6 +239,7 @@ export const getResumenMarcaciones = async (req: Request, res: Response) => {
                 hayExcepcionesCompletas = true
             if (excepcionesRangoHoras.length > 0)
                 hayExcepcionesRangoHoras = true
+            console.log(excepcionesRangoHoras)
             console.timeEnd("Organigram")
 
             let totalCantRetrasos: number = 0
@@ -260,7 +263,7 @@ export const getResumenMarcaciones = async (req: Request, res: Response) => {
                     where: {
                         ci: usuario?.ci,
                         terminal: usuario?.terminal,
-                        fecha: Between(rango.start.toDate(), rango.end.toDate()),
+                        fecha: Between(rangoValido.start.toDate(), rangoValido.end.toDate()),
                     },
                 })
                 //Clasifico las jornadas y marcaciones en un hashmap por fecha
