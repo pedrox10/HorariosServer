@@ -1,14 +1,14 @@
 import {BaseEntity, Column, Entity, PrimaryGeneratedColumn} from "typeorm";
 
-@Entity
+@Entity()
 export class UsuarioLogin extends BaseEntity {
-    @PrimaryGeneratedColumn
+    @PrimaryGeneratedColumn()
     id: number
-    @Column
+    @Column()
     nombre: string
-    @Column
+    @Column()
     nombreUsuario: string
-    @Column
+    @Column()
     clave: string
     @Column({ default: 'admin' }) // valores: 'admin', 'visor'
     rol: string;

@@ -1,4 +1,5 @@
 import {Router} from "express";
+import {login} from "./controllers/intercomunicacion.controller";
 import {
     getResumenMarcaciones, getJornada,
     getMarcaciones,
@@ -23,6 +24,8 @@ import {
 } from "./controllers/horario.controller";
 
 const router = Router();
+//Ruta para Login
+router.post("/login",login);
 
 // Rutas para operaciones con Terminales
 router.get("/terminal/:id",getTerminal);

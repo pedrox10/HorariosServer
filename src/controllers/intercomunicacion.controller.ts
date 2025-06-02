@@ -1,5 +1,8 @@
 import mongoose from 'mongoose';
 import { conectarMongo } from '../mongo.connection';
+import { Request, Response } from "express";
+import { UsuarioLogin } from "../entity/UsuarioLogin";
+import bcrypt from "bcrypt";
 
 interface Funcionario {
   ci: number;
@@ -52,3 +55,25 @@ export async function obtenerSolicitudesAprobadasPorCI(ci: number) {
     return null;
   }
 }
+
+export const login = async (req: Request, res: Response) => {
+  const { nombreUsuario, clave } = req.body;
+
+  const usuario = await UsuarioLogin.findOneBy({ nombreUsuario });
+
+  if (!usuario) {
+    return res.status(401).json({ mensaje: "Usuario no encontrado" });
+  }
+
+  const esClaveValida = await bcrypt.compare(clave, usuario.clave);
+  if (!esClaveValida) {
+    return res.status(401).json({ mensaje: "Clave incorrecta" });
+  }
+
+  // Responder con datos básicos
+  return res.json({
+    id: usuario.id,
+    nombre: usuario.nombre,
+    rol: usuario.rol,
+  });
+};
