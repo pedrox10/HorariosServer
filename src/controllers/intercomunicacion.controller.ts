@@ -57,23 +57,20 @@ export async function obtenerSolicitudesAprobadasPorCI(ci: number) {
 }
 
 export const login = async (req: Request, res: Response) => {
-  const { nombreUsuario, clave } = req.body;
-
-  const usuario = await UsuarioLogin.findOneBy({ nombreUsuario });
-
-  if (!usuario) {
+  const { usuario, clave } = req.body;
+  const usuarioBD = await UsuarioLogin.findOneBy({ nombreUsuario: usuario });
+  if (!usuarioBD) {
+    console.log("usuario no encontrado");
     return res.status(401).json({ mensaje: "Usuario no encontrado" });
   }
-
-  const esClaveValida = await bcrypt.compare(clave, usuario.clave);
+  const esClaveValida = await bcrypt.compare(clave, usuarioBD.clave);
   if (!esClaveValida) {
+    console.log("clave invalida");
     return res.status(401).json({ mensaje: "Clave incorrecta" });
   }
-
-  // Responder con datos básicos
   return res.json({
-    id: usuario.id,
-    nombre: usuario.nombre,
-    rol: usuario.rol,
+    id: usuarioBD.id,
+    nombre: usuarioBD.nombre,
+    rol: usuarioBD.rol,
   });
-};
+}
