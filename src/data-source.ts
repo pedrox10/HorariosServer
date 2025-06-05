@@ -24,7 +24,7 @@ export const AppDataSource = new DataSource({
     synchronize: true,
     logging: false,
     entities: [Terminal, Usuario, Marcacion, JornadaDia, Horario, Jornada, Turno, Asueto,
-                Licencia, ExcepcionTickeo, Sincronizacion, Interrupcion, UsuarioLogin],
+                Sincronizacion, Interrupcion, UsuarioLogin],
     subscribers: [],
     migrations: [],
 })

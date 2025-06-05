@@ -23,6 +23,6 @@ export class ExcepcionTickeo extends BaseEntity{
     detalle: string
     @ManyToOne(() => Licencia)
     licencia: Licencia
-    @ManyToOne(() => Usuario, (usuario) => usuario.excepcionesTickeo)
-    usuario: Usuario
+    /*@ManyToOne(() => Usuario, (usuario) => usuario.excepcionesTickeo)
+    usuario: Usuario*/
 }

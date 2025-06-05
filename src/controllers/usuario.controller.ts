@@ -189,7 +189,6 @@ export const getResumenMarcaciones = async (req: Request, res: Response) => {
                     if (solicitud.tipo === "ET") {
                         let fechaInicio = moment(solicitud.fecha_inicio, "YYYY-MM-DD");
                         if (fechaInicio.isSameOrAfter(rangoValido.start) && fechaInicio.isSameOrBefore(rangoValido.end)) {
-                            console.log("cumple")
                             let excepcion = new Excepcion();
                             excepcion.fecha = fechaInicio.toDate();
                             excepcion.jornada = 'rango';
@@ -281,10 +280,10 @@ export const getResumenMarcaciones = async (req: Request, res: Response) => {
                     marcacionesPorFecha.get(fecha)!.push(marcacion);
                 });
                 for (let fecha of rangoValido.by("day")) {
-                    console.time("Jornada")
+                    //console.time("Jornada")
                     const fechaStr = fecha.format('YYYY-MM-DD');
                     let jornada = jornadasPorFecha.get(fechaStr);
-                    console.timeEnd("Jornada")
+                    //console.timeEnd("Jornada")
                     let infoMarcacion = new InfoMarcacion();
                     let cantRetrasos: number = 0
                     let cantSalAntes: number = 0
@@ -513,7 +512,7 @@ export const getResumenMarcaciones = async (req: Request, res: Response) => {
                                 let segSalFin = moment(jornada.fecha + " " + "23:59").format('YYYY-MM-DD HH:mm')
                                 let segSalRango = momentExt.range(moment(segEntFin).toDate(), moment(segSalFin).toDate())
                                 //Obtengo las marcaciones segun fecha y clasifico segun rangos
-                                console.time("Marcaciones")
+                                //console.time("Marcaciones")
                                 let marcacionesDia = marcacionesPorFecha.get(fecha.format('YYYY-MM-DD')) || [];
                                 marcacionesDia.forEach(marcacion => {
                                     let horaMarcaje = moment(marcacion.fecha + " " + marcacion.hora).format('YYYY-MM-DD HH:mm')
@@ -526,7 +525,7 @@ export const getResumenMarcaciones = async (req: Request, res: Response) => {
                                     else if (segSalRango.contains(moment(horaMarcaje)))
                                         segSalidasM.push(moment(horaMarcaje))
                                 })
-                                console.timeEnd("Marcaciones")
+                                //console.timeEnd("Marcaciones")
                                 let priEntradas: string[] = [];
                                 let priSalidas: string[] = [];
                                 let segEntradas: string[] = [];

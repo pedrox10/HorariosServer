@@ -5,11 +5,9 @@ import {
     OneToMany,
     BaseEntity,
     ManyToOne,
-    VirtualColumn
 } from "typeorm"
 import {Terminal} from "./Terminal";
 import {Jornada} from "./Jornada";
-import {ExcepcionTickeo} from "./ExcepcionTickeo";
 
 export enum EstadoUsuario {
         inactivo,
@@ -40,6 +38,6 @@ export class Usuario extends BaseEntity{
     jornadas: Jornada[]
     @ManyToOne(() => Terminal, (terminal) => terminal.usuarios)
     terminal: Terminal
-    @OneToMany(() => ExcepcionTickeo, (excepcion) => excepcion.usuario)
-    excepcionesTickeo: ExcepcionTickeo[]
+    /*@OneToMany(() => ExcepcionTickeo, (excepcion) => excepcion.usuario)
+    excepcionesTickeo: ExcepcionTickeo[]*/
 }
