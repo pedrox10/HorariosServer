@@ -455,7 +455,7 @@ async function eliminarUsuario(usuario: Usuario, terminal: Terminal, queryRunner
     // Eliminar turnos si hay alguno
     if (turnosBorrar.length > 0) {
         await queryRunner.manager.remove(Turno, turnosBorrar);
-    }
+     }
     //Borramos las jornadas restantes
     logger.info(`Usuario eliminado: ${usuario.nombre} (CI: ${usuario.ci}) desde terminal "${terminal.nombre}"`);
     await queryRunner.manager.delete(Usuario, { id: usuario.id });

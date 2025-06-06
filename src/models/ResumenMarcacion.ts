@@ -11,6 +11,7 @@ export class ResumenMarcacion{
     diasComputados: number;
     infoMarcaciones: InfoMarcacion[];
     mensajeError?: string | any
+    sinAsignar?: number;
 
     constructor() {
     }

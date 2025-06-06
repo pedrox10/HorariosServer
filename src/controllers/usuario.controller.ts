@@ -247,6 +247,7 @@ export const getResumenMarcaciones = async (req: Request, res: Response) => {
             let totalSalAntes: number = 0
             let totalAusencias: number = 0
             let diasComputados: number = 0
+            let sinAsignar: number = 0
 
             if(hayRangoValido) {
                 //Obtengo toaas las jornadas y marcaciones del usuario
@@ -744,6 +745,7 @@ export const getResumenMarcaciones = async (req: Request, res: Response) => {
                         infoMarcacion.horario = "Ninguno"
                         infoMarcacion.mensaje = "Asigna antes un horario"
                         infoMarcacion.estado = EstadoJornada.sin_asignar
+                        sinAsignar++;
                     }
                     infoMarcaciones.push(infoMarcacion)
                 }
@@ -758,6 +760,7 @@ export const getResumenMarcaciones = async (req: Request, res: Response) => {
             resumenMarcacion.totalAusencias = totalAusencias
             resumenMarcacion.infoMarcaciones = infoMarcaciones
             resumenMarcacion.diasComputados = diasComputados
+            resumenMarcacion.sinAsignar = sinAsignar;
             res.send(resumenMarcacion)
         }
     }
