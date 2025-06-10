@@ -44,7 +44,7 @@ export const getUsuarios = async (req: Request, res: Response) => {
     let usuarios = terminal?.usuarios;
     if (usuarios) {
         for (const usuario of usuarios) {
-            let jornada = await ultJornadaAsignadaMes(usuario.id);
+            let jornada = await ultJornadaAsignada(usuario.id);
             if (jornada) {
                 let dia = moment(jornada.fecha).format("DD");
                 let mes = moment(jornada.fecha).format("MMM");
@@ -758,6 +758,9 @@ export const getResumenMarcaciones = async (req: Request, res: Response) => {
             resumenMarcacion.totalSalAntes = totalSalAntes
             resumenMarcacion.totalSinMarcar = totalSinMarcar
             resumenMarcacion.totalAusencias = totalAusencias
+            if(totalAusencias > 0) {
+                console.log(await ultMarcacion(usuario))
+            }
             resumenMarcacion.infoMarcaciones = infoMarcaciones
             resumenMarcacion.diasComputados = diasComputados
             resumenMarcacion.sinAsignar = sinAsignar;
@@ -860,7 +863,7 @@ function getAvisosDeBaja(rangoDeBaja: DateRange) {
     return infoMarcaciones;
 }
 
-export async function ultJornadaAsignadaMes(usuarioId: number) {
+export async function ultJornadaAsignada(usuarioId: number) {
     // Buscamos la última jornada (fecha más alta) entre inicioMes y finMes
     const ultimaJornada = await Jornada.findOne({
         where: {
@@ -875,6 +878,20 @@ export async function ultJornadaAsignadaMes(usuarioId: number) {
         },
     });
     return ultimaJornada;
+}
+
+export async function ultMarcacion(usuario: Usuario) {
+    // Buscamos la última jornada (fecha más alta) entre inicioMes y finMes
+    const ultMarcacion = await Marcacion.findOne({
+        where: {
+            ci: usuario.ci,
+            terminal: usuario.terminal
+        },
+        order: {
+            fecha: 'DESC', // Orden descendente para tomar la más reciente
+        },
+    });
+    return ultMarcacion;
 }
 
 export async function obtenerSolicitudesAprobadasPorCI(ci: number) {

@@ -351,7 +351,7 @@ export const sincronizarTerminal = async (req: Request, res: Response) => {
         let usuarios = t?.usuarios;
         if (usuarios) {
             for (let usuario of usuarios) {
-                let jornada = await ultJornadaAsignadaMes(usuario.id);
+                let jornada = await ultJornadaAsignada(usuario.id);
                 if (jornada) {
                     let dia = moment(jornada.fecha).format("DD");
                     let mes = moment(jornada.fecha).format("MMM");
@@ -461,7 +461,7 @@ async function eliminarUsuario(usuario: Usuario, terminal: Terminal, queryRunner
     await queryRunner.manager.delete(Usuario, { id: usuario.id });
 }
 
-export async function ultJornadaAsignadaMes(usuarioId: number) {
+export async function ultJornadaAsignada(usuarioId: number) {
     const ultimaJornada = await Jornada.findOne({
         where: {
             usuario: {id: usuarioId}, // Relación con el usuario
@@ -474,6 +474,5 @@ export async function ultJornadaAsignadaMes(usuarioId: number) {
             segTurno: true,
         },
     });
-    console.log(ultimaJornada)
     return ultimaJornada;
 }
