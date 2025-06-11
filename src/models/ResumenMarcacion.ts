@@ -8,6 +8,7 @@ export class ResumenMarcacion{
     totalSalAntes: number;
     totalSinMarcar: number;
     totalAusencias: number;
+    totalPermisosSG: number;
     diasComputados: number;
     infoMarcaciones: InfoMarcacion[];
     mensajeError?: string | any

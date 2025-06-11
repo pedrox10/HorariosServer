@@ -238,6 +238,7 @@ export const getResumenMarcaciones = async (req: Request, res: Response) => {
                 hayExcepcionesCompletas = true
             if (excepcionesRangoHoras.length > 0)
                 hayExcepcionesRangoHoras = true
+            console.log(excepcionesCompletas)
             console.log(excepcionesRangoHoras)
             console.timeEnd("Organigram")
 
@@ -246,6 +247,7 @@ export const getResumenMarcaciones = async (req: Request, res: Response) => {
             let totalSinMarcar: number = 0
             let totalSalAntes: number = 0
             let totalAusencias: number = 0
+            let totalPermisosSG: number = 0
             let diasComputados: number = 0
             let sinAsignar: number = 0
 
@@ -327,16 +329,14 @@ export const getResumenMarcaciones = async (req: Request, res: Response) => {
                                     case "VA":
                                         jornada.estado = EstadoJornada.vacacion
                                         break;
-                                    case "PE":
+                                    case "PO":
                                         jornada.estado = EstadoJornada.permiso
-                                        console.log("PE detectado")
                                         break;
                                     case "BM":
                                         jornada.estado = EstadoJornada.baja_medica
                                         break;
-                                    case "LI":
-                                        jornada.estado = EstadoJornada.licencia
-                                        console.log("LI detectado")
+                                    case "SG":
+                                        jornada.estado = EstadoJornada.permiso_sg
                                         break;
                                     default :
                                         jornada.estado = EstadoJornada.otro
@@ -370,10 +370,11 @@ export const getResumenMarcaciones = async (req: Request, res: Response) => {
                                         infoMarcacion.horario.nombre = "Baja Médica"
                                         infoMarcacion.estado = EstadoJornada.baja_medica
                                         break;
-                                    case EstadoJornada.licencia:
+                                    case EstadoJornada.permiso_sg:
                                         infoMarcacion.horario.color = "#a7c454";
-                                        infoMarcacion.horario.nombre = "Licencia"
-                                        infoMarcacion.estado = EstadoJornada.licencia
+                                        infoMarcacion.horario.nombre = "PermisoSG"
+                                        infoMarcacion.estado = EstadoJornada.permiso_sg
+                                        totalPermisosSG++;
                                         break;
                                     case EstadoJornada.otro:
                                         infoMarcacion.horario.color = "#939393";
@@ -394,6 +395,8 @@ export const getResumenMarcaciones = async (req: Request, res: Response) => {
                             if (hayExcepcionesRangoHoras) {
                                 excepcionesTickeo = getExcepcionesTickeo(jornada, excepcionesRangoHoras)
                                 for (let excepcionTickeo of excepcionesTickeo) {
+                                    if(excepcionTickeo.licencia === "SG")
+                                        totalPermisosSG = totalPermisosSG + 0.5
                                     let rangoTickeo: DateRange;
                                     let [hora, minuto] = excepcionTickeo.horaIni.split(':').map(Number);
                                     let inicio = moment(excepcionTickeo.fecha).utc().set({
@@ -758,6 +761,7 @@ export const getResumenMarcaciones = async (req: Request, res: Response) => {
             resumenMarcacion.totalSalAntes = totalSalAntes
             resumenMarcacion.totalSinMarcar = totalSinMarcar
             resumenMarcacion.totalAusencias = totalAusencias
+            resumenMarcacion.totalPermisosSG = totalPermisosSG
             if(totalAusencias > 0) {
                 console.log(await ultMarcacion(usuario))
             }
@@ -969,7 +973,7 @@ function getLicencia(excepcion: Excepcion): string {
         case "ET":
             res = "Excepción de Tickeo"
             break;
-        case "PE":
+        case "PO":
             res = "Permiso"
             break;
         case "VA":
@@ -978,8 +982,8 @@ function getLicencia(excepcion: Excepcion): string {
         case "BM":
             res = "Baja Médica"
             break;
-        case "LI":
-            res = "Licencia"
+        case "SG":
+            res = "PermisoSG"
             break;
         default:
             res = "Otros"

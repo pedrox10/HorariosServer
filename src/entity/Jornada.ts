@@ -11,7 +11,7 @@ export enum EstadoJornada {
     vacacion,
     baja_medica,
     permiso,
-    licencia,
+    permiso_sg,
     otro,
     sin_asignar,
     sin_registros,
