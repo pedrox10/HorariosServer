@@ -48,9 +48,15 @@ export const getUsuarios = async (req: Request, res: Response) => {
             if (jornada) {
                 let dia = moment(jornada.fecha).format("DD");
                 let mes = moment(jornada.fecha).format("MMM");
-                usuario.horarioMes = "Hasta " + dia + " " + mes;
+                usuario.ultAsignacion = "Hasta " + dia + " " + mes;
             } else {
-                usuario.horarioMes = "Sin Asignar"
+                usuario.ultAsignacion = "Sin Asignar"
+                let marcacion: Marcacion | null= await ultMarcacion(usuario);
+                if(marcacion === null)
+                    usuario.ultMarcacion = "Sin Marcaciones"
+                else
+                    usuario.ultMarcacion = moment(marcacion.fecha).format("DD/MM/YYYY") +
+                        " " + moment(marcacion.hora, "HH:mm:ss").format("HH:mm");
             }
         }
         res.send(usuarios)

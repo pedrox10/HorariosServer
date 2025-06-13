@@ -32,7 +32,8 @@ export class Usuario extends BaseEntity{
     fechaBaja: Date;
     @Column({type: 'date', nullable: true})
     fechaCumpleano: Date;
-    horarioMes: string;
+    ultAsignacion: string;
+    ultMarcacion?: string;
 
     @OneToMany(() => Jornada, (jornada) => jornada.usuario)
     jornadas: Jornada[]
