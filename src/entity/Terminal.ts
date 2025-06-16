@@ -18,6 +18,8 @@ export class  Terminal extends BaseEntity {
     ultSincronizacion: Date;
     @Column({ nullable: true })
     numSerie: string
+    @Column({ nullable: true })
+    modelo: string
     @Column({ nullable: true})
     totalMarcaciones: number
     @Column()
