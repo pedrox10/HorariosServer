@@ -181,6 +181,7 @@ export const respaldarTerminales = async (req: Request, res: Response) => {
                 usuariosT = JSON.parse(pyprogUsuarios.toString());
                 const contenidoRespaldo = {
                     numero_serie: respuesta.numero_serie,
+                    modelo: respuesta.modelo,
                     hora_terminal: horaTerminal.format("YYYY-MM-DD[T]HH:mm:ss"),
                     total_marcaciones: respuesta.total_marcaciones,
                     usuariosT,
@@ -219,6 +220,7 @@ export const sincronizarTerminal = async (req: Request, res: Response) => {
     let marcacionesT: any;
     let usuariosT: any;
     let numeroSerie;
+    let modelo;
     let horaTerminal;
     let totalMarcaciones;
 
@@ -245,14 +247,16 @@ export const sincronizarTerminal = async (req: Request, res: Response) => {
             //console.log(pyprogMarcaciones.toString())
             let respuesta = JSON.parse(pyprogMarcaciones.toString())
             marcacionesT = respuesta.marcaciones;
-            numeroSerie = respuesta.numero_serie
-            horaTerminal = respuesta.hora_terminal
-            totalMarcaciones = respuesta.total_marcaciones
+            numeroSerie = respuesta.numero_serie;
+            modelo = respuesta.modelo;
+            horaTerminal = respuesta.hora_terminal;
+            totalMarcaciones = respuesta.total_marcaciones;
         } else if (metodo === "POST") {
             console.log("Petición POST recibida");
             const info = JSON.parse(req.body.info);
             marcacionesT = info.marcaciones;
             numeroSerie = info.numero_serie
+            modelo = info.modelo
             horaTerminal = info.hora_terminal
             totalMarcaciones = info.total_marcaciones
         }
@@ -305,6 +309,8 @@ export const sincronizarTerminal = async (req: Request, res: Response) => {
             }
             if(terminal.numSerie !== numeroSerie)
                 terminal.numSerie = numeroSerie
+            if(terminal.modelo !== modelo)
+                terminal.modelo = modelo;
         } else {
             // Si es la primera sincronización, agregar todos los usuarios nuevos
             for (let usuarioT of usuariosT) {
@@ -312,6 +318,7 @@ export const sincronizarTerminal = async (req: Request, res: Response) => {
                 usuariosNuevos.push(usuario);
             }
             terminal.numSerie = numeroSerie;
+            terminal.modelo = modelo;
         }
         // Insertar y actualizar usuarios
         if (usuariosNuevos.length > 0) {
@@ -379,6 +386,7 @@ export const sincronizarTerminal = async (req: Request, res: Response) => {
             usuarios_editados: usuariosEditados.length,
             usuarios_eliminados: usuariosEliminados.length,
             numero_serie: numeroSerie,
+            modelo: modelo,
             hora_terminal: horaTerminal,
             hora_servidor: moment().utc().toDate(),
             total_marcaciones: totalMarcaciones,

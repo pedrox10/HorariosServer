@@ -55,7 +55,7 @@ export const getUsuarios = async (req: Request, res: Response) => {
                 if(marcacion === null)
                     usuario.ultMarcacion = "Sin Marcaciones"
                 else
-                    usuario.ultMarcacion = moment(marcacion.fecha).format("DD/MM/YYYY") +
+                    usuario.ultMarcacion = "Ultima marcacion: " + moment(marcacion.fecha).format("DD/MM/YYYY") +
                         " " + moment(marcacion.hora, "HH:mm:ss").format("HH:mm");
             }
         }

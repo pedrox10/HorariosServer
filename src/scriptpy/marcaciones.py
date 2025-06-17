@@ -19,6 +19,7 @@ try:
     conn = zk.connect()
     attendance_records = conn.get_attendance()
     serial_number = conn.get_serialnumber()
+    modelo = conn.get_device_name()
     current_time = serialize_datetime(conn.get_time())
     marcaciones = []
     if fecha_desde == "":
@@ -37,6 +38,7 @@ try:
     resultado = {
         "total_marcaciones": len(attendance_records),
         "numero_serie": serial_number,
+        "modelo": modelo,
         "hora_terminal": current_time,
         "marcaciones": aux
     }
