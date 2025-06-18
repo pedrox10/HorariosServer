@@ -764,13 +764,13 @@ export const getResumenMarcaciones = async (req: Request, res: Response) => {
             }
             resumenMarcacion.totalCantRetrasos = totalCantRetrasos
             resumenMarcacion.totalMinRetrasos = totalMinRetrasos
+            let multaRetrasos = totalMinRetrasos > 0 ? getMultaRetrasos(totalMinRetrasos): totalMinRetrasos;
+            if(multaRetrasos > 0)
+                resumenMarcacion.multaRetrasos = multaRetrasos
             resumenMarcacion.totalSalAntes = totalSalAntes
             resumenMarcacion.totalSinMarcar = totalSinMarcar
             resumenMarcacion.totalAusencias = totalAusencias
             resumenMarcacion.totalPermisosSG = totalPermisosSG
-            if(totalAusencias > 0) {
-                console.log(await ultMarcacion(usuario))
-            }
             resumenMarcacion.infoMarcaciones = infoMarcaciones
             resumenMarcacion.diasComputados = diasComputados
             resumenMarcacion.sinAsignar = sinAsignar;
@@ -995,4 +995,13 @@ function getLicencia(excepcion: Excepcion): string {
             res = "Otros"
     }
     return res;
+}
+
+function getMultaRetrasos(min: number): number {
+    if (min <= 30) return 0;
+    if (min <= 45) return 0.5;
+    if (min <= 60) return 1;
+    if (min <= 90) return 2;
+    if (min <= 120) return 3;
+    return 4;
 }

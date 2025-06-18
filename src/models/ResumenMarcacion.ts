@@ -5,9 +5,13 @@ export class ResumenMarcacion{
     usuario: Usuario;
     totalCantRetrasos:number;
     totalMinRetrasos: number;
-    totalSalAntes: number;
+    multaRetrasos?: number;
     totalSinMarcar: number;
+    multaSinMarcar?: number;
+    totalSalAntes: number;
+    multaSalAntes?: number;
     totalAusencias: number;
+    multaAusencias?: number;
     totalPermisosSG: number;
     diasComputados: number;
     infoMarcaciones: InfoMarcacion[];
