@@ -113,11 +113,13 @@ export const getMarcaciones = async (req: Request, res: Response) => {
 
 export const getResumenMarcaciones = async (req: Request, res: Response) => {
     const {id, ini, fin} = req.params;
+    console.time("GetUsuario")
     let usuario = await Usuario.findOne({
         where: {id: parseInt(id)}, relations: {
             terminal: true,
         }
     });
+    console.timeEnd("GetUsuario")
     if (usuario) {
         let fechaIni = moment(ini).format('YYYY-MM-DD')
         let fechaFin = moment(fin).format('YYYY-MM-DD')
@@ -157,6 +159,8 @@ export const getResumenMarcaciones = async (req: Request, res: Response) => {
                     }
                 }
             }
+
+            console.time("FeriadosInterrupciones")
             let feriados: Asueto[] = await Asueto.findBy({
                 fecha: Between(rangoValido.start.toDate(), rangoValido.end.toDate()),
                 tipo: TipoAsueto.todos
@@ -184,7 +188,7 @@ export const getResumenMarcaciones = async (req: Request, res: Response) => {
                     excepcionesRangoHoras.push(excepcion);
                 }
             }
-
+            console.timeEnd("FeriadosInterrupciones")
             console.time("Organigram")
             const respuesta = await obtenerSolicitudesAprobadasPorCI(usuario.ci);
             if(respuesta.success) {
@@ -244,8 +248,8 @@ export const getResumenMarcaciones = async (req: Request, res: Response) => {
                 hayExcepcionesCompletas = true
             if (excepcionesRangoHoras.length > 0)
                 hayExcepcionesRangoHoras = true
-            console.log(excepcionesCompletas)
-            console.log(excepcionesRangoHoras)
+            //console.log(excepcionesCompletas)
+            //console.log(excepcionesRangoHoras)
             console.timeEnd("Organigram")
 
             let totalCantRetrasos: number = 0
@@ -258,6 +262,7 @@ export const getResumenMarcaciones = async (req: Request, res: Response) => {
             let sinAsignar: number = 0
 
             if(hayRangoValido) {
+                console.time("RangoValido")
                 //Obtengo toaas las jornadas y marcaciones del usuario
                 let jornadasDelRango = await Jornada.find({
                     where: {
@@ -758,18 +763,21 @@ export const getResumenMarcaciones = async (req: Request, res: Response) => {
                     }
                     infoMarcaciones.push(infoMarcacion)
                 }
+                console.timeEnd("RangoValido")
             }
             if (rangoDeBaja) {
                 infoMarcaciones.push(...getAvisosDeBaja(rangoDeBaja))
             }
             resumenMarcacion.totalCantRetrasos = totalCantRetrasos
             resumenMarcacion.totalMinRetrasos = totalMinRetrasos
-            let multaRetrasos = totalMinRetrasos > 0 ? getMultaRetrasos(totalMinRetrasos): totalMinRetrasos;
-            if(multaRetrasos > 0)
-                resumenMarcacion.multaRetrasos = multaRetrasos
-            resumenMarcacion.totalSalAntes = totalSalAntes
+            resumenMarcacion.multaRetrasos = getMultaRetrasos(totalMinRetrasos)
             resumenMarcacion.totalSinMarcar = totalSinMarcar
+            resumenMarcacion.multaSinMarcar = getMultaSinMarcar(totalSinMarcar)
+            resumenMarcacion.totalSalAntes = totalSalAntes
+            resumenMarcacion.multaSalAntes = getMultaSalAntes(totalSalAntes)
             resumenMarcacion.totalAusencias = totalAusencias
+            resumenMarcacion.multaAusencias = getMultaAusencias(totalAusencias)
+            resumenMarcacion.totalSanciones = resumenMarcacion.multaRetrasos + resumenMarcacion.multaSinMarcar + resumenMarcacion.multaSalAntes + resumenMarcacion.multaAusencias
             resumenMarcacion.totalPermisosSG = totalPermisosSG
             resumenMarcacion.infoMarcaciones = infoMarcaciones
             resumenMarcacion.diasComputados = diasComputados
@@ -933,10 +941,13 @@ export async function obtenerSolicitudesAprobadasPorCI(ci: number) {
             if (inactivos.length === 0) {
                 return { success: false, error: 'No hay registros inactivos' };
             }
+            if (inactivos.length === 1) {
+                if(inactivos[0].fecha_ingreso === undefined)
+                    return {success: false, error: "Funcionario aún no tiene un cargo asignado"}
+            }
             const registroMasReciente = inactivos.reduce((prev: any, curr: any) => {
                 return moment(curr.fecha_conclusion).isAfter(prev.fecha_conclusion) ? curr : prev;
             });
-
             return {
                 success: false,
                 error: `Funcionario dado de baja en Organigrama el: ${moment(registroMasReciente.fecha_conclusion).format("DD/MM/YYYY")}`
@@ -1004,4 +1015,24 @@ function getMultaRetrasos(min: number): number {
     if (min <= 90) return 2;
     if (min <= 120) return 3;
     return 4;
+}
+
+function getMultaSinMarcar(sinMarcar: number): number {
+    switch (sinMarcar) {
+        case 0: return 0;
+        case 1: return 0.5;
+        case 2: return 1;
+        case 3: return 2;
+        case 4: return 2.5;
+        case 5: return 3;
+        default: return 3;
+    }
+}
+
+function getMultaSalAntes(salAntes: number): number {
+    return salAntes * 0.5
+}
+
+function getMultaAusencias(ausencias: number): number {
+    return ausencias * 2
 }
