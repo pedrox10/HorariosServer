@@ -237,7 +237,7 @@ export const getResumenMarcaciones = async (req: Request, res: Response) => {
                                 excepcion.detalle = capitalizar(solicitud.detalle);
                                 excepcion.licencia = solicitud.tipo;
                                 excepcionesRangoHoras.push(excepcion);
-                            }
+                               }
                         }
                     }
                 }
@@ -257,7 +257,12 @@ export const getResumenMarcaciones = async (req: Request, res: Response) => {
             let totalSinMarcar: number = 0
             let totalSalAntes: number = 0
             let totalAusencias: number = 0
+            //Contadores de Excepciones
+            let totalExcTickeo: number = 0
             let totalPermisosSG: number = 0
+            let totalVacaciones: number = 0
+            let totalBajas: number = 0
+            let totalOtros: number = 0
             let diasComputados: number = 0
             let sinAsignar: number = 0
 

@@ -12,8 +12,13 @@ export class ResumenMarcacion{
     multaSalAntes: number;
     totalAusencias: number;
     multaAusencias: number;
-    totalSanciones: number
+    totalSanciones: number;
+    //Contadores de excepciones
+    totalExcTickeo: number
     totalPermisosSG: number;
+    totalVacaciones: number;
+    totalBajas: number;
+    totalOtros: number;
     diasComputados: number;
     infoMarcaciones: InfoMarcacion[];
     mensajeError?: string | any
