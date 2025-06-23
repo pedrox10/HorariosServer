@@ -8,6 +8,7 @@ import {
 } from "typeorm"
 import {Terminal} from "./Terminal";
 import {Jornada} from "./Jornada";
+import {Grupo} from "./Grupo";
 
 export enum EstadoUsuario {
         inactivo,
@@ -32,13 +33,15 @@ export class Usuario extends BaseEntity{
     fechaBaja: Date;
     @Column({type: 'date', nullable: true})
     fechaCumpleano: Date;
-    ultAsignacion: string;
+    ultAsignacion?: string;
     ultMarcacion?: string;
 
     @OneToMany(() => Jornada, (jornada) => jornada.usuario)
     jornadas: Jornada[]
     @ManyToOne(() => Terminal, (terminal) => terminal.usuarios)
     terminal: Terminal
+    @ManyToOne(() => Grupo, (grupo) => grupo.usuarios)
+    grupo: Grupo
     /*@OneToMany(() => ExcepcionTickeo, (excepcion) => excepcion.usuario)
     excepcionesTickeo: ExcepcionTickeo[]*/
 }

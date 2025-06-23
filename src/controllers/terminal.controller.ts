@@ -13,6 +13,7 @@ import {Sincronizacion} from "../entity/Sincronizacion";
 import {Interrupcion} from "../entity/Interrupcion";
 import { promises as fs } from 'fs';
 import logger from "../logger/logger";
+import {Grupo} from "../entity/Grupo";
 
 const envPython = path.join(__dirname, "../scriptpy/envpy", "bin", "python3");
 const spawn = require('await-spawn');
@@ -93,6 +94,12 @@ export const eliminarInterrupcion = async (req: Request, res: Response) => {
 export const getTerminales = async (req: Request, res: Response) => {
     let terminales = await AppDataSource.manager.find(Terminal)
     res.send(terminales)
+}
+
+export const getGrupos = async (req: Request, res: Response) => {
+    const {id} = req.params;
+    const terminal = await Terminal.findOne({where: {id: parseInt(id)},});
+    res.send(terminal?.grupos)
 }
 
 export const getSincronizaciones = async (req: Request, res: Response) => {

@@ -3,6 +3,7 @@ import {Marcacion} from "./Marcacion";
 import {Usuario} from "./Usuario";
 import {Sincronizacion} from "./Sincronizacion";
 import {Interrupcion} from "./Interrupcion";
+import {Grupo} from "./Grupo";
 
 @Entity()
 export class  Terminal extends BaseEntity {
@@ -34,5 +35,7 @@ export class  Terminal extends BaseEntity {
     sincronizaciones: Sincronizacion[]
     @OneToMany(() => Interrupcion, (interrupcion) => interrupcion.terminal)
     interrupciones: Interrupcion[]
+    @OneToMany(() => Usuario, (usuario) => usuario.terminal)
+    grupos: Grupo[]
 
 }

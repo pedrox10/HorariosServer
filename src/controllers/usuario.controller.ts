@@ -51,7 +51,12 @@ export const getUsuarios = async (req: Request, res: Response) => {
                 usuario.ultAsignacion = "Hasta " + dia + " " + mes;
             } else {
                 usuario.ultAsignacion = "Sin Asignar"
-                let marcacion: Marcacion | null= await ultMarcacion(usuario);
+                let t = await Terminal.findOne({
+                    where: {id: parseInt(id)}
+                });
+                console.time("ult")
+                let marcacion: Marcacion | null= await ultMarcacion(usuario, t!);
+                console.timeEnd("ult")
                 if(marcacion === null)
                     usuario.ultMarcacion = "Sin Marcaciones"
                 else
@@ -910,12 +915,12 @@ export async function ultJornadaAsignada(usuarioId: number) {
     return ultimaJornada;
 }
 
-export async function ultMarcacion(usuario: Usuario) {
+export async function ultMarcacion(usuario: Usuario, terminal: Terminal) {
     // Buscamos la última jornada (fecha más alta) entre inicioMes y finMes
     const ultMarcacion = await Marcacion.findOne({
         where: {
             ci: usuario.ci,
-            terminal: usuario.terminal
+            terminal: terminal
         },
         order: {
             fecha: 'DESC', // Orden descendente para tomar la más reciente
