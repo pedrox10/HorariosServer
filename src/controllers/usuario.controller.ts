@@ -664,6 +664,13 @@ export const getResumenMarcaciones = async (req: Request, res: Response) => {
                                     let priSalidasM: Moment[] = [];
                                     //Genero los rangos para entradas y salidas:
                                     let priEntIni = moment(jornada.fecha + " " + "00:00").format('YYYY-MM-DD HH:mm')
+                                    if(jornada.horario.jornadasDosDias) {
+                                        const hora = moment(jornada.priTurno.horaEntrada, 'HH:mm');
+                                        const medioDia = moment('12:00', 'HH:mm');
+                                        if (hora.isAfter(medioDia))
+                                            priEntIni = moment(jornada.fecha + " " + "12:00").format('YYYY-MM-DD HH:mm')
+                                    }
+
                                     let priEntFin;
                                     let priSalFin;
                                     console.time("Marcaciones1T")
