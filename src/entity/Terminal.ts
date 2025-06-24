@@ -35,7 +35,6 @@ export class  Terminal extends BaseEntity {
     sincronizaciones: Sincronizacion[]
     @OneToMany(() => Interrupcion, (interrupcion) => interrupcion.terminal)
     interrupciones: Interrupcion[]
-    @OneToMany(() => Usuario, (usuario) => usuario.terminal)
+    @OneToMany(() => Grupo, (grupo) => grupo.terminal)
     grupos: Grupo[]
-
 }

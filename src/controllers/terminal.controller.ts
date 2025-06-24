@@ -91,6 +91,12 @@ export const eliminarInterrupcion = async (req: Request, res: Response) => {
     res.send(aux)
 }
 
+export const getTerminal = async (req: Request, res: Response) => {
+    const {id} = req.params;
+    const terminal = await Terminal.findOne({where: {id: parseInt(id)}, relations: {grupos: true}});
+    res.send(terminal)
+}
+
 export const getTerminales = async (req: Request, res: Response) => {
     let terminales = await AppDataSource.manager.find(Terminal)
     res.send(terminales)
@@ -98,8 +104,10 @@ export const getTerminales = async (req: Request, res: Response) => {
 
 export const getGrupos = async (req: Request, res: Response) => {
     const {id} = req.params;
-    const terminal = await Terminal.findOne({where: {id: parseInt(id)},});
-    res.send(terminal?.grupos)
+    const terminal = await Terminal.findOne(
+        {where: {id: parseInt(id)},});
+    let grupos = await Grupo.find({ where: {terminal: terminal!}} )
+    res.send(grupos)
 }
 
 export const getSincronizaciones = async (req: Request, res: Response) => {
@@ -131,12 +139,6 @@ export const getInterrupciones = async (req: Request, res: Response) => {
         return res.status(500).json({ error: "Error interno del servidor" });
     }
 };
-
-export const getTerminal = async (req: Request, res: Response) => {
-    const {id} = req.params;
-    const terminal = await Terminal.findOne({where: {id: parseInt(id)},});
-    res.send(terminal)
-}
 
 export const getFechaPriMarcacion = async (req: Request, res: Response) => {
     const {id} = req.params;

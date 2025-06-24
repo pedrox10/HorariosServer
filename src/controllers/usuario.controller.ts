@@ -37,11 +37,10 @@ export interface SolicitudAprobada {
 export const getUsuarios = async (req: Request, res: Response) => {
     const {id} = req.params;
     const terminal = await Terminal.findOne({
-        where: {id: parseInt(id)}, relations: {
-            usuarios: true,
-        }
+        where: {id: parseInt(id)}
     });
-    let usuarios = terminal?.usuarios;
+    let usuarios = await Usuario.find({ where: {terminal: terminal!}, relations: {grupo: true}} )
+
     if (usuarios) {
         for (const usuario of usuarios) {
             let jornada = await ultJornadaAsignada(usuario.id);

@@ -1,5 +1,6 @@
-import {BaseEntity, Column, Entity, OneToMany, PrimaryGeneratedColumn} from "typeorm";
+import {BaseEntity, Column, Entity, ManyToOne, OneToMany, PrimaryGeneratedColumn} from "typeorm";
 import {Usuario} from "./Usuario";
+import {Terminal} from "./Terminal";
 
 @Entity()
 export class Grupo extends BaseEntity {
@@ -7,6 +8,7 @@ export class Grupo extends BaseEntity {
     id: number;
     @Column()
     nombre: string
-    @OneToMany(() => Usuario, (usuario) => usuario.grupo)
-    usuarios: Usuario[]
+    @ManyToOne(() => Terminal, (terminal) => terminal.grupos)
+    terminal: Terminal
+
 }
