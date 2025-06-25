@@ -7,6 +7,7 @@ import {
     getUsuarios, getExcepciones, editarUsuario
 } from "./controllers/usuario.controller";
 import {
+    agregarGrupo,
     agregarInterrupcion,
     crearTerminal,
     editarTerminal, eliminarInterrupcion,
@@ -43,6 +44,7 @@ router.post("/terminal/interrupcion/agregar", agregarInterrupcion)
 router.delete("/terminal/interrupcion/:id/eliminar", eliminarInterrupcion)
 router.get("/terminales/respaldar", respaldarTerminales)
 router.get("/terminal/:id/grupos", getGrupos)
+router.post("/terminal/:id/grupos/agregar", agregarGrupo)
 
 // Rutas para operaciones con Usuarios
 router.get("/terminal/:id/usuarios", getUsuarios)

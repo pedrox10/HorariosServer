@@ -110,6 +110,21 @@ export const getGrupos = async (req: Request, res: Response) => {
     res.send(grupos)
 }
 
+export const agregarGrupo = async (req: Request, res: Response) => {
+    const {id} = req.params;
+    let nombre = req.body.nombre
+    const terminal = await Terminal.findOne({where: {id: parseInt(id)},});
+    if(terminal) {
+        let grupo = new Grupo()
+        grupo.nombre = nombre
+        grupo.terminal = terminal
+        await grupo.save();
+        return res.status(200).json(grupo)
+    } else {
+        return res.status(404).json({ info: 'Terminal biométrico no encontrado' })
+    }
+}
+
 export const getSincronizaciones = async (req: Request, res: Response) => {
     const {id} = req.params;
     const terminal = await Terminal.createQueryBuilder('terminal')

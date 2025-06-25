@@ -42,6 +42,4 @@ export class Usuario extends BaseEntity{
     terminal: Terminal
     @ManyToOne(() => Grupo, (grupo) => grupo.usuarios)
     grupo: Grupo
-    /*@OneToMany(() => ExcepcionTickeo, (excepcion) => excepcion.usuario)
-    excepcionesTickeo: ExcepcionTickeo[]*/
 }

@@ -8,7 +8,8 @@ export class Grupo extends BaseEntity {
     id: number;
     @Column()
     nombre: string
+    @OneToMany(() => Usuario, (usuario) => usuario.grupo)
+    usuarios: Usuario[]
     @ManyToOne(() => Terminal, (terminal) => terminal.grupos)
     terminal: Terminal
-
 }
