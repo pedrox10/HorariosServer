@@ -125,6 +125,23 @@ export const agregarGrupo = async (req: Request, res: Response) => {
     }
 }
 
+export const editarGrupo = async (req: Request, res: Response) => {
+    const {idGrupo} = req.params;
+    const {nombre} = req.body
+    const grupo = await Grupo.findOne({where: {id: parseInt(idGrupo)},});
+    if (grupo) {
+        grupo.nombre = nombre;
+        grupo.save()
+        res.send(grupo)
+    }
+}
+
+export const eliminarGrupo = async (req: Request, res: Response) => {
+    const {idTerminal, idGrupo} = req.params;
+    const eliminado = await Grupo.delete({id: parseInt(idGrupo)});
+    res.send(eliminado)
+}
+
 export const getSincronizaciones = async (req: Request, res: Response) => {
     const {id} = req.params;
     const terminal = await Terminal.createQueryBuilder('terminal')

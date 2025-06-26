@@ -40,6 +40,6 @@ export class Usuario extends BaseEntity{
     jornadas: Jornada[]
     @ManyToOne(() => Terminal, (terminal) => terminal.usuarios)
     terminal: Terminal
-    @ManyToOne(() => Grupo, (grupo) => grupo.usuarios)
+    @ManyToOne(() => Grupo, (grupo) => grupo.usuarios, {nullable: true, onDelete: "SET NULL"})
     grupo: Grupo
 }

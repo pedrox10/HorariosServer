@@ -9,8 +9,8 @@ import {
 import {
     agregarGrupo,
     agregarInterrupcion,
-    crearTerminal,
-    editarTerminal, eliminarInterrupcion,
+    crearTerminal, editarGrupo,
+    editarTerminal, eliminarGrupo, eliminarInterrupcion,
     eliminarTerminal, getFechaPriMarcacion, getGrupos, getInterrupciones, getSincronizaciones, getTerminal,
     getTerminales, getTerminalPorIp, respaldarTerminales,
     sincronizarTerminal
@@ -45,6 +45,8 @@ router.delete("/terminal/interrupcion/:id/eliminar", eliminarInterrupcion)
 router.get("/terminales/respaldar", respaldarTerminales)
 router.get("/terminal/:id/grupos", getGrupos)
 router.post("/terminal/:id/grupos/agregar", agregarGrupo)
+router.put("/terminal/:idTerminal/grupos/editar/:idGrupo", editarGrupo)
+router.delete("/terminal/:idTerminal/grupos/eliminar/:idGrupo", eliminarGrupo)
 
 // Rutas para operaciones con Usuarios
 router.get("/terminal/:id/usuarios", getUsuarios)
