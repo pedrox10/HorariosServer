@@ -85,9 +85,21 @@ export const getHorarios = async (req: Request, res: Response) => {
 }
 
 export const getAsuetos = async (req: Request, res: Response) => {
-    let asuetos = await AppDataSource.manager.find(Asueto)
-    res.send(asuetos)
-}
+    try {
+        let asuetos = await AppDataSource.manager.find(Asueto, {
+            order: {
+                tipo: "DESC", // Ordenar por tipo descendente (1 antes que 0)
+                fecha: "ASC"  // Luego por fecha ascendente
+            }
+        });
+
+        res.send(asuetos);
+
+    } catch (error: any) {
+        console.error("Error al obtener los asuetos:", error);
+        res.status(500).send({ message: "Error al obtener los asuetos", error: error.message });
+    }
+};
 
 export const getLicencias = async (req: Request, res: Response) => {
     let licencias = await AppDataSource.manager.find(Licencia)
