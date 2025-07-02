@@ -12,11 +12,12 @@ export enum EstadoJornada {
     baja_medica,
     permiso,
     permiso_sg,
-    otro,
+    licencia,
     sin_asignar,
     sin_registros,
     ausencia,
-    teletrabajo
+    teletrabajo,
+    capacitacion
 }
 
 @Entity()

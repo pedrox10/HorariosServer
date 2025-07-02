@@ -200,7 +200,7 @@ export const getResumenMarcaciones = async (req: Request, res: Response) => {
                 //console.log(solicitudesAprobadas)
                 //console.log(rangoValido.start.toDate())
                 for (const solicitud of solicitudesAprobadas) {
-                    if (solicitud.tipo === "ET") {
+                    if (solicitud.tipo === "ET" || solicitud.tipo === "TO") {
                         let fechaInicio = moment(solicitud.fecha_inicio, "YYYY-MM-DD");
                         if (fechaInicio.isSameOrAfter(rangoValido.start) && fechaInicio.isSameOrBefore(rangoValido.end)) {
                             let excepcion = new Excepcion();
@@ -241,7 +241,7 @@ export const getResumenMarcaciones = async (req: Request, res: Response) => {
                                 excepcion.detalle = capitalizar(solicitud.detalle);
                                 excepcion.licencia = solicitud.tipo;
                                 excepcionesRangoHoras.push(excepcion);
-                               }
+                            }
                         }
                     }
                 }
@@ -262,11 +262,14 @@ export const getResumenMarcaciones = async (req: Request, res: Response) => {
             let totalSalAntes: number = 0
             let totalAusencias: number = 0
             //Contadores de Excepciones
-            let totalExcTickeo: number = 0
+            let totalExcTickeos: number = 0
             let totalPermisosSG: number = 0
             let totalVacaciones: number = 0
             let totalBajas: number = 0
-            let totalOtros: number = 0
+            let totalTolerancias: number = 0
+            let totalPermisos: number = 0
+            let totalLicencias: number = 0
+            let totalCapacitaciones: number = 0
             let diasComputados: number = 0
             let sinAsignar: number = 0
 
@@ -347,20 +350,18 @@ export const getResumenMarcaciones = async (req: Request, res: Response) => {
                             if (excepcionCompleta) {
                                 switch (excepcionCompleta.licencia) {
                                     case "VA":
-                                        jornada.estado = EstadoJornada.vacacion
-                                        break;
-                                    case "PO":
-                                        jornada.estado = EstadoJornada.permiso
-                                        break;
+                                        jornada.estado = EstadoJornada.vacacion; break;
                                     case "BM":
-                                        jornada.estado = EstadoJornada.baja_medica
-                                        break;
+                                        jornada.estado = EstadoJornada.baja_medica; break;
                                     case "SG":
-                                        jornada.estado = EstadoJornada.permiso_sg
-                                        break;
+                                        jornada.estado = EstadoJornada.permiso_sg; break;
+                                    case "PO":
+                                        jornada.estado = EstadoJornada.permiso; break;
+                                    case "LI":
+                                        jornada.estado = EstadoJornada.licencia; break;
+                                    case "CA":
+                                        jornada.estado = EstadoJornada.capacitacion; break;
                                     default :
-                                        jornada.estado = EstadoJornada.otro
-                                        break;
                                 }
                             }
                         }
@@ -376,19 +377,16 @@ export const getResumenMarcaciones = async (req: Request, res: Response) => {
                                 infoMarcacion.mensaje = excepcionCompleta.detalle;
                                 switch (jornada.estado) {
                                     case EstadoJornada.vacacion:
-                                        infoMarcacion.horario.color = "#6cfd98";
-                                        infoMarcacion.horario.nombre = "Vacacion"
-                                        infoMarcacion.estado = EstadoJornada.vacacion
-                                        break;
-                                    case EstadoJornada.permiso:
                                         infoMarcacion.horario.color = "#7fd5fa";
-                                        infoMarcacion.horario.nombre = "Permiso"
-                                        infoMarcacion.estado = EstadoJornada.permiso
+                                        infoMarcacion.horario.nombre = "Vacación"
+                                        infoMarcacion.estado = EstadoJornada.vacacion
+                                        totalVacaciones++
                                         break;
                                     case EstadoJornada.baja_medica:
                                         infoMarcacion.horario.color = "#fc7b7d";
                                         infoMarcacion.horario.nombre = "Baja Médica"
                                         infoMarcacion.estado = EstadoJornada.baja_medica
+                                        totalBajas++
                                         break;
                                     case EstadoJornada.permiso_sg:
                                         infoMarcacion.horario.color = "#a7c454";
@@ -396,11 +394,25 @@ export const getResumenMarcaciones = async (req: Request, res: Response) => {
                                         infoMarcacion.estado = EstadoJornada.permiso_sg
                                         totalPermisosSG++;
                                         break;
-                                    case EstadoJornada.otro:
+                                    case EstadoJornada.permiso:
                                         infoMarcacion.horario.color = "#939393";
-                                        infoMarcacion.horario.nombre = "Otros"
-                                        infoMarcacion.estado = EstadoJornada.otro
+                                        infoMarcacion.horario.nombre = "Permiso"
+                                        infoMarcacion.estado = EstadoJornada.permiso
+                                        totalPermisos++
                                         break;
+                                    case EstadoJornada.licencia:
+                                        infoMarcacion.horario.color = "#939393";
+                                        infoMarcacion.horario.nombre = "Licencia"
+                                        infoMarcacion.estado = EstadoJornada.licencia
+                                        totalLicencias++
+                                        break;
+                                    case EstadoJornada.capacitacion:
+                                        infoMarcacion.horario.color = "#939393";
+                                        infoMarcacion.horario.nombre = "Capacitación"
+                                        infoMarcacion.estado = EstadoJornada.capacitacion
+                                        totalCapacitaciones++
+                                        break;
+                                    default:
                                 }
                             }
                         } else {
@@ -415,8 +427,25 @@ export const getResumenMarcaciones = async (req: Request, res: Response) => {
                             if (hayExcepcionesRangoHoras) {
                                 excepcionesTickeo = getExcepcionesTickeo(jornada, excepcionesRangoHoras)
                                 for (let excepcionTickeo of excepcionesTickeo) {
-                                    if(excepcionTickeo.licencia === "SG")
-                                        totalPermisosSG = totalPermisosSG + 0.5
+                                    switch (excepcionTickeo.licencia) {
+                                        case "ET":
+                                            totalExcTickeos++; break;
+                                        case "TO":
+                                            totalTolerancias++; break;
+                                        case "VA":
+                                            totalVacaciones = totalVacaciones + 0.5; break;
+                                        case "BM":
+                                            totalBajas = totalBajas + 0.5; break;
+                                        case "SG":
+                                            totalPermisosSG = totalPermisosSG + 0.5; break;
+                                        case "PO":
+                                            totalPermisos = totalPermisos + 0.5; break;
+                                        case "LI":
+                                            totalLicencias = totalLicencias + 0.5; break;
+                                        case "CA":
+                                            totalCapacitaciones = totalCapacitaciones + 0.5; break;
+                                        default:
+                                    }
                                     let rangoTickeo: DateRange;
                                     let [hora, minuto] = excepcionTickeo.horaIni.split(':').map(Number);
                                     let inicio = moment(excepcionTickeo.fecha).utc().set({
@@ -794,10 +823,21 @@ export const getResumenMarcaciones = async (req: Request, res: Response) => {
             resumenMarcacion.totalAusencias = totalAusencias
             resumenMarcacion.multaAusencias = getMultaAusencias(totalAusencias)
             resumenMarcacion.totalSanciones = resumenMarcacion.multaRetrasos + resumenMarcacion.multaSinMarcar + resumenMarcacion.multaSalAntes + resumenMarcacion.multaAusencias
-            resumenMarcacion.totalPermisosSG = totalPermisosSG
-            resumenMarcacion.infoMarcaciones = infoMarcaciones
             resumenMarcacion.diasComputados = diasComputados
             resumenMarcacion.sinAsignar = sinAsignar;
+            resumenMarcacion.infoMarcaciones = infoMarcaciones
+
+            resumenMarcacion.totalExcTickeos = totalExcTickeos
+            resumenMarcacion.totalTolerancias = totalTolerancias
+            resumenMarcacion.totalExcepciones = totalExcTickeos + totalTolerancias
+
+            resumenMarcacion.totalVacaciones = totalVacaciones
+            resumenMarcacion.totalBajas = totalBajas
+            resumenMarcacion.totalPermisosSG = totalPermisosSG
+            resumenMarcacion.totalPermisos = totalPermisos
+            resumenMarcacion.totalLicencias = totalLicencias
+            resumenMarcacion.totalCapacitaciones = totalCapacitaciones
+            resumenMarcacion.totalOtros = totalPermisos + totalLicencias + totalCapacitaciones;
             res.send(resumenMarcacion)
         }
     }
@@ -1004,20 +1044,21 @@ function getLicencia(excepcion: Excepcion): string {
     let res: string;
     switch (excepcion.licencia) {
         case "ET":
-            res = "Excepción de Tickeo"
-            break;
-        case "PO":
-            res = "Permiso"
-            break;
+            res = "Excepción de Tickeo"; break;
+        case "TO":
+            res = "Tolerancia"; break;
         case "VA":
-            res = "Vacación"
-            break;
+            res = "Vacación"; break;
         case "BM":
-            res = "Baja Médica"
-            break;
+            res = "Baja Médica"; break;
         case "SG":
-            res = "PermisoSG"
-            break;
+            res = "PermisoSG"; break;
+        case "PO":
+            res = "Permiso"; break;
+        case "LI":
+            res = "Licencia"; break;
+        case "CA":
+            res = "Capacitación"; break;
         default:
             res = "Otros"
     }
