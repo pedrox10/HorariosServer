@@ -184,7 +184,7 @@ export const getResumenMarcaciones = async (req: Request, res: Response) => {
                     excepcion.fecha = interrupcion.fecha;
                     excepcion.jornada = 'rango';
                     excepcion.detalle = capitalizar(interrupcion.detalle);
-                    excepcion.licencia = "ET";
+                    excepcion.licencia = "IT";
                     excepcion.horaIni = moment(interrupcion.horaIni).format("HH:mm");
                     excepcion.horaFin = moment(interrupcion.horaFin).format("HH:mm");
                     excepcion.esInterrupcion = true
@@ -263,6 +263,7 @@ export const getResumenMarcaciones = async (req: Request, res: Response) => {
             let totalAusencias: number = 0
             //Contadores de Excepciones
             let totalExcTickeos: number = 0
+            let totalInterrupciones: number = 0
             let totalPermisosSG: number = 0
             let totalVacaciones: number = 0
             let totalBajas: number = 0
@@ -432,6 +433,8 @@ export const getResumenMarcaciones = async (req: Request, res: Response) => {
                                             totalExcTickeos++; break;
                                         case "TO":
                                             totalTolerancias++; break;
+                                        case "IT":
+                                            totalInterrupciones++; break;
                                         case "VA":
                                             totalVacaciones = totalVacaciones + 0.5; break;
                                         case "BM":
@@ -829,8 +832,8 @@ export const getResumenMarcaciones = async (req: Request, res: Response) => {
 
             resumenMarcacion.totalExcTickeos = totalExcTickeos
             resumenMarcacion.totalTolerancias = totalTolerancias
-            resumenMarcacion.totalExcepciones = totalExcTickeos + totalTolerancias
-
+            resumenMarcacion.totalInterrupciones = totalInterrupciones
+            resumenMarcacion.totalExcepciones = totalExcTickeos + totalTolerancias + totalInterrupciones
             resumenMarcacion.totalVacaciones = totalVacaciones
             resumenMarcacion.totalBajas = totalBajas
             resumenMarcacion.totalPermisosSG = totalPermisosSG
