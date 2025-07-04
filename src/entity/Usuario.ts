@@ -13,7 +13,7 @@ import {Grupo} from "./Grupo";
 export enum EstadoUsuario {
         inactivo,
         activo,
-    }
+}
 
 @Entity()
 export class Usuario extends BaseEntity{

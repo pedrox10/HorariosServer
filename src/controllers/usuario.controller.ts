@@ -115,6 +115,20 @@ export const getMarcaciones = async (req: Request, res: Response) => {
     res.send(marcaciones)
 }
 
+export const getUltMarcacion = async (req: Request, res: Response) => {
+    const {id} = req.params;
+    const usuario = await Usuario.findOne({
+        where: {id: parseInt(id)}, relations: {
+            terminal: true,
+        }
+    });
+    const ultMarcacion = await Marcacion.findOne({
+        where: { ci: usuario?.ci, terminal: usuario?.terminal},
+        order: { fecha: 'DESC', hora: 'DESC'},
+    });
+    res.send(ultMarcacion)
+}
+
 export const getResumenMarcaciones = async (req: Request, res: Response) => {
     const {id, ini, fin} = req.params;
     console.time("GetUsuario")
@@ -865,6 +879,7 @@ async function getMarcacionesPor(usuario: Usuario, fecha: string) {
     })
     return marcaciones;
 }
+
 
 function getFeriado(jornada: Jornada, feriados: Asueto[]) {
     let res: Asueto | any = null;
