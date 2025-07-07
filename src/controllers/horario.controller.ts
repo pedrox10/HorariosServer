@@ -25,6 +25,7 @@ export const crearHorario = async (req: Request, res: Response) => {
     nuevoHorario.color = jsonHorario.color;
     nuevoHorario.area = jsonHorario.area;
     nuevoHorario.descripcion = jsonHorario.descripcion;
+    nuevoHorario.incluyeFeriados = jsonHorario.incluyeFeriados
     nuevoHorario.diasIntercalados = jsonHorario.diasIntercalados
     nuevoHorario.jornadasDosDias = jsonHorario.jornadasDosDias
     await nuevoHorario.save();
@@ -255,7 +256,7 @@ export const asignarHorario = async (req: Request, res: Response) => {
                 //console.log("no contiene")
             }
             dias = rangoValido.by("day");
-            if(horario?.diasIntercalados || horario?.jornadasDosDias) {
+            if(horario?.diasIntercalados || horario?.jornadasDosDias && !horario?.esContinuoDosDias) {
                 dias = rangoValido.by("day", {step: 2});
                 let copia = rangoValido.clone();
                 let rangoDiasDescanso = momentExt.range(copia.start.add(1, "days"), moment(fechaFin).toDate())
@@ -295,7 +296,7 @@ export const asignarHorario = async (req: Request, res: Response) => {
                     jornada.esLactancia = esLactancia;
                 jornadasGuardar.push(jornada)
             }
-            if(horario?.diasIntercalados || horario?.jornadasDosDias) {
+            if(horario?.diasIntercalados || horario?.jornadasDosDias && !horario?.esContinuoDosDias) {
                 for(let fecha of diasDescanso!) {
                     let jornada = new Jornada()
                     jornada.fecha = moment(fecha.format("YYYY-MM-DD")).toDate();
