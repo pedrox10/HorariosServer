@@ -2,7 +2,7 @@ import {Request, Response} from "express";
 import {Terminal} from "../entity/Terminal";
 import path from "path";
 
-const envPython = path.join(__dirname, "../scriptpy/envpy", "bin", "python3");
+const envPython = path.join("python");
 const spawn = require('await-spawn');
 
 export const conectar = async (req: Request, res: Response) => {
