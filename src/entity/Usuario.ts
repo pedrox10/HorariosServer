@@ -41,5 +41,5 @@ export class Usuario extends BaseEntity{
     @ManyToOne(() => Terminal, (terminal) => terminal.usuarios)
     terminal: Terminal
     @ManyToOne(() => Grupo, (grupo) => grupo.usuarios, {nullable: true, onDelete: "SET NULL"})
-    grupo: Grupo
+    grupo: Grupo | null;
 }

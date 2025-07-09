@@ -4,7 +4,7 @@ import {
     getResumenMarcaciones, getJornada,
     getMarcaciones,
     getUsuario,
-    getUsuarios, getExcepciones, editarUsuario, getUltMarcacion, asignarGrupo
+    getUsuarios, getExcepciones, editarUsuario, getUltMarcacion, asignarGrupo, limpiarGrupo
 } from "./controllers/usuario.controller";
 import {
     agregarGrupo,
@@ -60,6 +60,7 @@ router.get("/excepciones/:id/gestion/:gestion", getExcepciones)
 router.get("/usuario/:id/ini/:ini/fin/:fin", getResumenMarcaciones)
 router.get("/usuario/:id/ultMarcacion", getUltMarcacion)
 router.get("/asignar-grupo/:id/usuarios/:ids", asignarGrupo)
+router.get("/limpiar-grupo/usuarios/:ids", limpiarGrupo)
 //router.post('/usuario', agregarUsuario);
 
 // Rutas para operaciones con Horarios

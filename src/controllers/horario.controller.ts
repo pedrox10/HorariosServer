@@ -54,13 +54,14 @@ export const crearHorario = async (req: Request, res: Response) => {
 export const editarHorario = async (req: Request, res: Response) => {
     const {id} = req.params;
     const horario = await Horario.findOne({where: {id: parseInt(id)}, relations: {jornadaDias: true},});
-    const {nombre, tolerancia, color, area, descripcion} = req.body
+    const {nombre, tolerancia, color, area, descripcion, incluyeFeriados} = req.body
     if(horario) {
         horario.nombre = nombre;
         horario.tolerancia = tolerancia;
         horario.color = color;
         horario.area = area;
         horario.descripcion = descripcion;
+        horario.incluyeFeriados = incluyeFeriados
         await horario.save();
         res.status(200).send(horario)
     } else {

@@ -139,6 +139,19 @@ export const asignarGrupo = async (req: Request, res: Response) => {
     }
 }
 
+export const limpiarGrupo = async (req: Request, res: Response) => {
+    const {ids} = req.params;
+    let listaIds = ids.split(",")
+    let usuarios = await Usuario.find({
+        where: {id: In(listaIds)},
+    });
+    for (let usuario of usuarios) {
+        usuario.grupo = null;
+        usuario.save()
+    }
+    return res.status(200).json({ success: true, usuarios })
+}
+
 export const getResumenMarcaciones = async (req: Request, res: Response) => {
     const {id, ini, fin} = req.params;
     console.time("GetUsuario")
@@ -187,7 +200,6 @@ export const getResumenMarcaciones = async (req: Request, res: Response) => {
                     }
                 }
             }
-
             console.time("FeriadosInterrupciones")
             let feriados: Asueto[] = await Asueto.findBy({
                 fecha: Between(rangoValido.start.toDate(), rangoValido.end.toDate()),
@@ -316,6 +328,16 @@ export const getResumenMarcaciones = async (req: Request, res: Response) => {
                         fecha: Between(rangoValido.start.toDate(), rangoValido.end.toDate()),
                     },
                 })
+                if(marcacionesDelRango.length == 0) {
+                    let marcacion: Marcacion | null= await ultMarcacion(usuario, usuario.terminal);
+                    let ultima: string;
+                    if(marcacion === null)
+                        ultima = "Ultima marcacion: Sin Marcaciones"
+                    else
+                        ultima = "Ultima marcacion: <br>" + moment(marcacion.fecha).format("DD/MM/YYYY") +
+                            " " + moment(marcacion.hora, "HH:mm:ss").format("HH:mm");
+                    resumenMarcacion.usuario.ultMarcacion = ultima
+                }
                 //Clasifico las jornadas y marcaciones en un hashmap por fecha
                 let jornadasPorFecha = new Map<string, Jornada>();
                 jornadasDelRango.forEach(jornada => {
