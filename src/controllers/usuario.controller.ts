@@ -10,11 +10,13 @@ import {EstadoJornada, Jornada} from "../entity/Jornada";
 import {ResumenMarcacion} from "../models/ResumenMarcacion";
 import {ExcepcionTickeo, TipoExcepcion} from "../entity/ExcepcionTickeo";
 import {Asueto, TipoAsueto} from "../entity/Asueto";
-import {Between} from "typeorm";
+import {Between, In} from "typeorm";
 import mongoose from "mongoose";
 import {Excepcion} from "../models/Excepcion";
 import axios from "axios";
 import {Interrupcion} from "../entity/Interrupcion";
+import {Horario} from "../entity/Horario";
+import {Grupo} from "../entity/Grupo";
 
 const momentExt = extendMoment(MomentExt);
 
@@ -53,14 +55,6 @@ export const getUsuarios = async (req: Request, res: Response) => {
                 let t = await Terminal.findOne({
                     where: {id: parseInt(id)}
                 });
-                console.time("ult")
-                let marcacion: Marcacion | null= await ultMarcacion(usuario, t!);
-                console.timeEnd("ult")
-                if(marcacion === null)
-                    usuario.ultMarcacion = "Sin Marcaciones"
-                else
-                    usuario.ultMarcacion = "Ultima marcacion: " + moment(marcacion.fecha).format("DD/MM/YYYY") +
-                        " " + moment(marcacion.hora, "HH:mm:ss").format("HH:mm");
             }
         }
         res.send(usuarios)
@@ -127,6 +121,22 @@ export const getUltMarcacion = async (req: Request, res: Response) => {
         order: { fecha: 'DESC', hora: 'DESC'},
     });
     res.send(ultMarcacion)
+}
+
+export const asignarGrupo = async (req: Request, res: Response) => {
+    const {id, ids} = req.params;
+    const grupo = await Grupo.findOne({where: {id: parseInt(id)},});
+    let listaIds = ids.split(",")
+    let usuarios = await Usuario.find({
+        where: {id: In(listaIds)},
+    });
+    if(grupo) {
+        for (let usuario of usuarios) {
+            usuario.grupo = grupo;
+            usuario.save()
+        }
+        return res.status(200).json(grupo)
+    }
 }
 
 export const getResumenMarcaciones = async (req: Request, res: Response) => {
