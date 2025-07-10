@@ -385,10 +385,12 @@ export const getResumenMarcaciones = async (req: Request, res: Response) => {
                         diasComputados++;
                         //Si hay feriados, verificamos si la jornada actual es feriado
                         let feriado: Asueto | any;
-                        if (hayFeriados) {
-                            feriado = getFeriado(jornada, feriados);
-                            if (feriado)
-                                jornada.estado = EstadoJornada.feriado;
+                        if(!jornada.horario.incluyeFeriados) {
+                            if (hayFeriados) {
+                                feriado = getFeriado(jornada, feriados);
+                                if (feriado)
+                                    jornada.estado = EstadoJornada.feriado;
+                            }
                         }
                         //Si hay excepciones de jornada, verificamos si la jornada actual es vacacion, permiso, baja medica. etc
                         let excepcionCompleta: Excepcion | any;
@@ -589,14 +591,19 @@ export const getResumenMarcaciones = async (req: Request, res: Response) => {
                                     }
                                 }
                             }
-                            infoMarcacion.horario = {nombre: jornada.horario.nombre, color: jornada.horario.color};
+                            infoMarcacion.horario = {
+                                nombre: jornada.horario.nombre,
+                                color: jornada.horario.color,
+                                incluyeFeriados: jornada.horario.incluyeFeriados
+                            };
                             infoMarcacion.numTurnos = jornada.getNumTurnos();
 
                             if (numTurnos == 2) {
                                 infoMarcacion.horario = {
                                     nombre: jornada.horario.nombre, color: jornada.horario.color,
                                     priEntrada: jornada.priTurno.horaEntrada, priSalida: jornada.priTurno.horaSalida,
-                                    segEntrada: jornada.segTurno.horaEntrada, segSalida: jornada.segTurno.horaSalida
+                                    segEntrada: jornada.segTurno.horaEntrada, segSalida: jornada.segTurno.horaSalida,
+                                    incluyeFeriados: jornada.horario.incluyeFeriados
                                 };
                                 let priEntradasM: Moment[] = [];
                                 let priSalidasM: Moment[] = [];
@@ -741,6 +748,7 @@ export const getResumenMarcaciones = async (req: Request, res: Response) => {
                                     infoMarcacion.horario = {
                                         nombre: jornada.horario.nombre, color: jornada.horario.color,
                                         priEntrada: jornada.priTurno.horaEntrada, priSalida: jornada.priTurno.horaSalida,
+                                        incluyeFeriados: jornada.horario.incluyeFeriados
                                     };
                                     let priEntradasM: Moment[] = [];
                                     let priSalidasM: Moment[] = [];
