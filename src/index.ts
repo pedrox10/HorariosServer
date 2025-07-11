@@ -24,7 +24,7 @@ app.get('/api', (req, res) => {
 
 async function main() {
     await AppDataSource.initialize();
-    app.listen(4000, () => {
+    app.listen(41300, () => {
         logger.info("Servidor Iniciado");
     })
 }
