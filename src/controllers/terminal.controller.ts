@@ -8,7 +8,7 @@ import {EstadoUsuario, Usuario} from "../entity/Usuario";
 import moment from 'moment';
 import {Turno} from "../entity/Turno";
 import {Jornada} from "../entity/Jornada";
-import {Between, EntityManager, QueryRunner} from "typeorm";
+import {Between, EntityManager, MoreThanOrEqual, QueryRunner} from "typeorm";
 import {Sincronizacion} from "../entity/Sincronizacion";
 import {Interrupcion} from "../entity/Interrupcion";
 import { promises as fs } from 'fs';
@@ -370,7 +370,7 @@ export const sincronizarTerminal = async (req: Request, res: Response) => {
         }
         // Para usuarios eliminados, se hace la eliminación de sus marcaciones, turnos y el propio usuario
         for (let usuario of usuariosEliminados) {
-            await eliminarUsuario(usuario, terminal, queryRunner);
+            await marcarComoEliminado(usuario, terminal, queryRunner);
         }
         // Actualizar la terminal con la fecha de sincronización
         terminal.totalMarcaciones = totalMarcaciones;
@@ -508,6 +508,48 @@ async function eliminarUsuario(usuario: Usuario, terminal: Terminal, queryRunner
     //Borramos las jornadas restantes
     logger.info(`Usuario eliminado: ${usuario.nombre} (CI: ${usuario.ci}) desde terminal "${terminal.nombre}"`);
     await queryRunner.manager.delete(Usuario, { id: usuario.id });
+}
+
+export async function marcarComoEliminado(usuario: Usuario, terminal: Terminal, queryRunner: QueryRunner) {
+    const ultimaMarcacion = await queryRunner.manager.findOne(Marcacion, {
+        where: {
+            ci: usuario.ci,
+            terminal: terminal,
+        },
+        order: {
+            fecha: "DESC",
+        },
+    });
+    // 2. Calcular fecha de corte (día siguiente)
+    let fechaCorte = moment().startOf("day").toDate(); // por defecto hoy
+    if (ultimaMarcacion) {
+        fechaCorte = moment(ultimaMarcacion.fecha).add(1, 'day').startOf('day').toDate();
+    }
+    // 3. Buscar jornadas posteriores
+    const jornadas = await queryRunner.manager.find(Jornada, {
+        where: {
+            usuario: { id: usuario.id },
+            fecha: MoreThanOrEqual(fechaCorte),
+        },
+        relations: {
+            priTurno: true,
+            segTurno: true,
+        },
+    });
+    const turnosBorrar = jornadas.flatMap(j =>
+        j.getNumTurnos() === 2 ? [j.priTurno, j.segTurno] :
+            j.getNumTurnos() === 1 ? [j.priTurno] : []
+    );
+    // 4. Eliminar turnos y jornadas posteriores
+    if (turnosBorrar.length > 0)
+        await queryRunner.manager.remove(Turno, turnosBorrar);
+    if (jornadas.length > 0)
+        await queryRunner.manager.remove(Jornada, jornadas);
+    // 5. Marcar usuario como eliminado
+    usuario.estado = EstadoUsuario.eliminado;
+    await queryRunner.manager.save(usuario);
+    // 6. Log
+    console.log(`Usuario ${usuario.nombre} marcado como eliminado y limpiadas jornadas desde ${moment(fechaCorte).format("DD/MM/YYYY")}`);
 }
 
 export async function ultJornadaAsignada(usuarioId: number) {

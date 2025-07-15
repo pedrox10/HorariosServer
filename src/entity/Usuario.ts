@@ -13,6 +13,7 @@ import {Grupo} from "./Grupo";
 export enum EstadoUsuario {
         inactivo,
         activo,
+        eliminado
 }
 
 @Entity()

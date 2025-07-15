@@ -1020,11 +1020,13 @@ export async function ultMarcacion(usuario: Usuario, terminal: Terminal) {
             terminal: terminal
         },
         order: {
-            fecha: 'DESC', // Orden descendente para tomar la más reciente
+            fecha: 'DESC', hora: 'DESC' // Orden descendente para tomar la más reciente
         },
     });
     return ultMarcacion;
 }
+
+
 
 export async function obtenerSolicitudesAprobadasPorCI(ci: number) {
     const ACCESS_CODE =
