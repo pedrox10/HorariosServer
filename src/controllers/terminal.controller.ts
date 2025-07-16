@@ -260,6 +260,7 @@ export const sincronizarTerminal = async (req: Request, res: Response) => {
 
     let marcacionesT: any;
     let usuariosT: any;
+    let info: any;
     let numeroSerie;
     let modelo;
     let horaTerminal;
@@ -294,7 +295,7 @@ export const sincronizarTerminal = async (req: Request, res: Response) => {
             totalMarcaciones = respuesta.total_marcaciones;
         } else if (metodo === "POST") {
             console.log("Petición POST recibida");
-            const info = JSON.parse(req.body.info);
+            info = JSON.parse(req.body.info);
             marcacionesT = info.marcaciones;
             numeroSerie = info.numero_serie
             modelo = info.modelo
@@ -381,10 +382,14 @@ export const sincronizarTerminal = async (req: Request, res: Response) => {
         await queryRunner.commitTransaction();
         if (metodo === "POST") {
             try {
+                const jsonParaGuardar = {
+                    ...info,
+                    usuariosT: usuariosT
+                };
                 const nombreArchivo = `${terminal.nombre.replace(/\s+/g, '_')}_${moment(horaTerminal).format('YYYY-MM-DD_HH-mm-ss')}.json`;
                 const rutaArchivo = path.join(__dirname, '../../respaldos', nombreArchivo);
                 await fs.mkdir(path.dirname(rutaArchivo), { recursive: true });
-                await fs.writeFile(rutaArchivo, JSON.stringify(req.body, null, 2));
+                await fs.writeFile(rutaArchivo, JSON.stringify(jsonParaGuardar, null, 2));
             } catch (fileError: any) {
                 console.error(`Error al guardar el archivo de sincronización para Terminal ${terminal.id}:`, fileError.message);
                 // Aquí solo se registra el error; la sincronización de la DB ya fue exitosa.
