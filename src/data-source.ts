@@ -14,6 +14,7 @@ import {Sincronizacion} from "./entity/Sincronizacion";
 import {Interrupcion} from "./entity/Interrupcion";
 import {UsuarioLogin} from "./entity/UsuarioLogin";
 import {Grupo} from "./entity/Grupo";
+import {IpUsuario} from "./entity/IpUsuario";
 
 export const AppDataSource = new DataSource({
     type: "mysql",
@@ -25,7 +26,7 @@ export const AppDataSource = new DataSource({
     synchronize: true,
     logging: false,
     entities: [Terminal, Usuario, Marcacion, JornadaDia, Horario, Jornada, Turno, Asueto,
-                Sincronizacion, Interrupcion, UsuarioLogin, Grupo],
+                Sincronizacion, Interrupcion, UsuarioLogin, Grupo, IpUsuario],
     subscribers: [],
     migrations: [],
 })

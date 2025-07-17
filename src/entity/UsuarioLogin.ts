@@ -1,4 +1,5 @@
-import {BaseEntity, Column, Entity, PrimaryGeneratedColumn} from "typeorm";
+import {BaseEntity, Column, Entity, OneToMany, PrimaryGeneratedColumn} from "typeorm";
+import {IpUsuario} from "./IpUsuario";
 
 @Entity()
 export class UsuarioLogin extends BaseEntity {
@@ -12,4 +13,6 @@ export class UsuarioLogin extends BaseEntity {
     clave: string
     @Column({ default: 'admin' }) // valores: 'admin', 'visor'
     rol: string;
+    @OneToMany(() => IpUsuario, ip => ip.usuario)
+    ips: IpUsuario[];
 }

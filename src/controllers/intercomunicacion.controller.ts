@@ -3,6 +3,7 @@ import { conectarMongo } from '../mongo.connection';
 import { Request, Response } from "express";
 import { UsuarioLogin } from "../entity/UsuarioLogin";
 import bcrypt from "bcrypt";
+import {IpUsuario} from "../entity/IpUsuario";
 
 interface Funcionario {
   ci: number;
@@ -66,7 +67,16 @@ export const login = async (req: Request, res: Response) => {
   const esClaveValida = await bcrypt.compare(clave, usuarioBD.clave);
   if (!esClaveValida) {
     console.log("clave invalida");
-    return res.status(401).json({ mensaje: "Clave incorrecta" });
+    return res.status(401).json({ mensaje: "La contraseña es incorrecta" });
+  }
+  const aux = req.ip || req.connection.remoteAddress || '';
+  let ip = aux.replace(/^::ffff:/, '');
+  const yaExiste = await IpUsuario.findOneBy({ ip, usuario: { id: usuarioBD.id } });
+  if (!yaExiste) {
+    const ipUsuario = new IpUsuario()
+    ipUsuario.ip = ip;
+    ipUsuario.usuario = usuarioBD;
+    await ipUsuario.save();
   }
   return res.json({
     id: usuarioBD.id,
