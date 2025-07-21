@@ -37,7 +37,7 @@ router.put('/terminal/editar/:id', editarTerminal);
 router.delete('/terminal/eliminar/:id', eliminarTerminal);
 router.get("/terminales",getTerminales);
 router.get("/terminal/sincronizar/:id", sincronizarTerminal);
-router.post("/terminal/sincronizar/:id", sincronizarTerminal);
+router.post("/terminal/sincronizar-post/:id", sincronizarTerminal);
 router.get("/terminal/:id/pri-marcacion",getFechaPriMarcacion);
 router.get("/terminal/:id/sincronizaciones", getSincronizaciones);
 router.get("/terminal/:id/interrupciones", getInterrupciones)

@@ -7,19 +7,21 @@ timeout = 60        # Ti1
 zk = ZK(zk_ip, port=zk_port, timeout=timeout)
 try:
     conn = zk.connect()
-    print("Firmware Version:", conn.get_firmware_version())
-    print("Serial Number:", conn.get_serialnumber())
-    print("Platform:", conn.get_platform())
-    print("Device Name:", conn.get_device_name())
-    print("Face Version:", conn.get_face_version())
-    print("FP Version:", conn.get_fp_version())
-    print("Extend Format:", conn.get_extend_fmt())
-    print("User Extend Format:", conn.get_user_extend_fmt())
-    print("Face Function On:", conn.get_face_fun_on())
-    print("Compat Old Firmware:", conn.get_compat_old_firmware())
-    print("Network Parameters:", conn.get_network_params())
-    print("MAC Address:", conn.get_mac())
-    print("PIN Width:", conn.get_pin_width())
+    data = {
+            "firmware_version": conn.get_firmware_version(),
+            "serial_number": conn.get_serialnumber(),
+            "platform": conn.get_platform(),
+            "device_name": conn.get_device_name(),
+            "face_version": conn.get_face_version(),
+            "fp_version": conn.get_fp_version(),
+            "extend_format": conn.get_extend_fmt(),
+            "user_extend_format": conn.get_user_extend_fmt(),
+            "face_function_on": conn.get_face_fun_on(),
+            "compat_old_firmware": conn.get_compat_old_firmware(),
+            "network_parameters": conn.get_network_params(),
+            "mac_address": conn.get_mac()
+            }
+    print(json.dumps({"success": True, "info_capacidad": data}))
     conn.disconnect()
 except Exception as e:
-    print(f"Error: {e}")
+    print(json.dumps({"success": False, "error": str(e)}))

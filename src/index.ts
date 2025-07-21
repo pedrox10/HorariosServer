@@ -16,7 +16,12 @@ app.use(morgan("dev"))
 app.use(requestLogger);
 app.use(errorHandler);
 app.use("/api", routes)
-
+app.use((req, res) => {
+    res.status(404).json({
+        mensaje: "Ruta no encontrada",
+        ruta: req.originalUrl,
+    });
+});
 
 app.get('/api', (req, res) => {
     res.send("Inicio Server")

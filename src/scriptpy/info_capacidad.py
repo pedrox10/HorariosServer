@@ -18,7 +18,7 @@ try:
             "faces": conn.users,
             "faces_cap": conn.users_cap
             }
-    print(json.dumps(data))
+    print(json.dumps({"success": True, "info_capacidad": data}))
     conn.disconnect()
 except Exception as e:
     print(f"Error: {e}")
