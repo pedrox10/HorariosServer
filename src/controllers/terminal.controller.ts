@@ -8,7 +8,7 @@ import {EstadoUsuario, Usuario} from "../entity/Usuario";
 import moment from 'moment';
 import {Turno} from "../entity/Turno";
 import {Jornada} from "../entity/Jornada";
-import {Between, EntityManager, MoreThanOrEqual, QueryRunner} from "typeorm";
+import {Between, EntityManager, MoreThanOrEqual, Not, QueryRunner} from "typeorm";
 import {Sincronizacion} from "../entity/Sincronizacion";
 import {Interrupcion} from "../entity/Interrupcion";
 import { promises as fs } from 'fs';
@@ -139,7 +139,8 @@ export const editarGrupo = async (req: Request, res: Response) => {
 export const eliminarGrupo = async (req: Request, res: Response) => {
     const {idTerminal, idGrupo} = req.params;
     const eliminado = await Grupo.delete({id: parseInt(idGrupo)});
-    res.send(eliminado)
+    if(eliminado)
+        res.send(idGrupo)
 }
 
 export const getSincronizaciones = async (req: Request, res: Response) => {
@@ -327,7 +328,7 @@ export const sincronizarTerminal = async (req: Request, res: Response) => {
             usuariosT = JSON.parse(req.body.usuarios);
         }
 
-        let usuariosBD = await Usuario.find({ where: { terminal: terminal } });
+        let usuariosBD = await Usuario.find({ where: { terminal: terminal, estado: Not(EstadoUsuario.eliminado) } });
 
         if (fueSincronizado) {
             // Comparar usuarios del terminal con los de la BD
