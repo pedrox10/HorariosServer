@@ -16,7 +16,7 @@ app.use(morgan("dev"))
 app.use(requestLogger);
 app.use(errorHandler);
 app.use("/api", routes)
-app.use((req, res) => {
+app.use("/api", (req, res) => {
     res.status(404).json({
         mensaje: "Ruta no encontrada",
         ruta: req.originalUrl,
