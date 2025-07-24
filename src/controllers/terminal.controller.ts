@@ -211,9 +211,10 @@ export const respaldarTerminales = async (req: Request, res: Response) => {
                 argsMarcaciones.unshift(pyFileMarcaciones);
                 const pyprogMarcaciones = await spawn(envPython, argsMarcaciones);
                 let respuesta = JSON.parse(pyprogMarcaciones.toString())
+                let carpeta = terminal.nombre.replace(/\s+/g, '_');
                 let horaTerminal = moment(respuesta.hora_terminal)
                 const nombreArchivo = `${terminal.nombre.replace(/\s+/g, '_')}_${horaTerminal.format('YYYY-MM-DD_HH-mm-ss')}.json`;
-                const rutaArchivo = path.join(__dirname, '../../respaldos', nombreArchivo);
+                const rutaArchivo = path.join(__dirname, '../../respaldos', carpeta, nombreArchivo);
                 //Procesamiento de Usuarios
                 let usuariosT: any;
                 const pyFileUsuarios = 'src/scriptpy/usuarios.py';
@@ -387,8 +388,9 @@ export const sincronizarTerminal = async (req: Request, res: Response) => {
                     ...info,
                     usuariosT: usuariosT
                 };
+                let carpeta = terminal.nombre.replace(/\s+/g, '_');
                 const nombreArchivo = `${terminal.nombre.replace(/\s+/g, '_')}_${moment(horaTerminal).format('YYYY-MM-DD_HH-mm-ss')}.json`;
-                const rutaArchivo = path.join(__dirname, '../../respaldos', nombreArchivo);
+                const rutaArchivo = path.join(__dirname, '../../respaldos', carpeta, nombreArchivo);
                 await fs.mkdir(path.dirname(rutaArchivo), { recursive: true });
                 await fs.writeFile(rutaArchivo, JSON.stringify(jsonParaGuardar, null, 2));
             } catch (fileError: any) {

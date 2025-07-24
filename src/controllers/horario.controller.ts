@@ -236,8 +236,8 @@ export const asignarHorario = async (req: Request, res: Response) => {
     console.timeEnd('bd_superpuestas');
     console.time('asignacion');
 
-    let listaJornadas: JornadaDia[] = [];
-    listaJornadas = JSON.parse(jornadas);
+    let jornadasDias: JornadaDia[] = [];
+    jornadasDias = JSON.parse(jornadas);
     let jornadasGuardar: Jornada[] = [];
     let turnosGuardar: Turno[] = [];
 
@@ -265,7 +265,7 @@ export const asignarHorario = async (req: Request, res: Response) => {
             }
             for (let fecha of dias) {
                 let dia: string | any = env.dias.at(moment(fecha).day())
-                let jornadaDia = buscarEn(dia, listaJornadas)
+                let jornadaDia = buscarEn(dia, jornadasDias)
                 let jornada = new Jornada()
                 jornada.fecha = moment(fecha.format("YYYY-MM-DD")).toDate();
                 jornada.usuario = usuario
@@ -325,7 +325,7 @@ export const asignarHorario = async (req: Request, res: Response) => {
             let dia = moment(ultimaJornada.fecha).format("DD");
             let mes = moment(ultimaJornada.fecha).format("MMM");
             let horarioMes = "Hasta " + dia + " " + mes;
-            res.send({"res": true, "ultDiaAsignado": horarioMes})
+            res.send({"res": true, "ultDiaAsignado": horarioMes, "jornadasAsignadas": jornadasGuardar})
         }
     } else {
         res.send({"res": false, "ultDiaAsignado": ""})
