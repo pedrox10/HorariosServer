@@ -19,9 +19,10 @@ try:
             "face_function_on": conn.get_face_fun_on(),
             "compat_old_firmware": conn.get_compat_old_firmware(),
             "network_parameters": conn.get_network_params(),
-            "mac_address": conn.get_mac()
+            "mac_address": conn.get_mac(),
+            "pin_width": conn.get_pin_width()
             }
-    print(json.dumps({"success": True, "info_capacidad": data}))
+    print(json.dumps({"success": True, "info_extra": data}))
     conn.disconnect()
 except Exception as e:
     print(json.dumps({"success": False, "error": str(e)}))

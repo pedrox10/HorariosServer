@@ -16,3 +16,27 @@ export const conectar = async (req: Request, res: Response) => {
         return res.status(200).json(pyprogConectar.toString())
     }
 }
+
+export const infoCapacidad = async (req: Request, res: Response) => {
+    const {id} = req.params;
+    const terminal = await Terminal.findOne({where: {id: parseInt(id)},});
+    if (terminal) {
+        const pyInfoCapacidad = 'src/scriptpy/info_capacidad.py';
+        let args = [terminal.ip, terminal.puerto];
+        args.unshift(pyInfoCapacidad);
+        const pyprogInfoCapacidad = await spawn(envPython, args);
+        return res.status(200).json(pyprogInfoCapacidad.toString())
+    }
+}
+
+export const infoExtra = async (req: Request, res: Response) => {
+    const {id} = req.params;
+    const terminal = await Terminal.findOne({where: {id: parseInt(id)},});
+    if (terminal) {
+        const pyInfoExtra = 'src/scriptpy/info_extra.py';
+        let args = [terminal.ip, terminal.puerto];
+        args.unshift(pyInfoExtra);
+        const pyprogInfoExtra = await spawn(envPython, args);
+        return res.status(200).json(pyprogInfoExtra.toString())
+    }
+}

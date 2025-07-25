@@ -11,14 +11,13 @@ try:
     data = {
             "users": conn.users,
             "users_cap": conn.users_cap,
-            "fingers": conn.users,
-            "fingers_cap": conn.users_cap,
-            "records": conn.users,
-            "records_cap": conn.users_cap,
-            "faces": conn.users,
-            "faces_cap": conn.users_cap
+            "fingers": conn.fingers,
+            "fingers_cap": conn.fingers_cap,
+            "records": conn.records,
+            "faces": conn.faces,
+            "faces_cap": conn.faces_cap
             }
     print(json.dumps({"success": True, "info_capacidad": data}))
     conn.disconnect()
 except Exception as e:
-    print(f"Error: {e}")
+    print(json.dumps({"success": False, "error": str(e)}))

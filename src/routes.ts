@@ -23,7 +23,7 @@ import {
     getHorario,
     getHorarios, getJornadas, getLicencias, getNumJornadas
 } from "./controllers/horario.controller";
-import {conectar} from "./controllers/comandos.controller";
+import {conectar, infoCapacidad, infoExtra} from "./controllers/comandos.controller";
 
 const router = Router();
 //Ruta para Login
@@ -78,6 +78,7 @@ router.get('/horario/:id/jornadas', getNumJornadas);
 
 // Rutas para operaciones con Comandos
 router.get("/terminal/:id/conectar", conectar)
-
+router.get("/terminal/:id/info-capacidad", infoCapacidad)
+router.get("/terminal/:id/info-extra", infoExtra)
 
 export default router
