@@ -40,3 +40,15 @@ export const infoExtra = async (req: Request, res: Response) => {
         return res.status(200).json(pyprogInfoExtra.toString())
     }
 }
+
+export const horaActual = async (req: Request, res: Response) => {
+    const {id} = req.params;
+    const terminal = await Terminal.findOne({where: {id: parseInt(id)},});
+    if (terminal) {
+        const pyHoraActual = 'src/scriptpy/hora_actual.py';
+        let args = [terminal.ip, terminal.puerto];
+        args.unshift(pyHoraActual);
+        const pyprogHoraActual = await spawn(envPython, args);
+        return res.status(200).json(pyprogHoraActual.toString())
+    }
+}

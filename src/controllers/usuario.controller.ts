@@ -154,7 +154,7 @@ export const limpiarGrupo = async (req: Request, res: Response) => {
 
 export const getResumenMarcaciones = async (req: Request, res: Response) => {
     const {id, ini, fin} = req.params;
-    let resumenMarcacion = await getResumenMarcacionesInterno(id, ini, fin);
+    let resumenMarcacion = await getReporteMarcaciones(id, ini, fin);
     res.send(resumenMarcacion);
 }
 
@@ -177,7 +177,7 @@ export const getResumenMarcacionesPorCI = async (req: Request, res: Response) =>
         .getMany();
     let respuesta: ResumenMarcacion[] = [];
     for(let usuario of usuarios) {
-        let resumenMarcacion = await getResumenMarcacionesInterno(usuario.id + "", ini, fin);
+        let resumenMarcacion = await getReporteMarcaciones(usuario.id + "", ini, fin);
         if(resumenMarcacion)
             respuesta.push(resumenMarcacion);
     }
@@ -440,7 +440,7 @@ function getMultaAusencias(ausencias: number): number {
     return ausencias * 2
 }
 
-export async function getResumenMarcacionesInterno(id: string, ini: string, fin: string ) {
+export async function getReporteMarcaciones(id: string, ini: string, fin: string ) {
     console.time("GetUsuario")
     let usuario = await Usuario.findOne({
         where: {id: parseInt(id)}, relations: {
