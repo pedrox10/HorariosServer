@@ -160,7 +160,6 @@ export const getResumenMarcaciones = async (req: Request, res: Response) => {
 
 export const getResumenMarcacionesPorCI = async (req: Request, res: Response) => {
     const {ci, ini, fin} = req.params;
-    console.log(req.params)
     const usuarios = await Usuario.createQueryBuilder("usuario")
         .innerJoin(subQuery => {
             return subQuery
@@ -182,8 +181,6 @@ export const getResumenMarcacionesPorCI = async (req: Request, res: Response) =>
             respuesta.push(resumenMarcacion);
     }
     res.send(respuesta)
-    /*let resumenMarcacion = await getResumenMarcacionesInterno(id, ini, fin);
-    res.send(resumenMarcacion);*/
 }
 
 async function getJornadaPor(usuario: Usuario, fecha: string) {
