@@ -154,6 +154,293 @@ export const limpiarGrupo = async (req: Request, res: Response) => {
 
 export const getResumenMarcaciones = async (req: Request, res: Response) => {
     const {id, ini, fin} = req.params;
+    let resumenMarcacion = await getResumenMarcacionesInterno(id, ini, fin);
+    res.send(resumenMarcacion);
+}
+
+export const getResumenMarcacionesPorCI = async (req: Request, res: Response) => {
+    const {ci, ini, fin} = req.params;
+    console.log(req.params)
+    const usuarios = await Usuario.createQueryBuilder("usuario")
+        .innerJoin(subQuery => {
+            return subQuery
+                .select("marcacion.terminalId", "terminalId")
+                .from(Marcacion, "marcacion")
+                .where("marcacion.ci = :ci", { ci: parseInt(ci) })
+                .andWhere("marcacion.fecha BETWEEN :fechaIni AND :fechaFin", {
+                    fechaIni: moment(ini).format('YYYY-MM-DD'),
+                    fechaFin: moment(fin).format('YYYY-MM-DD')
+                })
+                .groupBy("marcacion.terminalId");
+        }, "sub", "usuario.terminalId = sub.terminalId")
+        .where("usuario.ci = :ci", { ci: parseInt(ci) })
+        .getMany();
+    let respuesta: ResumenMarcacion[] = [];
+    for(let usuario of usuarios) {
+        let resumenMarcacion = await getResumenMarcacionesInterno(usuario.id + "", ini, fin);
+        if(resumenMarcacion)
+            respuesta.push(resumenMarcacion);
+    }
+    res.send(respuesta)
+    /*let resumenMarcacion = await getResumenMarcacionesInterno(id, ini, fin);
+    res.send(resumenMarcacion);*/
+}
+
+async function getJornadaPor(usuario: Usuario, fecha: string) {
+    let jornada = await Jornada.findOne({
+        where: {usuario: usuario, fecha: moment(fecha).toDate()}, relations: {
+            priTurno: true, segTurno: true, horario: true
+        }
+    })
+    return jornada;
+}
+
+async function getMarcacionesPor(usuario: Usuario, fecha: string) {
+    let marcaciones = await Marcacion.find({
+        where: {
+            ci: usuario?.ci,
+            terminal: usuario?.terminal,
+            fecha: moment(fecha).toDate()
+        },
+    })
+    return marcaciones;
+}
+
+
+function getFeriado(jornada: Jornada, feriados: Asueto[]) {
+    let res: Asueto | any = null;
+    for (let feriado of feriados) {
+        if (feriado.fecha === jornada.fecha) {
+            res = feriado
+            break;
+        }
+    }
+    return res;
+}
+
+function getExcepcionCompleta(jornada: Jornada, excepcionesCompletas: Excepcion[]) {
+    let res: Excepcion | null = null;
+    for (let excepcionCompleta of excepcionesCompletas) {
+        const fechaExcepcion = moment(excepcionCompleta.fecha).utc().startOf('day').toDate();
+        const fechaJornada = moment(jornada.fecha).utc().startOf('day').toDate();
+        if (fechaExcepcion.getTime() === fechaJornada.getTime()) { // Comparación con timestamps
+            res = excepcionCompleta;
+            break;
+        }
+    }
+    return res;
+}
+
+function getExcepcionesTickeo(jornada: Jornada, excepcionesRangoHoras: Excepcion[]) {
+    let res: Excepcion [] =[];
+    for (let excepcionTickeo of excepcionesRangoHoras) {
+        const fechaExcepcion = moment(excepcionTickeo.fecha).utc().startOf('day').toDate();
+        const fechaJornada = moment(jornada.fecha).utc().startOf('day').toDate();
+        if (fechaExcepcion.getTime() === fechaJornada.getTime()) { // Comparación con timestamps
+            res.push(excepcionTickeo)
+        }
+    }
+    return res;
+}
+
+function getSinRegistros(rangoSinRegistros: DateRange) {
+    let infoMarcaciones: InfoMarcacion[] = [];
+    for (let fecha of rangoSinRegistros.by("day")) {
+        let infoMarcacion = new InfoMarcacion();
+        let dia = moment(fecha).locale("es").format("ddd DD")
+        dia = dia.charAt(0).toUpperCase() + dia.substring(1)
+        infoMarcacion.dia = dia
+        infoMarcacion.fecha = moment(fecha).toDate();
+        infoMarcacion.horario = "Sin registros"
+        infoMarcacion.estado = EstadoJornada.sin_registros;
+        infoMarcacion.activo = false
+        infoMarcacion.mensaje = "Funcionario aún no registrado en el biométrico"
+        if (fecha.isSame(rangoSinRegistros.start, 'day')) {
+            infoMarcacion.primerDia = {success: true, mes: capitalizar(moment(fecha).locale("es").format("MMMM"))};
+        } else {
+            if(fecha.date() === 1)
+                infoMarcacion.primerDia = {success: true, mes: capitalizar(moment(fecha).locale("es").format("MMMM"))};
+        }
+        infoMarcaciones.push(infoMarcacion)
+    }
+    return infoMarcaciones;
+}
+
+function getAvisosDeBaja(rangoDeBaja: DateRange) {
+    let infoMarcaciones: InfoMarcacion[] = [];
+    for (let fecha of rangoDeBaja.by("day")) {
+        let infoMarcacion = new InfoMarcacion();
+        let dia = moment(fecha).locale("es").format("ddd DD")
+        dia = dia.charAt(0).toUpperCase() + dia.substring(1)
+        infoMarcacion.dia = dia
+        infoMarcacion.fecha = moment(fecha).toDate();
+        infoMarcacion.horario = "Sin registros"
+        infoMarcacion.estado = EstadoJornada.sin_registros;
+        infoMarcacion.activo = false
+        infoMarcacion.mensaje = "Funcionario fué dado de baja en el sistema"
+        infoMarcaciones.push(infoMarcacion)
+    }
+    return infoMarcaciones;
+}
+
+export async function ultJornadaAsignada(usuarioId: number) {
+    // Buscamos la última jornada (fecha más alta) entre inicioMes y finMes
+    const ultimaJornada = await Jornada.findOne({
+        where: {
+            usuario: {id: usuarioId}, // Relación con el usuario
+        },
+        order: {
+            fecha: 'DESC', // Orden descendente para tomar la más reciente
+        },
+        relations: {
+            priTurno: true,
+            segTurno: true,
+        },
+    });
+    return ultimaJornada;
+}
+
+export async function ultMarcacion(usuario: Usuario, terminal: Terminal) {
+    // Buscamos la última jornada (fecha más alta) entre inicioMes y finMes
+    const ultMarcacion = await Marcacion.findOne({
+        where: {
+            ci: usuario.ci,
+            terminal: terminal
+        },
+        order: {
+            fecha: 'DESC', hora: 'DESC' // Orden descendente para tomar la más reciente
+        },
+    });
+    return ultMarcacion;
+}
+
+export async function obtenerSolicitudesAprobadasPorCI(ci: number) {
+    const ACCESS_CODE =
+        "ga8f0051d6ff90ff485359f626060aa0fe38fc2c451c184f337ae146e4cd7eefcb8497011ee63534e4afd7eedf65fc1d9017f67c2385bc85b392b862a7bedfd6g";
+    const BASE_URL = "http://190.181.22.149:3310";
+    const HEADERS = {
+        headers: {
+            "X-Access-Code": ACCESS_CODE,
+        },
+    };
+
+    try {
+        // 1. Buscar funcionario por CI
+        const {data: funcionarios} = await axios.get(
+            `${BASE_URL}/funcionario/filtro/ci/${ci}`,
+            HEADERS
+        );
+        const funcionario = funcionarios?.[0];
+        if (!funcionario) {
+            return {success: false, error: "Número de CI no encontrado en Organigrama"}
+        }
+        if (!funcionario.estado) {
+            const {data: registros} = await axios.get(
+                `${BASE_URL}/registro/filtro/id_funcionario/${funcionario._id}`,
+                HEADERS
+            );
+            const inactivos = registros.filter((r: any)  => r.estado === false);
+            if (inactivos.length === 0) {
+                return { success: false, error: 'No hay registros inactivos' };
+            }
+            if (inactivos.length === 1) {
+                if(inactivos[0].fecha_ingreso === undefined)
+                    return {success: false, error: "Funcionario aún no tiene un cargo asignado"}
+            }
+            const registroMasReciente = inactivos.reduce((prev: any, curr: any) => {
+                return moment(curr.fecha_conclusion).isAfter(prev.fecha_conclusion) ? curr : prev;
+            });
+            return {
+                success: false,
+                error: `Funcionario dado de baja en Organigrama el: ${moment(registroMasReciente.fecha_conclusion).format("DD/MM/YYYY")}`
+            };
+        }
+        // 2. Buscar registros del funcionario
+        const {data: registros} = await axios.get(
+            `${BASE_URL}/registro/filtro/id_funcionario/${funcionario._id}`,
+            HEADERS
+        );
+        const registroActivo = registros.find((r: { estado: boolean }) => r.estado === true);
+        if (!registroActivo) {
+            console.log("No se encontró un registro activo");
+            return {success: false, error: "Funcionario aún no tiene un cargo asignado"}
+        }
+        const {data: solicitudes} = await axios.get<SolicitudAprobada[]>(
+            `${BASE_URL}/solicitud/filtro/id_registro/${registroActivo._id}`,
+            HEADERS
+        );
+        // 3) Filtra por estado y devuelve todas las propiedades:
+        let solicitudesAprobadas = solicitudes.filter(s => s.estado === 'APROBADO');
+        return {success: true, solicitudes: solicitudesAprobadas}
+    } catch (error: any) {
+        console.error(
+            "Error al obtener solicitudes aprobadas:",
+            error.response?.data || error.message
+        );
+        return {success: false, error: "No hay conexión a Organigrama"}
+    }
+}
+
+function capitalizar(cadena: string): string {
+    if (!cadena) return "";
+    return cadena.charAt(0).toUpperCase() + cadena.slice(1).toLowerCase();
+}
+
+function getLicencia(excepcion: Excepcion): string {
+    let res: string;
+    switch (excepcion.licencia) {
+        case "ET":
+            res = "Excepción de Tickeo"; break;
+        case "TO":
+            res = "Tolerancia"; break;
+        case "VA":
+            res = "Vacación"; break;
+        case "BM":
+            res = "Baja Médica"; break;
+        case "SG":
+            res = "PermisoSG"; break;
+        case "PO":
+            res = "Permiso"; break;
+        case "LI":
+            res = "Licencia"; break;
+        case "CA":
+            res = "Capacitación"; break;
+        default:
+            res = "Otros"
+    }
+    return res;
+}
+
+function getMultaRetrasos(min: number): number {
+    if (min <= 30) return 0;
+    if (min <= 45) return 0.5;
+    if (min <= 60) return 1;
+    if (min <= 90) return 2;
+    if (min <= 120) return 3;
+    return 4;
+}
+
+function getMultaSinMarcar(sinMarcar: number): number {
+    switch (sinMarcar) {
+        case 0: return 0;
+        case 1: return 0.5;
+        case 2: return 1;
+        case 3: return 2;
+        case 4: return 2.5;
+        case 5: return 3;
+        default: return 3;
+    }
+}
+
+function getMultaSalAntes(salAntes: number): number {
+    return salAntes * 0.5
+}
+
+function getMultaAusencias(ausencias: number): number {
+    return ausencias * 2
+}
+
+export async function getResumenMarcacionesInterno(id: string, ini: string, fin: string ) {
     console.time("GetUsuario")
     let usuario = await Usuario.findOne({
         where: {id: parseInt(id)}, relations: {
@@ -173,7 +460,7 @@ export const getResumenMarcaciones = async (req: Request, res: Response) => {
             let rangoSinRegistros = momentExt.range(moment(fechaIni).toDate(), moment(fechaFin).toDate())
             infoMarcaciones.push(...getSinRegistros(rangoSinRegistros))
             resumenMarcacion.infoMarcaciones = infoMarcaciones
-            res.send(resumenMarcacion)
+            return resumenMarcacion;
         } else {
             let rangoValido: DateRange;
             let hayFeriados = false;
@@ -895,259 +1182,8 @@ export const getResumenMarcaciones = async (req: Request, res: Response) => {
             resumenMarcacion.totalLicencias = totalLicencias
             resumenMarcacion.totalCapacitaciones = totalCapacitaciones
             resumenMarcacion.totalOtros = totalPermisos + totalLicencias + totalCapacitaciones;
-            res.send(resumenMarcacion)
+            return resumenMarcacion;
         }
     }
 }
 
-async function getJornadaPor(usuario: Usuario, fecha: string) {
-    let jornada = await Jornada.findOne({
-        where: {usuario: usuario, fecha: moment(fecha).toDate()}, relations: {
-            priTurno: true, segTurno: true, horario: true
-        }
-    })
-    return jornada;
-}
-
-async function getMarcacionesPor(usuario: Usuario, fecha: string) {
-    let marcaciones = await Marcacion.find({
-        where: {
-            ci: usuario?.ci,
-            terminal: usuario?.terminal,
-            fecha: moment(fecha).toDate()
-        },
-    })
-    return marcaciones;
-}
-
-
-function getFeriado(jornada: Jornada, feriados: Asueto[]) {
-    let res: Asueto | any = null;
-    for (let feriado of feriados) {
-        if (feriado.fecha === jornada.fecha) {
-            res = feriado
-            break;
-        }
-    }
-    return res;
-}
-
-function getExcepcionCompleta(jornada: Jornada, excepcionesCompletas: Excepcion[]) {
-    let res: Excepcion | null = null;
-    for (let excepcionCompleta of excepcionesCompletas) {
-        const fechaExcepcion = moment(excepcionCompleta.fecha).utc().startOf('day').toDate();
-        const fechaJornada = moment(jornada.fecha).utc().startOf('day').toDate();
-        if (fechaExcepcion.getTime() === fechaJornada.getTime()) { // Comparación con timestamps
-            res = excepcionCompleta;
-            break;
-        }
-    }
-    return res;
-}
-
-function getExcepcionesTickeo(jornada: Jornada, excepcionesRangoHoras: Excepcion[]) {
-    let res: Excepcion [] =[];
-    for (let excepcionTickeo of excepcionesRangoHoras) {
-        const fechaExcepcion = moment(excepcionTickeo.fecha).utc().startOf('day').toDate();
-        const fechaJornada = moment(jornada.fecha).utc().startOf('day').toDate();
-        if (fechaExcepcion.getTime() === fechaJornada.getTime()) { // Comparación con timestamps
-            res.push(excepcionTickeo)
-        }
-    }
-    return res;
-}
-
-function getSinRegistros(rangoSinRegistros: DateRange) {
-    let infoMarcaciones: InfoMarcacion[] = [];
-    for (let fecha of rangoSinRegistros.by("day")) {
-        let infoMarcacion = new InfoMarcacion();
-        let dia = moment(fecha).locale("es").format("ddd DD")
-        dia = dia.charAt(0).toUpperCase() + dia.substring(1)
-        infoMarcacion.dia = dia
-        infoMarcacion.horario = "Sin registros"
-        infoMarcacion.estado = EstadoJornada.sin_registros;
-        infoMarcacion.activo = false
-        infoMarcacion.mensaje = "Funcionario aún no registrado en el biométrico"
-        if (fecha.isSame(rangoSinRegistros.start, 'day')) {
-            infoMarcacion.primerDia = {success: true, mes: capitalizar(moment(fecha).locale("es").format("MMMM"))};
-        } else {
-            if(fecha.date() === 1)
-                infoMarcacion.primerDia = {success: true, mes: capitalizar(moment(fecha).locale("es").format("MMMM"))};
-        }
-        infoMarcaciones.push(infoMarcacion)
-    }
-    return infoMarcaciones;
-}
-
-function getAvisosDeBaja(rangoDeBaja: DateRange) {
-    let infoMarcaciones: InfoMarcacion[] = [];
-    for (let fecha of rangoDeBaja.by("day")) {
-        let infoMarcacion = new InfoMarcacion();
-        let dia = moment(fecha).locale("es").format("ddd DD")
-        dia = dia.charAt(0).toUpperCase() + dia.substring(1)
-        infoMarcacion.dia = dia
-        infoMarcacion.horario = "Sin registros"
-        infoMarcacion.estado = EstadoJornada.sin_registros;
-        infoMarcacion.activo = false
-        infoMarcacion.mensaje = "Funcionario fué dado de baja en el sistema"
-        infoMarcaciones.push(infoMarcacion)
-    }
-    return infoMarcaciones;
-}
-
-export async function ultJornadaAsignada(usuarioId: number) {
-    // Buscamos la última jornada (fecha más alta) entre inicioMes y finMes
-    const ultimaJornada = await Jornada.findOne({
-        where: {
-            usuario: {id: usuarioId}, // Relación con el usuario
-        },
-        order: {
-            fecha: 'DESC', // Orden descendente para tomar la más reciente
-        },
-        relations: {
-            priTurno: true,
-            segTurno: true,
-        },
-    });
-    return ultimaJornada;
-}
-
-export async function ultMarcacion(usuario: Usuario, terminal: Terminal) {
-    // Buscamos la última jornada (fecha más alta) entre inicioMes y finMes
-    const ultMarcacion = await Marcacion.findOne({
-        where: {
-            ci: usuario.ci,
-            terminal: terminal
-        },
-        order: {
-            fecha: 'DESC', hora: 'DESC' // Orden descendente para tomar la más reciente
-        },
-    });
-    return ultMarcacion;
-}
-
-export async function obtenerSolicitudesAprobadasPorCI(ci: number) {
-    const ACCESS_CODE =
-        "ga8f0051d6ff90ff485359f626060aa0fe38fc2c451c184f337ae146e4cd7eefcb8497011ee63534e4afd7eedf65fc1d9017f67c2385bc85b392b862a7bedfd6g";
-    const BASE_URL = "http://190.181.22.149:3310";
-    const HEADERS = {
-        headers: {
-            "X-Access-Code": ACCESS_CODE,
-        },
-    };
-
-    try {
-        // 1. Buscar funcionario por CI
-        const {data: funcionarios} = await axios.get(
-            `${BASE_URL}/funcionario/filtro/ci/${ci}`,
-            HEADERS
-        );
-        const funcionario = funcionarios?.[0];
-        if (!funcionario) {
-            return {success: false, error: "Número de CI no encontrado en Organigrama"}
-        }
-        if (!funcionario.estado) {
-            const {data: registros} = await axios.get(
-                `${BASE_URL}/registro/filtro/id_funcionario/${funcionario._id}`,
-                HEADERS
-            );
-            const inactivos = registros.filter((r: any)  => r.estado === false);
-            if (inactivos.length === 0) {
-                return { success: false, error: 'No hay registros inactivos' };
-            }
-            if (inactivos.length === 1) {
-                if(inactivos[0].fecha_ingreso === undefined)
-                    return {success: false, error: "Funcionario aún no tiene un cargo asignado"}
-            }
-            const registroMasReciente = inactivos.reduce((prev: any, curr: any) => {
-                return moment(curr.fecha_conclusion).isAfter(prev.fecha_conclusion) ? curr : prev;
-            });
-            return {
-                success: false,
-                error: `Funcionario dado de baja en Organigrama el: ${moment(registroMasReciente.fecha_conclusion).format("DD/MM/YYYY")}`
-            };
-        }
-        // 2. Buscar registros del funcionario
-        const {data: registros} = await axios.get(
-            `${BASE_URL}/registro/filtro/id_funcionario/${funcionario._id}`,
-            HEADERS
-        );
-        const registroActivo = registros.find((r: { estado: boolean }) => r.estado === true);
-        if (!registroActivo) {
-            console.log("No se encontró un registro activo");
-            return {success: false, error: "Funcionario aún no tiene un cargo asignado"}
-        }
-        const {data: solicitudes} = await axios.get<SolicitudAprobada[]>(
-            `${BASE_URL}/solicitud/filtro/id_registro/${registroActivo._id}`,
-            HEADERS
-        );
-        // 3) Filtra por estado y devuelve todas las propiedades:
-        let solicitudesAprobadas = solicitudes.filter(s => s.estado === 'APROBADO');
-        return {success: true, solicitudes: solicitudesAprobadas}
-    } catch (error: any) {
-        console.error(
-            "Error al obtener solicitudes aprobadas:",
-            error.response?.data || error.message
-        );
-        return {success: false, error: "No hay conexión a Organigrama"}
-    }
-}
-
-function capitalizar(cadena: string): string {
-    if (!cadena) return "";
-    return cadena.charAt(0).toUpperCase() + cadena.slice(1).toLowerCase();
-}
-
-function getLicencia(excepcion: Excepcion): string {
-    let res: string;
-    switch (excepcion.licencia) {
-        case "ET":
-            res = "Excepción de Tickeo"; break;
-        case "TO":
-            res = "Tolerancia"; break;
-        case "VA":
-            res = "Vacación"; break;
-        case "BM":
-            res = "Baja Médica"; break;
-        case "SG":
-            res = "PermisoSG"; break;
-        case "PO":
-            res = "Permiso"; break;
-        case "LI":
-            res = "Licencia"; break;
-        case "CA":
-            res = "Capacitación"; break;
-        default:
-            res = "Otros"
-    }
-    return res;
-}
-
-function getMultaRetrasos(min: number): number {
-    if (min <= 30) return 0;
-    if (min <= 45) return 0.5;
-    if (min <= 60) return 1;
-    if (min <= 90) return 2;
-    if (min <= 120) return 3;
-    return 4;
-}
-
-function getMultaSinMarcar(sinMarcar: number): number {
-    switch (sinMarcar) {
-        case 0: return 0;
-        case 1: return 0.5;
-        case 2: return 1;
-        case 3: return 2;
-        case 4: return 2.5;
-        case 5: return 3;
-        default: return 3;
-    }
-}
-
-function getMultaSalAntes(salAntes: number): number {
-    return salAntes * 0.5
-}
-
-function getMultaAusencias(ausencias: number): number {
-    return ausencias * 2
-}
