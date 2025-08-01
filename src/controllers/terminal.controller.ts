@@ -243,6 +243,7 @@ export const respaldarTerminales = async (req: Request, res: Response) => {
     }
 };
 
+const terminalesBloqueados = new Map<number, boolean>();
 export const sincronizarTerminal = async (req: Request, res: Response) => {
     const { id } = req.params;
     const metodo = req.method; // "GET" o "POST"
@@ -253,7 +254,13 @@ export const sincronizarTerminal = async (req: Request, res: Response) => {
             mensaje: "¡Terminal no encontrado en Base de Datos!",
         });
     }
-
+    // Intentar adquirir el bloqueo.
+    if (terminalesBloqueados.has(terminal.id)) {
+        return res.status(409).json({
+            mensaje: "¡El terminal ya está en proceso de sincronización!",
+        });
+    }
+    terminalesBloqueados.set(terminal.id, true); // <--- Bloqueo adquirido
     const fueSincronizado = terminal.ultSincronizacion !== null;
     let marcacionesNuevas: Marcacion[] = [];
     let usuariosNuevos: Usuario[] = [];
@@ -454,6 +461,7 @@ export const sincronizarTerminal = async (req: Request, res: Response) => {
     } finally {
         // Liberar el queryRunner para evitar fugas de conexión
         await queryRunner.release();
+        terminalesBloqueados.delete(terminal.id);
     }
 };
 
