@@ -46,6 +46,8 @@ export const getUsuarios = async (req: Request, res: Response) => {
     if (usuarios) {
         for (const usuario of usuarios) {
             let jornada = await ultJornadaAsignada(usuario.id);
+            /*let res = await solicitudesAprobadasPorCI(usuario.ci)
+            console.log(res)*/
             if (jornada) {
                 let dia = moment(jornada.fecha).format("DD");
                 let mes = moment(jornada.fecha).format("MMM");
@@ -58,6 +60,80 @@ export const getUsuarios = async (req: Request, res: Response) => {
             }
         }
         res.send(usuarios)
+    }
+}
+
+// Codigo Ramiro para solicitudes aprobadas:
+async function solicitudesAprobadasPorCI(ci: number) {
+    const ACCESS_CODE =
+        "ga8f0051d6ff90ff485359f626060aa0fe38fc2c451c184f337ae146e4cd7eefcb8497011ee63534e4afd7eedf65fc1d9017f67c2385bc85b392b862a7bedfd6g";
+    const BASE_URL = "http://190.181.22.149:3310";
+    const HEADERS = {
+        headers: {
+            "X-Access-Code": ACCESS_CODE,
+        },
+    };
+    try {
+        // 1. Buscar funcionario por CI
+        const { data: funcionarios } = await axios.get(
+            `${BASE_URL}/funcionario/filtro/ci/${ci}`,
+            HEADERS
+        );
+        const funcionario = funcionarios?.[0];
+        if (!funcionario || !funcionario.estado) {
+            console.log("Funcionario no encontrado o inactivo");
+            return;
+        }
+        // 2. Buscar registros del funcionario
+        const { data: registros } = await axios.get(
+            `${BASE_URL}/registro/filtro/id_funcionario/${funcionario._id}`,
+            HEADERS
+        );
+        const registroActivo = registros.find((r: any) => r.estado === true);
+        if (!registroActivo) {
+            console.log("No se encontró un registro activo");
+            return;
+        }
+        // Reemplazar id_funcionario con los datos del funcionario
+        registroActivo.id_funcionario = {
+            nombre: funcionario.nombre,
+            paterno: funcionario.paterno,
+            materno: funcionario.materno,
+            ci: funcionario.ci,
+            ext: funcionario.ext ? funcionario.ext : "",
+        };
+        // 3. Buscar rotaciones activas del registro
+        const { data: rotaciones } = await axios.get(
+            `${BASE_URL}/rotacion/filtro/id_registro/${registroActivo._id}`,
+            HEADERS
+        );
+        // Asociar rotaciones si existe al registro
+        const rotacionActivo = rotaciones.find(
+            (r: any) => registroActivo?.id_funcionario && r.estado === true
+        );
+        if (rotacionActivo) {
+            registroActivo.id_rotacion = rotacionActivo;
+        }
+        // 4. Buscar solicitudes asociadas al registro activo
+        const { data: solicitudes } = await axios.get(
+            `${BASE_URL}/solicitud/filtro/id_registro/${registroActivo._id}`,
+            HEADERS
+        );
+        // Asociar solicitudes a registro
+        const solicitudesAprobadas = solicitudes.filter(
+            (s: any) => s.estado === "APROBADO"
+        );
+        if (solicitudesAprobadas) {
+            registroActivo.id_solicitudes = solicitudesAprobadas;
+        }
+        return registroActivo
+        //console.log("Solicitudes aprobadas:", solicitudesAprobadas);
+        //return solicitudesAprobadas
+    } catch (error: any) {
+        console.error(
+            "Error al obtener solicitudes aprobadas:",
+            error.response?.data || error.message
+        );
     }
 }
 
