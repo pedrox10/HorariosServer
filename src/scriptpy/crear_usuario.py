@@ -12,8 +12,8 @@ uid = int(sys.argv[3])
 zk = ZK(ip, port=puerto, timeout=10, force_udp=False, ommit_ping=False)
 try:
     conn = zk.connect()
-    #conn.set_user(uid=212, name='JUAN PEREZ', privilege=const.USER_DEFAULT, password='', user_id='5907491')
-    conn.delete_user(uid=212)
+    #conn.set_user(uid=215, name='Fanani M. Ihsan', privilege=const.USER_ADMIN, password='', group_id='', user_id='123', card=0)
+    conn.delete_user(uid=215)
 except Exception as e:
     print(f"Error al crear usuario: {str(e)}")
 finally:
