@@ -14,6 +14,7 @@ try:
             "fingers": conn.fingers,
             "fingers_cap": conn.fingers_cap,
             "records": conn.records,
+            "records_cap": conn.rec_cap,
             "faces": conn.faces,
             "faces_cap": conn.faces_cap
             }
