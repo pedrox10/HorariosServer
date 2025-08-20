@@ -63,10 +63,9 @@ export const getUsuarios = async (req: Request, res: Response) => {
     }
 }
 
-// Codigo Ramiro para solicitudes aprobadas:
-async function solicitudesAprobadasPorCI(ci: number) {
-    const ACCESS_CODE =
-        "ga8f0051d6ff90ff485359f626060aa0fe38fc2c451c184f337ae146e4cd7eefcb8497011ee63534e4afd7eedf65fc1d9017f67c2385bc85b392b862a7bedfd6g";
+export const infoOrganigram = async (req: Request, res: Response) => {
+    const {ci} = req.params;
+    const ACCESS_CODE = "ga8f0051d6ff90ff485359f626060aa0fe38fc2c451c184f337ae146e4cd7eefcb8497011ee63534e4afd7eedf65fc1d9017f67c2385bc85b392b862a7bedfd6g";
     const BASE_URL = "http://190.181.22.149:3310";
     const HEADERS = {
         headers: {
@@ -74,15 +73,13 @@ async function solicitudesAprobadasPorCI(ci: number) {
         },
     };
     try {
-        // 1. Buscar funcionario por CI
         const { data: funcionarios } = await axios.get(
             `${BASE_URL}/funcionario/filtro/ci/${ci}`,
             HEADERS
         );
         const funcionario = funcionarios?.[0];
         if (!funcionario || !funcionario.estado) {
-            console.log("Funcionario no encontrado o inactivo");
-            return;
+            return res.status(404).json({ exito: false, respuesta: "Funcionario no encontrado o inactivo"});
         }
         // 2. Buscar registros del funcionario
         const { data: registros } = await axios.get(
@@ -91,8 +88,7 @@ async function solicitudesAprobadasPorCI(ci: number) {
         );
         const registroActivo = registros.find((r: any) => r.estado === true);
         if (!registroActivo) {
-            console.log("No se encontró un registro activo");
-            return;
+            return res.status(404).json({ exito: false, respuesta: "\"No se encontró un registro activo\""});
         }
         // Reemplazar id_funcionario con los datos del funcionario
         registroActivo.id_funcionario = {
@@ -114,26 +110,10 @@ async function solicitudesAprobadasPorCI(ci: number) {
         if (rotacionActivo) {
             registroActivo.id_rotacion = rotacionActivo;
         }
-        // 4. Buscar solicitudes asociadas al registro activo
-        const { data: solicitudes } = await axios.get(
-            `${BASE_URL}/solicitud/filtro/id_registro/${registroActivo._id}`,
-            HEADERS
-        );
-        // Asociar solicitudes a registro
-        const solicitudesAprobadas = solicitudes.filter(
-            (s: any) => s.estado === "APROBADO"
-        );
-        if (solicitudesAprobadas) {
-            registroActivo.id_solicitudes = solicitudesAprobadas;
-        }
-        return registroActivo
-        //console.log("Solicitudes aprobadas:", solicitudesAprobadas);
-        //return solicitudesAprobadas
+        return res.status(200).json({ exito: true, respuesta: registroActivo});
     } catch (error: any) {
-        console.error(
-            "Error al obtener solicitudes aprobadas:",
-            error.response?.data || error.message
-        );
+        return res.status(500).json({ exito: false, respuesta: "Error al obtener solicitudes aprobadas"});
+        console.error("Error al obtener solicitudes aprobadas:", error.response?.data || error.message);
     }
 }
 
@@ -181,7 +161,8 @@ export const getMarcaciones = async (req: Request, res: Response) => {
             terminal: true,
         }
     });
-    const marcaciones = await Marcacion.findBy({ci: usuario?.ci, terminal: usuario?.terminal})
+    const marcaciones = await Marcacion.find({ where: { ci: usuario?.ci, terminal: usuario?.terminal},
+        order: { fecha: "DESC", hora: "DESC"}});
     res.send(marcaciones)
 }
 
