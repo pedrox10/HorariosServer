@@ -7,6 +7,8 @@ export class ResumenMarcacion{
     totalMinRetrasos: number;
     multaRetrasos: number;
     totalSinMarcar: number;
+    sinMarcarEntradas: number;
+    sinMarcarSalidas: number;
     multaSinMarcar: number;
     totalSalAntes: number;
     multaSalAntes: number;

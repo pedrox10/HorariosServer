@@ -46,8 +46,6 @@ export const getUsuarios = async (req: Request, res: Response) => {
     if (usuarios) {
         for (const usuario of usuarios) {
             let jornada = await ultJornadaAsignada(usuario.id);
-            /*let res = await solicitudesAprobadasPorCI(usuario.ci)
-            console.log(res)*/
             if (jornada) {
                 let dia = moment(jornada.fecha).format("DD");
                 let mes = moment(jornada.fecha).format("MMM");
@@ -636,6 +634,8 @@ export async function getReporteMarcaciones(id: string, ini: string, fin: string
             let totalCantRetrasos: number = 0
             let totalMinRetrasos: number = 0
             let totalSinMarcar: number = 0
+            let sinMarcarEntradas: number= 0
+            let sinMarcarSalidas: number = 0
             let totalSalAntes: number = 0
             let totalAusencias: number = 0
             //Contadores de Excepciones
