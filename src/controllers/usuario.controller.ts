@@ -634,8 +634,8 @@ export async function getReporteMarcaciones(id: string, ini: string, fin: string
             let totalCantRetrasos: number = 0
             let totalMinRetrasos: number = 0
             let totalSinMarcar: number = 0
-            let sinMarcarEntradas: number= 0
-            let sinMarcarSalidas: number = 0
+            let totalSinMarcarEntradas: number = 0;
+            let totalSinMarcarSalidas: number = 0;
             let totalSalAntes: number = 0
             let totalAusencias: number = 0
             //Contadores de Excepciones
@@ -703,6 +703,8 @@ export async function getReporteMarcaciones(id: string, ini: string, fin: string
                     let cantSalAntes: number = 0
                     let minRetrasos: number = 0
                     let sinMarcar: number = 0
+                    let sinMarcarEntradas: number= 0
+                    let sinMarcarSalidas: number = 0
                     infoMarcacion.activo = false
                     let hayPriRetraso: boolean = false
                     let haySegRetraso: boolean = false
@@ -1000,7 +1002,9 @@ export async function getReporteMarcaciones(id: string, ini: string, fin: string
                                         }
                                     } else {
                                         sinMarcar++
+                                        sinMarcarEntradas++
                                         totalSinMarcar++
+                                        totalSinMarcarEntradas ++
                                     }
                                 }
 
@@ -1019,7 +1023,10 @@ export async function getReporteMarcaciones(id: string, ini: string, fin: string
                                         }
                                     } else {
                                         sinMarcar++
+                                        sinMarcarSalidas++
                                         totalSinMarcar++
+                                        totalSinMarcarSalidas++
+
                                     }
                                 }
 
@@ -1042,7 +1049,9 @@ export async function getReporteMarcaciones(id: string, ini: string, fin: string
                                         }
                                     } else {
                                         sinMarcar++
+                                        sinMarcarEntradas++
                                         totalSinMarcar++
+                                        totalSinMarcarEntradas++
                                     }
                                 }
 
@@ -1061,17 +1070,25 @@ export async function getReporteMarcaciones(id: string, ini: string, fin: string
                                         }
                                     } else {
                                         sinMarcar++
+                                        sinMarcarSalidas++
                                         totalSinMarcar++
+                                        totalSinMarcarSalidas++
                                     }
                                 }
                                 infoMarcacion.activo = true;
                                 if (sinMarcar == numTurnos * 2) {
                                     infoMarcacion.noMarcados = 0;
+                                    infoMarcacion.sinMarcarEntradas = 0
+                                    infoMarcacion.sinMarcarSalidas = 0
                                     totalSinMarcar = totalSinMarcar - numTurnos * 2;
+                                    totalSinMarcarEntradas = totalSinMarcarEntradas - numTurnos;
+                                    totalSinMarcarSalidas = totalSinMarcarSalidas - numTurnos;
                                     totalAusencias++;
                                     infoMarcacion.estado = EstadoJornada.ausencia
                                 } else {
                                     infoMarcacion.noMarcados = sinMarcar;
+                                    infoMarcacion.sinMarcarEntradas = sinMarcarEntradas;
+                                    infoMarcacion.sinMarcarSalidas = sinMarcarSalidas;
                                 }
                                 infoMarcacion.cantRetrasos = cantRetrasos;
                                 infoMarcacion.minRetrasos = minRetrasos;
@@ -1149,7 +1166,9 @@ export async function getReporteMarcaciones(id: string, ini: string, fin: string
                                             }
                                         } else {
                                             sinMarcar++
+                                            sinMarcarEntradas++
                                             totalSinMarcar++
+                                            totalSinMarcarEntradas++
                                         }
                                     }
 
@@ -1168,17 +1187,25 @@ export async function getReporteMarcaciones(id: string, ini: string, fin: string
                                             }
                                         } else {
                                             sinMarcar++
+                                            sinMarcarSalidas++
                                             totalSinMarcar++
+                                            totalSinMarcarSalidas++
                                         }
                                     }
                                     infoMarcacion.activo = true;
                                     if (sinMarcar == numTurnos * 2) {
                                         infoMarcacion.noMarcados = 0;
+                                        infoMarcacion.sinMarcarEntradas = 0
+                                        infoMarcacion.sinMarcarSalidas = 0
                                         totalSinMarcar = totalSinMarcar - numTurnos * 2;
+                                        totalSinMarcarEntradas = totalSinMarcarEntradas - numTurnos;
+                                        totalSinMarcarSalidas = totalSinMarcarSalidas - numTurnos;
                                         totalAusencias++;
                                         infoMarcacion.estado = EstadoJornada.ausencia
                                     } else {
                                         infoMarcacion.noMarcados = sinMarcar;
+                                        infoMarcacion.sinMarcarEntradas = sinMarcarEntradas
+                                        infoMarcacion.sinMarcarSalidas = sinMarcarSalidas
                                     }
                                     infoMarcacion.cantRetrasos = cantRetrasos;
                                     infoMarcacion.minRetrasos = minRetrasos;
@@ -1215,6 +1242,8 @@ export async function getReporteMarcaciones(id: string, ini: string, fin: string
             resumenMarcacion.totalMinRetrasos = totalMinRetrasos
             resumenMarcacion.multaRetrasos = getMultaRetrasos(totalMinRetrasos)
             resumenMarcacion.totalSinMarcar = totalSinMarcar
+            resumenMarcacion.totalSinMarcarEntradas = totalSinMarcarEntradas
+            resumenMarcacion.totalSinMarcarSalidas = totalSinMarcarSalidas
             resumenMarcacion.multaSinMarcar = getMultaSinMarcar(totalSinMarcar)
             resumenMarcacion.totalSalAntes = totalSalAntes
             resumenMarcacion.multaSalAntes = getMultaSalAntes(totalSalAntes)

@@ -12,6 +12,8 @@ export class InfoMarcacion{
   cantSalAntes: number
   minRetrasos: number
   noMarcados: number
+  sinMarcarEntradas: number;
+  sinMarcarSalidas: number;
   hayPriEntExcepcion?: any
   hayPriSalExcepcion?: any
   haySegEntExcepcion?: any
