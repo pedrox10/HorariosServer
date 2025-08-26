@@ -77,7 +77,7 @@ export const infoOrganigram = async (req: Request, res: Response) => {
         );
         const funcionario = funcionarios?.[0];
         if (!funcionario || !funcionario.estado) {
-            return res.status(404).json({ exito: false, respuesta: "Funcionario no encontrado o inactivo"});
+            return res.status(200).json({ exito: false, respuesta: "Funcionario no encontrado o inactivo"});
         }
         // 2. Buscar registros del funcionario
         const { data: registros } = await axios.get(
@@ -86,7 +86,7 @@ export const infoOrganigram = async (req: Request, res: Response) => {
         );
         const registroActivo = registros.find((r: any) => r.estado === true);
         if (!registroActivo) {
-            return res.status(404).json({ exito: false, respuesta: "\"No se encontró un registro activo\""});
+            return res.status(200).json({ exito: false, respuesta: "\"No se encontró un registro activo\""});
         }
         // Reemplazar id_funcionario con los datos del funcionario
         registroActivo.id_funcionario = {
