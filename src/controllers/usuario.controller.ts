@@ -666,7 +666,7 @@ export async function getReporteMarcaciones(id: string, ini: string, fin: string
                     where: {
                         ci: usuario?.ci,
                         terminal: usuario?.terminal,
-                        fecha: Between(rangoValido.start.toDate(), rangoValido.end.toDate()),
+                        fecha: Between(rangoValido.start.toDate(), rangoValido.end.add(1, "day").toDate()),
                     },
                 })
                 if(marcacionesDelRango.length == 0) {
