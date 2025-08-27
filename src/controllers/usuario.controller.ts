@@ -662,11 +662,13 @@ export async function getReporteMarcaciones(id: string, ini: string, fin: string
                         priTurno: true, segTurno: true, horario: true
                     }
                 });
+                //Creo una copia del fin del rangoValido
+                let finRango = rangoValido.end.clone().add(1, "day").toDate();
                 let marcacionesDelRango = await Marcacion.find({
                     where: {
                         ci: usuario?.ci,
                         terminal: usuario?.terminal,
-                        fecha: Between(rangoValido.start.toDate(), rangoValido.end.add(1, "day").toDate()),
+                        fecha: Between(rangoValido.start.toDate(), finRango),
                     },
                 })
                 if(marcacionesDelRango.length == 0) {
