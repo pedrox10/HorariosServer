@@ -333,22 +333,22 @@ export const asignarHorario = async (req: Request, res: Response) => {
     console.timeEnd("ultJornada")
 }
 
-export const eliminarJornada = async (req: Request, res: Response) => {
-    const {id} = req.params;
-    const jornada = await Jornada.findOne({
-        where: {id: parseInt(id)}, relations: {
-            priTurno: true, segTurno: true,
-        }
+export const asignarDiaLibre = async (req: Request, res: Response) => {
+    const { ids } = req.params;
+    let idsJornadas = ids.split(",");
+
+    let jornadas = await Jornada.find({
+        where: { id: In(idsJornadas) },
+        relations: { priTurno: true, segTurno: true, horario: true }
     });
-    if (jornada) {
-        let pri = jornada.priTurno
-        let seg = jornada.segTurno
-        await jornada.remove()
-        await pri.remove()
-        await seg.remove()
+
+    for (let jornada of jornadas) {
+        jornada.estado = 0; // día libre
+        await jornada.save();
+        console.log(jornada)
     }
-    res.send("true")
-}
+    res.send("true");
+};
 
 export const editarFechaAsueto = async (req: Request, res: Response) => {
     const {id, fecha} = req.params;

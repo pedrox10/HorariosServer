@@ -24,9 +24,9 @@ import {
     sincronizarTerminal
 } from "./controllers/terminal.controller";
 import {
+    asignarDiaLibre,
     asignarHorario,
     crearHorario, editarFechaAsueto, editarHorario, eliminarHorario,
-    eliminarJornada,
     getAsuetos,
     getHorario,
     getHorarios, getJornadas, getLicencias, getNumJornadas
@@ -80,11 +80,11 @@ router.get("/asignar-horario/:id/usuarios/:ids/ini/:ini/fin/:fin/jornadas/:jorna
 router.get('/horario/crear/:horario/:jornadas', crearHorario);
 router.put('/horario/editar/:id', editarHorario);
 router.get('/horario/:id/eliminar', eliminarHorario);
-router.delete('/eliminar-jornada/:id', eliminarJornada);
 router.get('/asuetos/', getAsuetos);
 router.get('/asueto/:id/editarFecha/:fecha', editarFechaAsueto);
 router.get('/licencias/', getLicencias);
 router.get('/horario/:id/jornadas', getNumJornadas);
+router.get('/jornadas/:ids/asignar-dia-libre', asignarDiaLibre)
 
 // Rutas para operaciones con Comandos
 router.get("/terminal/:id/conectar", conectar)
