@@ -26,12 +26,12 @@ export class Jornada extends BaseEntity {
     id: number;
     @Column({type: 'date'})
     fecha: Date
-    @OneToOne(() => Turno, (turno) => turno.jornada, { cascade: true, onDelete: "CASCADE" })
+    @OneToOne(() => Turno, (turno) => turno.jornada, { cascade: true, onDelete: "CASCADE",  nullable: true })
     @JoinColumn()
-    priTurno: Turno
-    @OneToOne(() => Turno,(turno) => turno.jornada, { cascade: true, onDelete: "CASCADE" } )
+    priTurno: Turno | null
+    @OneToOne(() => Turno,(turno) => turno.jornada, { cascade: true, onDelete: "CASCADE",  nullable: true } )
     @JoinColumn()
-    segTurno: Turno
+    segTurno: Turno | null
     @Column({ default: EstadoJornada.activa })
     estado:EstadoJornada
     @Column({nullable: true})

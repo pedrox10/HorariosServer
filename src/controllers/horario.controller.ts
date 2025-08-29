@@ -208,10 +208,10 @@ export const asignarHorario = async (req: Request, res: Response) => {
     },)
     for (let jornada of jornadasSuperpuestas) {
         if (jornada.getNumTurnos() == 2) {
-            turnosBorrar.push(jornada.priTurno);
-            turnosBorrar.push(jornada.segTurno);
+            turnosBorrar.push(jornada.priTurno!);
+            turnosBorrar.push(jornada.segTurno!);
         } else if (jornada.getNumTurnos() == 1) {
-            turnosBorrar.push(jornada.priTurno)
+            turnosBorrar.push(jornada.priTurno!)
         } else
             jornadasBorrar.push(jornada);
     }
@@ -335,19 +335,39 @@ export const asignarHorario = async (req: Request, res: Response) => {
 
 export const asignarDiaLibre = async (req: Request, res: Response) => {
     const { ids } = req.params;
-    let idsJornadas = ids.split(",");
-
-    let jornadas = await Jornada.find({
-        where: { id: In(idsJornadas) },
-        relations: { priTurno: true, segTurno: true, horario: true }
-    });
-
-    for (let jornada of jornadas) {
-        jornada.estado = 0; // día libre
-        await jornada.save();
-        console.log(jornada)
+    const idsJornadas = ids.split(",");
+    try {
+        await AppDataSource.transaction(async transactionalEntityManager => {
+            const jornadas = await transactionalEntityManager.find(Jornada, {
+                where: { id: In(idsJornadas) },
+                relations: ["priTurno", "segTurno"]
+            });
+            if (jornadas.length === 0) {
+                throw new Error("Jornadas no encontradas.");
+            }
+            const turnosBorrar = [];
+            for (const jornada of jornadas) {
+                if (jornada.priTurno) {
+                    turnosBorrar.push(jornada.priTurno);
+                    jornada.priTurno = null;
+                }
+                if (jornada.segTurno) {
+                    turnosBorrar.push(jornada.segTurno);
+                    jornada.segTurno = null;
+                }
+                jornada.estado = 0;
+            }
+            await transactionalEntityManager.save(Jornada, jornadas);
+            if (turnosBorrar.length > 0) {
+                // Usar transactionalEntityManager.remove para borrar los turnos
+                await transactionalEntityManager.remove(Turno, turnosBorrar);
+            }
+            res.send({"exito": true, "jornadasAsignadas": jornadas})
+        });
+    } catch (error) {
+        console.error("Error al asignar día libre:", error);
+        res.status(500).send({"exito": false, "mensaje": "Error al actualizar las jornadas."});
     }
-    res.send("true");
 };
 
 export const editarFechaAsueto = async (req: Request, res: Response) => {

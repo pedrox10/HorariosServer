@@ -859,8 +859,9 @@ export async function getReporteMarcaciones(id: string, ini: string, fin: string
                                     });
                                     rangoTickeo = momentExt.range(moment(inicio), moment(fin))
                                     if(numTurnos != 0) {
+                                        let priTurno = jornada.priTurno!
                                         if (!priEntExcepcion.existe) {
-                                            let priHoraEntrada = moment(jornada.fecha + " " + jornada.priTurno.horaEntrada).format("YYYY-MM-DDTHH:mm:ss[Z]")
+                                            let priHoraEntrada = moment(jornada.fecha + " " + priTurno.horaEntrada).format("YYYY-MM-DDTHH:mm:ss[Z]")
                                             if (rangoTickeo.contains(moment(priHoraEntrada))) {
                                                 priEntExcepcion = {
                                                     existe: true,
@@ -879,9 +880,9 @@ export async function getReporteMarcaciones(id: string, ini: string, fin: string
                                         if (!priSalExcepcion.existe) {
                                             let priHoraSalida;
                                             if (jornada.horario.jornadasDosDias)
-                                                priHoraSalida = moment(jornada.fecha + " " + jornada.priTurno.horaSalida).add(1, "day").format("YYYY-MM-DDTHH:mm:ss[Z]")
+                                                priHoraSalida = moment(jornada.fecha + " " + priTurno.horaSalida).add(1, "day").format("YYYY-MM-DDTHH:mm:ss[Z]")
                                             else
-                                                priHoraSalida = moment(jornada.fecha + " " + jornada.priTurno.horaSalida).format("YYYY-MM-DDTHH:mm:ss[Z]")
+                                                priHoraSalida = moment(jornada.fecha + " " + priTurno.horaSalida).format("YYYY-MM-DDTHH:mm:ss[Z]")
                                             if (rangoTickeo.contains(moment(priHoraSalida))) {
                                                 priSalExcepcion = {
                                                     existe: true,
@@ -899,8 +900,9 @@ export async function getReporteMarcaciones(id: string, ini: string, fin: string
                                         }
                                     }
                                     if(numTurnos == 2) {
+                                        let segTurno = jornada.segTurno!
                                         if (!segEntExcepcion.existe) {
-                                            let segHoraEntrada = moment(jornada.fecha + " " + jornada.segTurno.horaEntrada).format("YYYY-MM-DDTHH:mm:ss[Z]")
+                                            let segHoraEntrada = moment(jornada.fecha + " " + segTurno.horaEntrada).format("YYYY-MM-DDTHH:mm:ss[Z]")
                                             if (rangoTickeo.contains(moment(segHoraEntrada))) {
                                                 segEntExcepcion = {
                                                     existe: true,
@@ -917,7 +919,7 @@ export async function getReporteMarcaciones(id: string, ini: string, fin: string
                                             }
                                         }
                                         if (!segSalExcepcion.existe) {
-                                            let segHoraSalida = moment(jornada.fecha + " " + jornada.segTurno.horaSalida).format("YYYY-MM-DDTHH:mm:ss[Z]")
+                                            let segHoraSalida = moment(jornada.fecha + " " + segTurno.horaSalida).format("YYYY-MM-DDTHH:mm:ss[Z]")
                                             if (rangoTickeo.contains(moment(segHoraSalida))) {
                                                 segSalExcepcion = {
                                                     existe: true,
@@ -944,10 +946,12 @@ export async function getReporteMarcaciones(id: string, ini: string, fin: string
                             infoMarcacion.numTurnos = jornada.getNumTurnos();
 
                             if (numTurnos == 2) {
+                                let priTurno = jornada.priTurno!
+                                let segTurno = jornada.segTurno!
                                 infoMarcacion.horario = {
                                     nombre: jornada.horario.nombre, color: jornada.horario.color,
-                                    priEntrada: jornada.priTurno.horaEntrada, priSalida: jornada.priTurno.horaSalida,
-                                    segEntrada: jornada.segTurno.horaEntrada, segSalida: jornada.segTurno.horaSalida,
+                                    priEntrada: priTurno.horaEntrada, priSalida: priTurno.horaSalida,
+                                    segEntrada: segTurno.horaEntrada, segSalida: segTurno.horaSalida,
                                     incluyeFeriados: jornada.horario.incluyeFeriados
                                 };
                                 let priEntradasM: Moment[] = [];
@@ -956,12 +960,12 @@ export async function getReporteMarcaciones(id: string, ini: string, fin: string
                                 let segSalidasM: Moment[] = [];
                                 //Genero los rangos para los cuatro posibles casos:
                                 let priEntIni = moment(jornada.fecha + " " + "00:00").format('YYYY-MM-DD HH:mm')
-                                let priEntFin = moment(jornada.fecha + " " + jornada.priTurno.horaSalida).subtract(1, "hours").format('YYYY-MM-DD HH:mm')
+                                let priEntFin = moment(jornada.fecha + " " + priTurno.horaSalida).subtract(1, "hours").format('YYYY-MM-DD HH:mm')
                                 let priEntRango = momentExt.range(moment(priEntIni).toDate(), moment(priEntFin).toDate())
-                                let dif = moment(jornada.fecha + " " + jornada.segTurno.horaEntrada).diff(moment(jornada.fecha + " " + jornada.priTurno.horaSalida), "hours")
-                                let priSalFin = moment(jornada.fecha + " " + jornada.priTurno.horaSalida).add(dif / 2, "hours")
+                                let dif = moment(jornada.fecha + " " + segTurno.horaEntrada).diff(moment(jornada.fecha + " " + priTurno.horaSalida), "hours")
+                                let priSalFin = moment(jornada.fecha + " " + priTurno.horaSalida).add(dif / 2, "hours")
                                 let priSalRango = momentExt.range(moment(priEntFin).toDate(), moment(priSalFin).toDate())
-                                let segEntFin = moment(jornada.fecha + " " + jornada.segTurno.horaSalida).subtract(1, "hours").format('YYYY-MM-DD HH:mm')
+                                let segEntFin = moment(jornada.fecha + " " + segTurno.horaSalida).subtract(1, "hours").format('YYYY-MM-DD HH:mm')
                                 let segEntRango = momentExt.range(moment(priSalFin).toDate(), moment(segEntFin).toDate())
                                 let segSalFin = moment(jornada.fecha + " " + "23:59").format('YYYY-MM-DD HH:mm')
                                 let segSalRango = momentExt.range(moment(segEntFin).toDate(), moment(segSalFin).toDate())
@@ -992,7 +996,7 @@ export async function getReporteMarcaciones(id: string, ini: string, fin: string
                                             priEntradas.push(entrada.format("HH:mm"))
                                         })
                                         infoMarcacion.priEntradas = priEntradas
-                                        let retraso = priEntradasM.at(0)?.diff(moment(jornada.fecha + " " + jornada.priTurno.horaEntrada), "minutes")
+                                        let retraso = priEntradasM.at(0)?.diff(moment(jornada.fecha + " " + priTurno.horaEntrada), "minutes")
                                         if (retraso) {
                                             if (retraso > jornada.horario.tolerancia) {
                                                 cantRetrasos++;
@@ -1018,7 +1022,7 @@ export async function getReporteMarcaciones(id: string, ini: string, fin: string
                                         })
                                         infoMarcacion.priSalidas = priSalidas
                                         let ultimo = priSalidasM.length -1
-                                        if(priSalidasM.at(ultimo)?.isBefore(moment(jornada.fecha + " " + jornada.priTurno.horaSalida))) {
+                                        if(priSalidasM.at(ultimo)?.isBefore(moment(jornada.fecha + " " + priTurno.horaSalida))) {
                                             cantSalAntes++
                                             totalSalAntes++
                                             hayPriAntes = true
@@ -1039,7 +1043,7 @@ export async function getReporteMarcaciones(id: string, ini: string, fin: string
                                             segEntradas.push(entrada.format("HH:mm"))
                                         })
                                         infoMarcacion.segEntradas = segEntradas
-                                        let retraso = segEntradasM.at(0)?.diff(moment(jornada.fecha + " " + jornada.segTurno.horaEntrada), "minutes")
+                                        let retraso = segEntradasM.at(0)?.diff(moment(jornada.fecha + " " + segTurno.horaEntrada), "minutes")
                                         if (retraso) {
                                             if (retraso > jornada.horario.tolerancia) {
                                                 cantRetrasos++;
@@ -1065,7 +1069,7 @@ export async function getReporteMarcaciones(id: string, ini: string, fin: string
                                         })
                                         infoMarcacion.segSalidas = segSalidas
                                         let ultimo = segSalidasM.length -1
-                                        if(segSalidasM.at(ultimo)?.isBefore(moment(jornada.fecha + " " + jornada.segTurno.horaSalida))) {
+                                        if(segSalidasM.at(ultimo)?.isBefore(moment(jornada.fecha + " " + segTurno.horaSalida))) {
                                             cantSalAntes++
                                             totalSalAntes++
                                             haySegAntes = true
@@ -1105,9 +1109,10 @@ export async function getReporteMarcaciones(id: string, ini: string, fin: string
                                 infoMarcacion.haySegAntes = haySegAntes;
                             } else {
                                 if (numTurnos == 1) {
+                                    let priTurno = jornada.priTurno!
                                     infoMarcacion.horario = {
                                         nombre: jornada.horario.nombre, color: jornada.horario.color,
-                                        priEntrada: jornada.priTurno.horaEntrada, priSalida: jornada.priTurno.horaSalida,
+                                        priEntrada: priTurno.horaEntrada, priSalida: priTurno.horaSalida,
                                         incluyeFeriados: jornada.horario.incluyeFeriados
                                     };
                                     let priEntradasM: Moment[] = [];
@@ -1115,7 +1120,7 @@ export async function getReporteMarcaciones(id: string, ini: string, fin: string
                                     //Genero los rangos para entradas y salidas:
                                     let priEntIni = moment(jornada.fecha + " " + "00:00").format('YYYY-MM-DD HH:mm')
                                     if(jornada.horario.jornadasDosDias) {
-                                        const hora = moment(jornada.priTurno.horaEntrada, 'HH:mm');
+                                        const hora = moment(priTurno.horaEntrada, 'HH:mm');
                                         const medioDia = moment('12:00', 'HH:mm');
                                         if (hora.isAfter(medioDia))
                                             priEntIni = moment(jornada.fecha + " " + "12:00").format('YYYY-MM-DD HH:mm')
@@ -1126,13 +1131,13 @@ export async function getReporteMarcaciones(id: string, ini: string, fin: string
                                     console.time("Marcaciones1T")
                                     let marcacionesDia = marcacionesPorFecha.get(fecha.format('YYYY-MM-DD')) || [];
                                     if(jornada.horario.jornadasDosDias) {
-                                        priEntFin = moment(jornada.fecha + " " + jornada.priTurno.horaSalida).add(1, "day").subtract(1, "hours").format('YYYY-MM-DD HH:mm')
+                                        priEntFin = moment(jornada.fecha + " " + priTurno.horaSalida).add(1, "day").subtract(1, "hours").format('YYYY-MM-DD HH:mm')
                                         priSalFin = moment(jornada.fecha + " " + "11:59").add(1, "day").format('YYYY-MM-DD HH:mm')
                                         let marcacionesSigDia = marcacionesPorFecha.get(fecha.add(1, "day").format('YYYY-MM-DD')) || [];
                                         marcacionesDia.push(... marcacionesSigDia)
                                     }
                                     else {
-                                        priEntFin = moment(jornada.fecha + " " + jornada.priTurno.horaSalida).subtract(1, "hours").format('YYYY-MM-DD HH:mm')
+                                        priEntFin = moment(jornada.fecha + " " + priTurno.horaSalida).subtract(1, "hours").format('YYYY-MM-DD HH:mm')
                                         priSalFin = moment(jornada.fecha + " " + "23:59").format('YYYY-MM-DD HH:mm')
                                     }
                                     let priEntRango = momentExt.range(moment(priEntIni).toDate(), moment(priEntFin).toDate())
@@ -1156,7 +1161,7 @@ export async function getReporteMarcaciones(id: string, ini: string, fin: string
                                                 priEntradas.push(entrada.format("HH:mm"))
                                             })
                                             infoMarcacion.priEntradas = priEntradas
-                                            let retraso = priEntradasM.at(0)?.diff(moment(jornada.fecha + " " + jornada.priTurno.horaEntrada), "minutes")
+                                            let retraso = priEntradasM.at(0)?.diff(moment(jornada.fecha + " " + priTurno.horaEntrada), "minutes")
                                             if (retraso) {
                                                 if (retraso > jornada.horario.tolerancia) {
                                                     cantRetrasos++;
@@ -1182,7 +1187,7 @@ export async function getReporteMarcaciones(id: string, ini: string, fin: string
                                             })
                                             infoMarcacion.priSalidas = priSalidas
                                             let ultimo = priSalidasM.length -1
-                                            if(priSalidasM.at(ultimo)?.isBefore(moment(jornada.fecha + " " + jornada.priTurno.horaSalida))) {
+                                            if(priSalidasM.at(ultimo)?.isBefore(moment(jornada.fecha + " " + priTurno.horaSalida))) {
                                                 cantSalAntes++
                                                 totalSalAntes++
                                                 hayPriAntes = true
