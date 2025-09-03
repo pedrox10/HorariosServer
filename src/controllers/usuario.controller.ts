@@ -960,12 +960,12 @@ export async function getReporteMarcaciones(id: string, ini: string, fin: string
                                 let segSalidasM: Moment[] = [];
                                 //Genero los rangos para los cuatro posibles casos:
                                 let priEntIni = moment(jornada.fecha + " " + "00:00").format('YYYY-MM-DD HH:mm')
-                                let priEntFin = moment(jornada.fecha + " " + priTurno.horaSalida).subtract(1, "hours").format('YYYY-MM-DD HH:mm')
+                                let priEntFin = moment(jornada.fecha + " " + priTurno.horaSalida).subtract(2, "hours").format('YYYY-MM-DD HH:mm')
                                 let priEntRango = momentExt.range(moment(priEntIni).toDate(), moment(priEntFin).toDate())
                                 let dif = moment(jornada.fecha + " " + segTurno.horaEntrada).diff(moment(jornada.fecha + " " + priTurno.horaSalida), "hours")
                                 let priSalFin = moment(jornada.fecha + " " + priTurno.horaSalida).add(dif / 2, "hours")
                                 let priSalRango = momentExt.range(moment(priEntFin).toDate(), moment(priSalFin).toDate())
-                                let segEntFin = moment(jornada.fecha + " " + segTurno.horaSalida).subtract(1, "hours").format('YYYY-MM-DD HH:mm')
+                                let segEntFin = moment(jornada.fecha + " " + segTurno.horaSalida).subtract(2, "hours").format('YYYY-MM-DD HH:mm')
                                 let segEntRango = momentExt.range(moment(priSalFin).toDate(), moment(segEntFin).toDate())
                                 let segSalFin = moment(jornada.fecha + " " + "23:59").format('YYYY-MM-DD HH:mm')
                                 let segSalRango = momentExt.range(moment(segEntFin).toDate(), moment(segSalFin).toDate())
@@ -1131,13 +1131,13 @@ export async function getReporteMarcaciones(id: string, ini: string, fin: string
                                     console.time("Marcaciones1T")
                                     let marcacionesDia = marcacionesPorFecha.get(fecha.format('YYYY-MM-DD')) || [];
                                     if(jornada.horario.jornadasDosDias) {
-                                        priEntFin = moment(jornada.fecha + " " + priTurno.horaSalida).add(1, "day").subtract(1, "hours").format('YYYY-MM-DD HH:mm')
+                                        priEntFin = moment(jornada.fecha + " " + priTurno.horaSalida).add(1, "day").subtract(2, "hours").format('YYYY-MM-DD HH:mm')
                                         priSalFin = moment(jornada.fecha + " " + "11:59").add(1, "day").format('YYYY-MM-DD HH:mm')
                                         let marcacionesSigDia = marcacionesPorFecha.get(fecha.add(1, "day").format('YYYY-MM-DD')) || [];
                                         marcacionesDia.push(... marcacionesSigDia)
                                     }
                                     else {
-                                        priEntFin = moment(jornada.fecha + " " + priTurno.horaSalida).subtract(1, "hours").format('YYYY-MM-DD HH:mm')
+                                        priEntFin = moment(jornada.fecha + " " + priTurno.horaSalida).subtract(2, "hours").format('YYYY-MM-DD HH:mm')
                                         priSalFin = moment(jornada.fecha + " " + "23:59").format('YYYY-MM-DD HH:mm')
                                     }
                                     let priEntRango = momentExt.range(moment(priEntIni).toDate(), moment(priEntFin).toDate())
