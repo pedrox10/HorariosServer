@@ -108,6 +108,7 @@ export const infoOrganigram = async (req: Request, res: Response) => {
         if (rotacionActivo) {
             registroActivo.id_rotacion = rotacionActivo;
         }
+        console.log(registroActivo)
         return res.status(200).json({ exito: true, respuesta: registroActivo});
     } catch (error: any) {
         return res.status(500).json({ exito: false, respuesta: "Error al obtener solicitudes aprobadas"});
@@ -413,6 +414,7 @@ export async function obtenerSolicitudesAprobadasPorCI(ci: number) {
             HEADERS
         );
         const registroActivo = registros.find((r: { estado: boolean }) => r.estado === true);
+        console.log(registroActivo)
         if (!registroActivo) {
             console.log("No se encontró un registro activo");
             return {success: false, error: "Funcionario aún no tiene un cargo asignado"}

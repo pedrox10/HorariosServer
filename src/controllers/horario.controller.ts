@@ -325,6 +325,7 @@ export const asignarHorario = async (req: Request, res: Response) => {
             let dia = moment(ultimaJornada.fecha).format("DD");
             let mes = moment(ultimaJornada.fecha).format("MMM");
             let horarioMes = "Hasta " + dia + " " + mes;
+            console.log(jornadasGuardar)
             res.send({"res": true, "ultDiaAsignado": horarioMes, "jornadasAsignadas": jornadasGuardar})
         }
     } else {
@@ -340,7 +341,7 @@ export const asignarDiaLibre = async (req: Request, res: Response) => {
         await AppDataSource.transaction(async transactionalEntityManager => {
             const jornadas = await transactionalEntityManager.find(Jornada, {
                 where: { id: In(idsJornadas) },
-                relations: ["priTurno", "segTurno"]
+                relations: ["priTurno", "segTurno", "horario", "usuario"]
             });
             if (jornadas.length === 0) {
                 throw new Error("Jornadas no encontradas.");
@@ -362,6 +363,7 @@ export const asignarDiaLibre = async (req: Request, res: Response) => {
                 // Usar transactionalEntityManager.remove para borrar los turnos
                 await transactionalEntityManager.remove(Turno, turnosBorrar);
             }
+            console.log(jornadas)
             res.send({"exito": true, "jornadasAsignadas": jornadas})
         });
     } catch (error) {
