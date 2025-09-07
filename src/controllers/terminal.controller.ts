@@ -273,12 +273,16 @@ export const sincronizarTerminal = async (req: Request, res: Response) => {
     let numeroSerie;
     let modelo;
     let horaTerminal;
+    let horaServidor;
+    let horaServidorUtc;
     let totalMarcaciones;
 
     const queryRunner = AppDataSource.createQueryRunner();
     await queryRunner.connect();
 
     try {
+        horaServidor = moment().toDate();
+        horaServidorUtc = moment().utc().toDate()
         if (metodo === "GET") {
             const conectado = await conectar(terminal.ip, terminal.puerto);
             if (!conectado) {
@@ -426,7 +430,7 @@ export const sincronizarTerminal = async (req: Request, res: Response) => {
         }
         let sincronizacion:Sincronizacion  = new Sincronizacion()
         sincronizacion.fecha = horaTerminal;
-        sincronizacion.horaServidor = moment().toDate();
+        sincronizacion.horaServidor = horaServidor;
         sincronizacion.nuevasMarcaciones = marcacionesNuevas.length
         sincronizacion.totalMarcaciones = totalMarcaciones
         sincronizacion.usuariosAgregados = usuariosNuevos.length
@@ -444,7 +448,7 @@ export const sincronizarTerminal = async (req: Request, res: Response) => {
             numero_serie: numeroSerie,
             modelo: modelo,
             hora_terminal: horaTerminal,
-            hora_servidor: moment().utc().toDate(),
+            hora_servidor: horaServidorUtc,
             total_marcaciones: totalMarcaciones,
             usuarios: usuarios || []
         });
