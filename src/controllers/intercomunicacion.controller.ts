@@ -4,6 +4,12 @@ import { Request, Response } from "express";
 import { UsuarioLogin } from "../entity/UsuarioLogin";
 import bcrypt from "bcrypt";
 import {IpUsuario} from "../entity/IpUsuario";
+import fs from "fs";
+import moment from "moment";
+import {Terminal} from "../entity/Terminal";
+import {Marcacion} from "../entity/Marcacion";
+import {Interrupcion} from "../entity/Interrupcion";
+import path from "path";
 
 interface Funcionario {
   ci: number;
@@ -83,4 +89,44 @@ export const login = async (req: Request, res: Response) => {
     nombre: usuarioBD.nombre,
     rol: usuarioBD.rol,
   });
+}
+
+export const resincronizar = async (req: Request, res: Response) => {
+  const {id} = req.params;
+  res.send( await verificarMarcaciones(parseInt(id)));
+}
+
+export async function verificarMarcaciones(terminalId: number){
+  const rutaArchivo = path.join(__dirname, "../../respaldos/PLANTA_BAJA/PLANTA_BAJA_2025-09-06_01-00-12.json");
+  const archivo = JSON.parse(fs.readFileSync(rutaArchivo, "utf8"));
+  const terminal = await Terminal.findOne({ where: { id: terminalId } });
+  if (!terminal) {
+    throw new Error("Terminal no encontrado");
+  }
+  // todas las marcaciones del terminal en BD
+  const marcacionesBD = await Marcacion.find({
+    where: { terminal: terminal },
+  });
+  // convertir a set (para búsqueda rápida)
+  const setBD = new Set(
+      marcacionesBD.map(m => {
+        // m.fecha ya es YYYY-MM-DD (Date o string), m.hora es string HH:mm:ss
+        const fechaStr = moment(m.fecha).format("YYYY-MM-DD");
+        const horaStr = typeof m.hora === "string"
+            ? m.hora
+            : moment(m.hora).format("HH:mm:ss");
+
+        const fechaHora = `${fechaStr} ${horaStr}`;
+        return `${m.ci}_${moment(fechaHora, "YYYY-MM-DD HH:mm:ss").format("YYYY-MM-DD HH:mm:ss")}`;
+      })
+  );
+  // revisar las que faltan
+  const faltantes = archivo.marcaciones.filter((m: any) => {
+    const clave = `${m.user_id}_${moment(m.timestamp).format("YYYY-MM-DD HH:mm:ss")}`;
+    return !setBD.has(clave);
+  });
+  console.log(`Total en JSON: ${archivo.marcaciones.length}`);
+  console.log(`Total en BD: ${marcacionesBD.length}`);
+  console.log(`Faltantes: ${faltantes.length}`);
+  return faltantes;
 }

@@ -414,7 +414,7 @@ export async function obtenerSolicitudesAprobadasPorCI(ci: number) {
             HEADERS
         );
         const registroActivo = registros.find((r: { estado: boolean }) => r.estado === true);
-        console.log(registroActivo)
+        //console.log(registroActivo)
         if (!registroActivo) {
             console.log("No se encontró un registro activo");
             return {success: false, error: "Funcionario aún no tiene un cargo asignado"}

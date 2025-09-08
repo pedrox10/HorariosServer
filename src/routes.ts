@@ -1,5 +1,5 @@
 import {Router} from "express";
-import {login} from "./controllers/intercomunicacion.controller";
+import {login, resincronizar} from "./controllers/intercomunicacion.controller";
 import {
     getResumenMarcaciones,
     getJornada,
@@ -56,6 +56,7 @@ router.get("/terminal/:id/grupos", getGrupos)
 router.post("/terminal/:id/grupos/agregar", agregarGrupo)
 router.put("/terminal/:idTerminal/grupos/editar/:idGrupo", editarGrupo)
 router.delete("/terminal/:idTerminal/grupos/eliminar/:idGrupo", eliminarGrupo)
+router.get("/terminal/:id/resincronizar",resincronizar);
 
 // Rutas para operaciones con Usuarios
 router.get("/terminal/:id/usuarios", getUsuarios)
