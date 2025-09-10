@@ -11,7 +11,13 @@ def serialize_datetime(obj):
     raise TypeError("Type not serializable")
 try:
     conn = zk.connect()
-    print(json.dumps({"success": True, "hora_actual": serialize_datetime(conn.get_time())}))
+    hora_actual = serialize_datetime(conn.get_time())
+    hora_servidor = serialize_datetime(datetime.datetime.now())
+    print(json.dumps({
+        "success": True,
+        "hora_actual": hora_actual,
+        "hora_servidor": hora_servidor
+    }))
     conn.disconnect()
 except Exception as e:
     print(json.dumps({"success": False, "error": str(e)}))

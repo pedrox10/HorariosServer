@@ -13,11 +13,9 @@ port = int(sys.argv[2])
 date_time_iso = sys.argv[3] # Expected format: YYYY-MM-DDTHH:MM:SS
 
 zk = ZK(ip, port=port, timeout=10)
-
 try:
     # Convertimos iso string a objecto fecha, asumimos zona horaria correcta
     new_datetime = datetime.datetime.fromisoformat(date_time_iso)
-
     conn = zk.connect()
     if conn:
         conn.set_time(new_datetime)

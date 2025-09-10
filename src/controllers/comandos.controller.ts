@@ -1,6 +1,7 @@
 import {Request, Response} from "express";
 import {Terminal} from "../entity/Terminal";
 import path from "path";
+import moment from "moment";
 
 const envPython = path.join(__dirname, "../scriptpy/envpy", "bin", "python3");
 const spawn = require('await-spawn');
@@ -50,5 +51,18 @@ export const horaActual = async (req: Request, res: Response) => {
         args.unshift(pyHoraActual);
         const pyprogHoraActual = await spawn(envPython, args);
         return res.status(200).json(pyprogHoraActual.toString())
+    }
+}
+
+export const sincronizarHora = async (req: Request, res: Response) => {
+    const {id} = req.params;
+    const terminal = await Terminal.findOne({where: {id: parseInt(id)},});
+    if (terminal) {
+        const pySincronizarHora = 'src/scriptpy/cambiar_fecha.py';
+        let args = [terminal.ip, terminal.puerto];
+        args.push(moment().format("YYYY-MM-DDTHH:mm:ss"));
+        args.unshift(pySincronizarHora);
+        const pyprogSincronizarHora = await spawn(envPython, args);
+        return res.status(200).json(pyprogSincronizarHora.toString())
     }
 }
