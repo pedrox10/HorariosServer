@@ -7,16 +7,13 @@ import time
 import datetime
 import codecs
 from builtins import input
-
 import json
-
-sys.path.append("zk")
-
 from zk import ZK, const
 from zk.user import User
 from zk.finger import Finger
 from zk.attendance import Attendance
 from zk.exception import ZKErrorResponse, ZKNetworkError
+sys.path.append("zk")
 
 class BasicException(Exception):
     pass
