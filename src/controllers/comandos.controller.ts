@@ -54,15 +54,15 @@ export const horaActual = async (req: Request, res: Response) => {
     }
 }
 
-export const sincronizarHora = async (req: Request, res: Response) => {
+export const sincronizarFecha = async (req: Request, res: Response) => {
     const {id} = req.params;
     const terminal = await Terminal.findOne({where: {id: parseInt(id)},});
     if (terminal) {
-        const pySincronizarHora = 'src/scriptpy/cambiar_fecha.py';
+        const pySincronizarFecha = 'src/scriptpy/cambiar_fecha.py';
         let args = [terminal.ip, terminal.puerto];
         args.push(moment().format("YYYY-MM-DDTHH:mm:ss"));
-        args.unshift(pySincronizarHora);
-        const pyprogSincronizarHora = await spawn(envPython, args);
-        return res.status(200).json(pyprogSincronizarHora.toString())
+        args.unshift(pySincronizarFecha);
+        const pyprogSincronizarFecha = await spawn(envPython, args);
+        return res.status(200).json(pyprogSincronizarFecha.toString())
     }
 }
