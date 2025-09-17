@@ -16,6 +16,5 @@ try:
         "mensaje": "El dispositivo se reinició correctamente"
     }
     print(json.dumps(data))
-    conn.disconnect()
 except Exception as e:
     print(json.dumps({"success": False, "error": str(e)}))

@@ -31,7 +31,15 @@ import {
     getHorario,
     getHorarios, getJornadas, getLicencias, getNumJornadas
 } from "./controllers/horario.controller";
-import {conectar, horaActual, infoCapacidad, infoExtra, sincronizarFecha} from "./controllers/comandos.controller";
+import {
+    apagar,
+    borrarMarcaciones, borrarTodo,
+    conectar,
+    horaActual,
+    infoCapacidad,
+    infoExtra, reiniciar,
+    sincronizarFecha
+} from "./controllers/comandos.controller";
 
 const router = Router();
 //Ruta para Login
@@ -93,5 +101,9 @@ router.get("/terminal/:id/info-capacidad", infoCapacidad)
 router.get("/terminal/:id/info-extra", infoExtra)
 router.get("/terminal/:id/hora-actual", horaActual)
 router.get("/terminal/:id/sincronizar-fecha", sincronizarFecha)
+router.get("/terminal/:id/borrar-marcaciones", borrarMarcaciones)
+router.get("/terminal/:id/borrar-todo", borrarTodo)
+router.get("/terminal/:id/apagar", apagar)
+router.get("/terminal/:id/reiniciar", reiniciar)
 
 export default router

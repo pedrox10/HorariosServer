@@ -66,3 +66,51 @@ export const sincronizarFecha = async (req: Request, res: Response) => {
         return res.status(200).json(pyprogSincronizarFecha.toString())
     }
 }
+
+export const borrarMarcaciones = async (req: Request, res: Response) => {
+    const {id} = req.params;
+    const terminal = await Terminal.findOne({where: {id: parseInt(id)},});
+    if (terminal) {
+        const pyBorrarMarcaciones = 'src/scriptpy/borrar_marcaciones.py';
+        let args = [terminal.ip, terminal.puerto];
+        args.unshift(pyBorrarMarcaciones);
+        const pyprogBorrarMarcaciones = await spawn(envPython, args);
+        return res.status(200).json(pyprogBorrarMarcaciones.toString())
+    }
+}
+
+export const borrarTodo = async (req: Request, res: Response) => {
+    const {id} = req.params;
+    const terminal = await Terminal.findOne({where: {id: parseInt(id)},});
+    if (terminal) {
+        const pyBorrarTodo = 'src/scriptpy/borrar_todo.py';
+        let args = [terminal.ip, terminal.puerto];
+        args.unshift(pyBorrarTodo);
+        const pyprogBorrarTodo = await spawn(envPython, args);
+        return res.status(200).json(pyprogBorrarTodo.toString())
+    }
+}
+
+export const apagar = async (req: Request, res: Response) => {
+    const {id} = req.params;
+    const terminal = await Terminal.findOne({where: {id: parseInt(id)},});
+    if (terminal) {
+        const pyApagar = 'src/scriptpy/apagar.py';
+        let args = [terminal.ip, terminal.puerto];
+        args.unshift(pyApagar);
+        const pyprogApagar = await spawn(envPython, args);
+        return res.status(200).json(pyprogApagar.toString())
+    }
+}
+
+export const reiniciar = async (req: Request, res: Response) => {
+    const {id} = req.params;
+    const terminal = await Terminal.findOne({where: {id: parseInt(id)},});
+    if (terminal) {
+        const pyReiniciar = 'src/scriptpy/reiniciar.py';
+        let args = [terminal.ip, terminal.puerto];
+        args.unshift(pyReiniciar);
+        const pyprogReiniciar = await spawn(envPython, args);
+        return res.status(200).json(pyprogReiniciar.toString())
+    }
+}

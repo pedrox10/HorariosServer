@@ -16,11 +16,12 @@ zk = ZK(ip, port=port, timeout=10)
 try:
     # Convertimos iso string a objecto fecha, asumimos zona horaria correcta
     new_datetime = datetime.datetime.fromisoformat(date_time_iso)
+    formatted_datetime = new_datetime.strftime("%d/%m/%Y %H:%M:%S")
     conn = zk.connect()
     if conn:
         conn.set_time(new_datetime)
         conn.disconnect()
-        print(json.dumps({"success": True, "message": "Fecha y hora del dispositivo actualizadas a: {date_time_iso}"}))
+        print(json.dumps({"success": True, "message": f"Fecha y hora actualizadas: {formatted_datetime}"}))
     else:
         print(json.dumps({"success": False, "error": "No se pudo conectar al dispositivo"}))
 except ValueError:
