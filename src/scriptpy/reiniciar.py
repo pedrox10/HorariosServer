@@ -13,7 +13,7 @@ try:
     conn.restart()
     data = {
         "success": True,
-        "mensaje": "El dispositivo se reinició correctamente"
+        "mensaje": "El dispositivo se reiniciará en breve"
     }
     print(json.dumps(data))
 except Exception as e:

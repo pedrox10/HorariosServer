@@ -10,9 +10,9 @@ zk = ZK(zk_ip, port=zk_port, timeout=timeout)
 try:
     conn = zk.connect()
     data = {
-            "success": True,
-            "mensaje": "Dispositivo apagado correctamente",
-        }
+        "success": True,
+        "mensaje": "El dispositivo se apagará en breve",
+    }
     print(json.dumps(data))
     # Ejecutar apagado del dispositivo
     conn.poweroff()

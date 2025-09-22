@@ -9,6 +9,17 @@ timeout = 60
 zk = ZK(zk_ip, port=zk_port, timeout=timeout)
 try:
     conn = zk.connect()
+    usuarios = conn.get_users()
+    huellas = conn.get_templates()
+
+    # Guardar en un JSON
+    import json
+    backup = {
+        "usuarios": [u.__dict__ for u in usuarios],
+        "huellas": [t.json_pack() for t in huellas]
+    }
+    with open("backup.json", "w", encoding="utf8") as f:
+        json.dump(backup, f, indent=2, ensure_ascii=False)
     # Ejecutar borrado de todos los datos del dispositivo
     conn.clear_data()
     data = {

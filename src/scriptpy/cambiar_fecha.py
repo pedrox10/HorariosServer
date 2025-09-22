@@ -21,7 +21,7 @@ try:
     if conn:
         conn.set_time(new_datetime)
         conn.disconnect()
-        print(json.dumps({"success": True, "message": f"Fecha y hora actualizadas: {formatted_datetime}"}))
+        print(json.dumps({"success": True, "mensaje": f"Fecha y hora actualizadas: {formatted_datetime}"}))
     else:
         print(json.dumps({"success": False, "error": "No se pudo conectar al dispositivo"}))
 except ValueError:
