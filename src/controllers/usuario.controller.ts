@@ -367,6 +367,62 @@ export async function ultMarcacion(usuario: Usuario, terminal: Terminal) {
     return ultMarcacion;
 }
 
+
+async function getSolicitudesAprobadasPorCI(ci: number) {
+    const ACCESS_CODE = "ga8f0051d6ff90ff485359f626060aa0fe38fc2c451c184f337ae146e4cd7eefcb8497011ee63534e4afd7eedf65fc1d9017f67c2385bc85b392b862a7bedfd6g";
+    const BASE_URL = "http://190.181.22.149:3310";
+    const HEADERS = { headers: { "X-Access-Code": ACCESS_CODE,},
+    };
+    let solicitudesAprobadas = [];
+    let fechaAlta: string;
+    let fechaBaja: string;
+    let enRotacion: boolean = false;
+
+    try {
+        // 1. Busqueda del funcionario por CI
+        const { data: funcionarios } = await axios.get(`${BASE_URL}/funcionario/filtro/ci/${ci}`, HEADERS);
+        const funcionario = funcionarios?.[0];
+        if (!funcionario) {
+            return {success: false, error: "Número de CI no encontrado en Organigrama"}
+        }
+        // 2. Buscar todos los registros del funcionario sea activo o no
+        const { data: registros } = await axios.get(`${BASE_URL}/registro/filtro/id_funcionario/${funcionario._id}`, HEADERS);
+        if (!registros.length) {
+            return {success: false, error: "El funcionario no tiene registros"}
+        }
+        // 3. Obtengo el registro mas reciente y determinar si es activo o no
+        const registroMasReciente = registros.reduce((prev: any, curr: any) => {
+            return moment(curr.fecha_conclusion).isAfter(prev.fecha_conclusion) ? curr : prev;
+        });
+        if(registroMasReciente.estado) {
+            fechaAlta = moment(registroMasReciente.fecha_ingreso).format("DD/MM/YYYY");
+            fechaBaja = "";
+            // Buscar rotaciones activas del registro
+            const { data: rotaciones } = await axios.get(`${BASE_URL}/rotacion/filtro/id_registro/${registroMasReciente._id}`, HEADERS);
+            const rotacionActivo = rotaciones.find((r: any) => registroMasReciente?.id_funcionario && r.estado === true);
+            if (rotacionActivo)
+                enRotacion = true;
+        } else {
+            fechaAlta = moment(registroMasReciente.fecha_ingreso).format("DD/MM/YYYY");
+            fechaBaja = moment(registroMasReciente.fecha_conclusion).format("DD/MM/YYYY");
+            enRotacion = false;
+        }
+        // 4. Iteración por cada registro para obtener solicitudes, los registros obtenidos son tanto de alta como de baja, esto con el objetivo de obtener los registros si un funcionario cambio durante el mes de cargo y asi obtener ambos registros
+        for (const registro of registros) {
+            const { data: solicitudes } = await axios.get(`${BASE_URL}/solicitud/filtro/id_registro/${registro._id}`, HEADERS);
+            const aprobadas = solicitudes.filter((s: any) => s.estado === 'APROBADO');
+            for(let solicitud of aprobadas) {
+                solicitudesAprobadas.push(solicitud)
+            }
+        }
+        return {success: true, solicitudes: solicitudesAprobadas, alta: fechaAlta, baja: fechaBaja, rotando: enRotacion}
+
+    } catch (error: any) {
+        console.error("Error al obtener solicitudes aprobadas:", error.response?.data || error.message);
+        return {success: false, error: "No hay conexión a Organigrama"}
+    }
+}
+
 export async function obtenerSolicitudesAprobadasPorCI(ci: number) {
     const ACCESS_CODE =
         "ga8f0051d6ff90ff485359f626060aa0fe38fc2c451c184f337ae146e4cd7eefcb8497011ee63534e4afd7eedf65fc1d9017f67c2385bc85b392b862a7bedfd6g";
@@ -571,6 +627,8 @@ export async function getReporteMarcaciones(id: string, ini: string, fin: string
             }
             console.timeEnd("FeriadosInterrupciones")
             console.time("Organigram")
+            let test = await getSolicitudesAprobadasPorCI(usuario.ci)
+            console.log(test)
             const respuesta = await obtenerSolicitudesAprobadasPorCI(usuario.ci);
             if(respuesta.success) {
                 const solicitudesAprobadas = respuesta.solicitudes ?? [];

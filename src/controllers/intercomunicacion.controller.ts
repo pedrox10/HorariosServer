@@ -97,7 +97,7 @@ export const resincronizar = async (req: Request, res: Response) => {
 }
 
 export async function verificarMarcaciones(terminalId: number){
-  const rutaArchivo = path.join(__dirname, "../../respaldos/PLANTA_BAJA/PLANTA_BAJA_2025-09-06_01-00-12.json");
+  const rutaArchivo = path.join(__dirname, "../../respaldos/TRANSPORTE/TRANSPORTE_2025-09-21_01-03-17.json");
   const archivo = JSON.parse(fs.readFileSync(rutaArchivo, "utf8"));
   const terminal = await Terminal.findOne({ where: { id: terminalId } });
   if (!terminal) {
