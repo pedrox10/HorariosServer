@@ -248,13 +248,10 @@ export const asignarHorario = async (req: Request, res: Response) => {
         let rangoValido: DateRange;
         let esVacio = moment(fechaIni).isBefore(moment(usuario.fechaAlta)) && moment(fechaFin).isBefore(usuario.fechaAlta);
         if (!esVacio) {
-            //console.log("genero rangos")
             if (rango.contains(moment(usuario.fechaAlta), {excludeStart: true})) {
                 rangoValido = momentExt.range(moment(usuario.fechaAlta).toDate(), moment(fechaFin).toDate())
-                //console.log("rango contiene")
             } else {
                 rangoValido = momentExt.range(moment(fechaIni).toDate(), moment(fechaFin).toDate())
-                //console.log("no contiene")
             }
             dias = rangoValido.by("day");
             if(horario?.diasIntercalados || horario?.jornadasDosDias && !horario?.esContinuoDosDias) {
