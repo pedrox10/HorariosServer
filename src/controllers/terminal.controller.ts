@@ -207,7 +207,7 @@ export const respaldarTerminales = async (req: Request, res: Response) => {
             try {
                 //Procesamiento de Marcaciones
                 const pyFileMarcaciones = 'src/scriptpy/marcaciones.py';
-                let argsMarcaciones = [terminal.ip, terminal.puerto];
+                let  argsMarcaciones = [terminal.ip, terminal.puerto];
                 argsMarcaciones.unshift(pyFileMarcaciones);
                 const pyprogMarcaciones = await spawn(envPython, argsMarcaciones);
                 let respuesta = JSON.parse(pyprogMarcaciones.toString())
