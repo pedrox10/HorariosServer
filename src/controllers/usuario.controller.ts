@@ -627,13 +627,10 @@ export async function getReporteMarcaciones(id: string, ini: string, fin: string
             }
             console.timeEnd("FeriadosInterrupciones")
             console.time("Organigram")
-            let test = await getSolicitudesAprobadasPorCI(usuario.ci)
-            console.log(test)
-            const respuesta = await obtenerSolicitudesAprobadasPorCI(usuario.ci);
+            let respuesta = await getSolicitudesAprobadasPorCI(usuario.ci)
+            console.log(respuesta)
             if(respuesta.success) {
                 const solicitudesAprobadas = respuesta.solicitudes ?? [];
-                //console.log(solicitudesAprobadas)
-                //console.log(rangoValido.start.toDate())
                 for (const solicitud of solicitudesAprobadas) {
                     if (solicitud.tipo === "ET" || solicitud.tipo === "TO") {
                         let fechaInicio = moment(solicitud.fecha_inicio, "YYYY-MM-DD");
@@ -680,15 +677,18 @@ export async function getReporteMarcaciones(id: string, ini: string, fin: string
                         }
                     }
                 }
+                resumenMarcacion.organigrama = {
+                    alta: respuesta.alta,
+                    baja: respuesta.baja,
+                    rotando: respuesta.rotando
+                };
             } else {
-                resumenMarcacion.mensajeError = respuesta.error;
+                resumenMarcacion.organigrama = respuesta.error;
             }
             if (excepcionesCompletas.length > 0)
                 hayExcepcionesCompletas = true
             if (excepcionesRangoHoras.length > 0)
                 hayExcepcionesRangoHoras = true
-            //console.log(excepcionesCompletas)
-            //console.log(excepcionesRangoHoras)
             console.timeEnd("Organigram")
 
             let totalCantRetrasos: number = 0
