@@ -259,6 +259,10 @@ export const asignarHorario = async (req: Request, res: Response) => {
                 let copia = rangoValido.clone();
                 let rangoDiasDescanso = momentExt.range(copia.start.add(1, "days"), moment(fechaFin).toDate())
                 diasDescanso = rangoDiasDescanso.by("day", {step: 2})
+                if(empiezaConDescanso) {
+                    dias = rangoDiasDescanso.by("day", {step: 2})
+                    diasDescanso = rangoValido.by("day", {step: 2});
+                }
             }
             for (let fecha of dias) {
                 let dia: string | any = env.dias.at(moment(fecha).day())
@@ -321,7 +325,7 @@ export const asignarHorario = async (req: Request, res: Response) => {
         if(ultimaJornada) {
             let dia = moment(ultimaJornada.fecha).format("DD");
             let mes = moment(ultimaJornada.fecha).format("MMM");
-            let horarioMes = "Hasta " + dia + " " + mes;
+                let horarioMes = "Hasta " + dia + " " + mes;
             console.log(jornadasGuardar)
             res.send({"res": true, "ultDiaAsignado": horarioMes, "jornadasAsignadas": jornadasGuardar})
         }

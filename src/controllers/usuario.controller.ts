@@ -677,14 +677,8 @@ export async function getReporteMarcaciones(id: string, ini: string, fin: string
                         }
                     }
                 }
-                resumenMarcacion.organigrama = {
-                    alta: respuesta.alta,
-                    baja: respuesta.baja,
-                    rotando: respuesta.rotando
-                };
-            } else {
-                resumenMarcacion.organigrama = respuesta.error;
             }
+            resumenMarcacion.organigrama = generarInfoOrganigrama(respuesta, rangoValido);
             if (excepcionesCompletas.length > 0)
                 hayExcepcionesCompletas = true
             if (excepcionesRangoHoras.length > 0)
@@ -1337,3 +1331,46 @@ export async function getReporteMarcaciones(id: string, ini: string, fin: string
     }
 }
 
+interface RespuestaOrganigrama {
+    success: boolean;
+    alta?: string;
+    baja?: string;
+    rotando?: boolean;
+    error?: string;
+}
+/**
+ * Genera la información desde Organigrama que debe mostrarse en el reporte
+ *
+ * @param respuesta    Objeto devuelto por getSolicitudesAprobadasPorCI
+ * @param rangoValido  Rango de fechas del reporte
+ */
+export function generarInfoOrganigrama(respuesta: RespuestaOrganigrama, rangoValido: DateRange) {
+    if (!respuesta.success) {
+        return { error: respuesta.error };
+    }
+    const tieneAlta = !!respuesta.alta;
+    const tieneBaja = !!respuesta.baja;
+    const estaRotando = !!respuesta.rotando;
+
+    const altaEnRango = tieneAlta && rangoValido.contains( moment(respuesta.alta, "DD/MM/YYYY").toDate(),
+            { excludeStart: false, excludeEnd: false }
+        );
+
+    if (tieneBaja) {
+        if (altaEnRango) {
+            return { alta: respuesta.alta, baja: respuesta.baja };
+        }
+        return { baja: respuesta.baja };
+    }
+
+    if (estaRotando) {
+        const info: any = { rotando: true };
+        if (altaEnRango)
+            info.alta = respuesta.alta;
+        return info;
+    }
+    if (altaEnRango) {
+        return { alta: respuesta.alta };
+    }
+    return undefined;
+}
