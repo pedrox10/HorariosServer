@@ -255,14 +255,14 @@ export const asignarHorario = async (req: Request, res: Response) => {
             }
             dias = rangoValido.by("day");
             if(horario?.diasIntercalados || horario?.jornadasDosDias && !horario?.esContinuoDosDias) {
-                dias = rangoValido.by("day", {step: 2});
-                let copia = rangoValido.clone();
-                let rangoDiasDescanso = momentExt.range(copia.start.add(1, "days"), moment(fechaFin).toDate())
-                diasDescanso = rangoDiasDescanso.by("day", {step: 2})
-                if(empiezaConDescanso) {
-                    dias = rangoDiasDescanso.by("day", {step: 2})
-                    diasDescanso = rangoValido.by("day", {step: 2});
-                }
+                const rangoTrabajo = rangoValido.clone();
+                const rangoDescanso = momentExt.range(rangoValido.start.clone().add(1, "days"), moment(fechaFin).toDate());
+                dias = rangoTrabajo.by("day", { step: 2 });
+                diasDescanso = rangoDescanso.by("day", { step: 2 });
+                /*if (true) {
+                    dias = rangoDescanso.by("day", { step: 2 });
+                    diasDescanso = rangoTrabajo.by("day", { step: 2 });
+                }*/
             }
             for (let fecha of dias) {
                 let dia: string | any = env.dias.at(moment(fecha).day())
