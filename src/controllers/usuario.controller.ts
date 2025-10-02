@@ -376,7 +376,7 @@ async function getSolicitudesAprobadasPorCI(ci: number) {
     let solicitudesAprobadas = [];
     let fechaAlta: string;
     let fechaBaja: string;
-    let enRotacion: boolean = false;
+    let fechaRotacion: string = "";
 
     try {
         // 1. Busqueda del funcionario por CI
@@ -401,11 +401,10 @@ async function getSolicitudesAprobadasPorCI(ci: number) {
             const { data: rotaciones } = await axios.get(`${BASE_URL}/rotacion/filtro/id_registro/${registroMasReciente._id}`, HEADERS);
             const rotacionActivo = rotaciones.find((r: any) => registroMasReciente?.id_funcionario && r.estado === true);
             if (rotacionActivo)
-                enRotacion = true;
+                fechaRotacion = moment(rotacionActivo.fecha_ingreso).format("DD/MM/YYYY");
         } else {
             fechaAlta = moment(registroMasReciente.fecha_ingreso).format("DD/MM/YYYY");
             fechaBaja = moment(registroMasReciente.fecha_conclusion).format("DD/MM/YYYY");
-            enRotacion = false;
         }
         // 4. Iteración por cada registro para obtener solicitudes, los registros obtenidos son tanto de alta como de baja, esto con el objetivo de obtener los registros si un funcionario cambio durante el mes de cargo y asi obtener ambos registros
         for (const registro of registros) {
@@ -415,7 +414,7 @@ async function getSolicitudesAprobadasPorCI(ci: number) {
                 solicitudesAprobadas.push(solicitud)
             }
         }
-        return {success: true, solicitudes: solicitudesAprobadas, alta: fechaAlta, baja: fechaBaja, rotando: enRotacion}
+        return {success: true, solicitudes: solicitudesAprobadas, alta: fechaAlta, baja: fechaBaja, rotacion: fechaRotacion}
 
     } catch (error: any) {
         console.error("Error al obtener solicitudes aprobadas:", error.response?.data || error.message);
@@ -1335,7 +1334,7 @@ interface RespuestaOrganigrama {
     success: boolean;
     alta?: string;
     baja?: string;
-    rotando?: boolean;
+    rotacion?: string;
     error?: string;
 }
 /**
@@ -1350,7 +1349,7 @@ export function generarInfoOrganigrama(respuesta: RespuestaOrganigrama, rangoVal
     }
     const tieneAlta = !!respuesta.alta;
     const tieneBaja = !!respuesta.baja;
-    const estaRotando = !!respuesta.rotando;
+    const tieneRotacion = !!respuesta.rotacion;
 
     const altaEnRango = tieneAlta && rangoValido.contains( moment(respuesta.alta, "DD/MM/YYYY").toDate(),
             { excludeStart: false, excludeEnd: false }
@@ -1363,8 +1362,8 @@ export function generarInfoOrganigrama(respuesta: RespuestaOrganigrama, rangoVal
         return { baja: respuesta.baja };
     }
 
-    if (estaRotando) {
-        const info: any = { rotando: true };
+    if (tieneRotacion) {
+        const info: any = { rotacion: respuesta.rotacion };
         if (altaEnRango)
             info.alta = respuesta.alta;
         return info;

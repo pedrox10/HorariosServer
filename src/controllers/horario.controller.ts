@@ -188,9 +188,10 @@ export const  getJornadasPorMes = async (req: Request, res: Response) => {
 export const asignarHorario = async (req: Request, res: Response) => {
     console.time('buscar_superpuestas');
     const {id, ids, ini, fin, jornadas} = req.params;
-    const { invierno, lactancia } = req.query; // Obtener desde Query Params
+    const { invierno, lactancia, descanso } = req.query; // Obtener desde Query Params
     const esInvierno = invierno === "true";
     const esLactancia = lactancia === "true";
+    const empiezaConDecanso = descanso === "true";
     let horario = await Horario.findOne({where: {id: parseInt(id)},});
     let listaIds = ids.split(",")
     let usuarios = await Usuario.find({
@@ -259,10 +260,10 @@ export const asignarHorario = async (req: Request, res: Response) => {
                 const rangoDescanso = momentExt.range(rangoValido.start.clone().add(1, "days"), moment(fechaFin).toDate());
                 dias = rangoTrabajo.by("day", { step: 2 });
                 diasDescanso = rangoDescanso.by("day", { step: 2 });
-                /*if (true) {
+                if (empiezaConDecanso) {
                     dias = rangoDescanso.by("day", { step: 2 });
                     diasDescanso = rangoTrabajo.by("day", { step: 2 });
-                }*/
+                }
             }
             for (let fecha of dias) {
                 let dia: string | any = env.dias.at(moment(fecha).day())
