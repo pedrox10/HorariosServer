@@ -65,7 +65,7 @@ export const infoOrganigram = async (req: Request, res: Response) => {
     const BASE_URL = "http://190.181.22.149:3310";
     const HEADERS = {
         headers: {
-            "X-Access-Code": ACCESS_CODE,
+            "X-Access-Code": ACCESS_CODE, timeout: 500,
         },
     };
     try {
@@ -369,7 +369,7 @@ export async function ultMarcacion(usuario: Usuario, terminal: Terminal) {
 async function getSolicitudesAprobadasPorCI(ci: number) {
     const ACCESS_CODE = "ga8f0051d6ff90ff485359f626060aa0fe38fc2c451c184f337ae146e4cd7eefcb8497011ee63534e4afd7eedf65fc1d9017f67c2385bc85b392b862a7bedfd6g";
     const BASE_URL = "http://190.181.22.149:3310";
-    const HEADERS = { headers: { "X-Access-Code": ACCESS_CODE,},
+    const HEADERS = { headers: { "X-Access-Code": ACCESS_CODE, timeout: 500},
     };
     let solicitudesAprobadas = [];
     let fechaAlta: string;
