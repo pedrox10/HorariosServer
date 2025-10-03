@@ -386,7 +386,7 @@ export const sincronizarTerminal = async (req: Request, res: Response) => {
         for (let usuario of usuariosEliminados) {
             await marcarComoEliminado(usuario, terminal, queryRunner);
         }
-        // Actualizar la terminal con la fecha de sincronización
+        // Actualizar el terminal con la fecha de sincronización
         terminal.totalMarcaciones = totalMarcaciones;
 
         terminal.ultSincronizacion = moment(horaTerminal, "YYYY-MM-DD[T]HH:mm:ss").toDate();

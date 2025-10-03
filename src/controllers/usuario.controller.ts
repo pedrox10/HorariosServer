@@ -11,11 +11,9 @@ import {ResumenMarcacion} from "../models/ResumenMarcacion";
 import {ExcepcionTickeo, TipoExcepcion} from "../entity/ExcepcionTickeo";
 import {Asueto, TipoAsueto} from "../entity/Asueto";
 import {Between, In} from "typeorm";
-import mongoose from "mongoose";
 import {Excepcion} from "../models/Excepcion";
 import axios from "axios";
 import {Interrupcion} from "../entity/Interrupcion";
-import {Horario} from "../entity/Horario";
 import {Grupo} from "../entity/Grupo";
 
 const momentExt = extendMoment(MomentExt);
