@@ -35,7 +35,7 @@ def obtener_usuario_y_huellas(ip, uid):
     return usuario, huellas
 
 
-def copiar_usuario(origen, destino, uid):
+def clonar_usuario(origen, destino, uid):
     usuario, huellas = obtener_usuario_y_huellas(origen, uid)
 
     zk_dest = ZK(destino, port=4370, timeout=10)
@@ -45,7 +45,7 @@ def copiar_usuario(origen, destino, uid):
 
     # Crear usuario
     conn_dest.set_user(
-        uid=usuario.uid,
+        uid=None,
         name=usuario.name,
         privilege=usuario.privilege,
         password=usuario.password,
@@ -53,16 +53,14 @@ def copiar_usuario(origen, destino, uid):
         user_id=usuario.user_id,
         card=usuario.card
     )
-
     # Copiar huellas
     conn_dest.save_user_template(usuario, huellas)
 
     conn_dest.disconnect()
     return True
 
-
 try:
-    copiar_usuario(ip_origen, ip_destino, uid)
+    clonar_usuario(ip_origen, ip_destino, uid)
     print(json.dumps({"success": True, "mensaje": f"Usuario {uid} copiado de {ip_origen} a {ip_destino}"}))
 except Exception as e:
     print(json.dumps({"success": False, "error": str(e)}))
