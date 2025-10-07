@@ -406,7 +406,6 @@ export const sincronizarTerminal = async (req: Request, res: Response) => {
                 await fs.writeFile(rutaArchivo, JSON.stringify(jsonParaGuardar, null, 2));
             } catch (fileError: any) {
                 console.error(`Error al guardar el archivo de sincronización para Terminal ${terminal.id}:`, fileError.message);
-                // Aquí solo se registra el error; la sincronización de la DB ya fue exitosa.
             }
         }
         // Recuperar la terminal con la relación de usuarios para la respuesta
