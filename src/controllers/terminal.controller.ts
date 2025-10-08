@@ -216,7 +216,7 @@ export const respaldarTerminales = async (req: Request, res: Response) => {
     const resultados = [];
     try {
         await client.access(FTP_CONFIG);
-        const terminales = await AppDataSource.manager.find(Terminal, { where: { ip: "192.168.70.199" } });
+        const terminales = await AppDataSource.manager.find(Terminal, { where: { tieneConexion: true } });
         for (const terminal of terminales) {
             const nombreCarpeta = terminal.nombre.replace(/\s+/g, '_');
             const rutaDirectorioFTP = `/respaldos/${nombreCarpeta}`; // Directorio en el FTP
