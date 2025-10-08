@@ -14,6 +14,17 @@ import {Interrupcion} from "../entity/Interrupcion";
 import { promises as fs } from 'fs';
 import logger from "../logger/logger";
 import {Grupo} from "../entity/Grupo";
+import * as ftp from 'basic-ftp';
+import { Readable } from 'stream';
+
+// --- Configuración del Servidor FTP ---
+const FTP_CONFIG = {
+    host: 'ftpupload.net',
+    user: 'b7_40121480',
+    password: 'amarse10', // ¡IMPORTANTE! Reemplaza con tu contraseña real.
+    port: 21,
+    secure: false, // Protocolo FTP estándar, no FTPS (seguro).
+};
 
 const envPython = path.join(__dirname, "../scriptpy/envpy", "bin", "python3");
 const spawn = require('await-spawn');
@@ -99,7 +110,7 @@ export const getTerminal = async (req: Request, res: Response) => {
 
 export const getTerminales = async (req: Request, res: Response) => {
     let terminales = await AppDataSource.manager.find(Terminal)
-    res.send(terminales)
+    res.json(terminales)
 }
 
 export const getGrupos = async (req: Request, res: Response) => {
@@ -200,28 +211,33 @@ export const getTerminalPorIp = async (req: Request, res: Response) => {
 }
 
 export const respaldarTerminales = async (req: Request, res: Response) => {
+    const client = new ftp.Client();
+    client.ftp.verbose = false; // Desactiva el log detallado si lo deseas
+    const resultados = [];
     try {
-        const terminales = await AppDataSource.manager.find(Terminal, { where: { tieneConexion: true } });
-        const resultados = [];
+        await client.access(FTP_CONFIG);
+        const terminales = await AppDataSource.manager.find(Terminal, { where: { ip: "192.168.70.199" } });
         for (const terminal of terminales) {
+            const nombreCarpeta = terminal.nombre.replace(/\s+/g, '_');
+            const rutaDirectorioFTP = `/respaldos/${nombreCarpeta}`; // Directorio en el FTP
             try {
-                //Procesamiento de Marcaciones
                 const pyFileMarcaciones = 'src/scriptpy/marcaciones.py';
-                let  argsMarcaciones = [terminal.ip, terminal.puerto];
+                let argsMarcaciones = [terminal.ip, terminal.puerto];
                 argsMarcaciones.unshift(pyFileMarcaciones);
+                // Ejecuta script Python para obtener datos
                 const pyprogMarcaciones = await spawn(envPython, argsMarcaciones);
-                let respuesta = JSON.parse(pyprogMarcaciones.toString())
-                let carpeta = terminal.nombre.replace(/\s+/g, '_');
-                let horaTerminal = moment(respuesta.hora_terminal)
-                const nombreArchivo = `${terminal.nombre.replace(/\s+/g, '_')}_${horaTerminal.format('YYYY-MM-DD_HH-mm-ss')}.json`;
-                const rutaArchivo = path.join(__dirname, '../../respaldos', carpeta, nombreArchivo);
-                //Procesamiento de Usuarios
+                let respuesta = JSON.parse(pyprogMarcaciones.toString());
+                let horaTerminal = moment(respuesta.hora_terminal);
+                const nombreArchivo = `${nombreCarpeta}_${horaTerminal.format('YYYY-MM-DD_HH-mm-ss')}.json`;
+                const rutaArchivoFTP = `${rutaDirectorioFTP}/${nombreArchivo}`;
+                // --- 2. PROCESAMIENTO DE USUARIOS ---
                 let usuariosT: any;
                 const pyFileUsuarios = 'src/scriptpy/usuarios.py';
                 let argsUsuarios = [terminal.ip, terminal.puerto];
                 argsUsuarios.unshift(pyFileUsuarios);
                 const pyprogUsuarios = await spawn(envPython, argsUsuarios);
                 usuariosT = JSON.parse(pyprogUsuarios.toString());
+                // --- 3. CREACIÓN DEL CONTENIDO JSON ---
                 const contenidoRespaldo = {
                     numero_serie: respuesta.numero_serie,
                     modelo: respuesta.modelo,
@@ -230,16 +246,33 @@ export const respaldarTerminales = async (req: Request, res: Response) => {
                     usuariosT,
                     marcaciones: respuesta.marcaciones,
                 };
-                await fs.mkdir(path.dirname(rutaArchivo), { recursive: true });
-                await fs.writeFile(rutaArchivo, JSON.stringify(contenidoRespaldo, null, 2));
-                resultados.push({ terminal: terminal.nombre, estado: 'Exitoso', archivo: rutaArchivo });
+                // Convierte el objeto a una cadena JSON con formato
+                const contenidoJSON = JSON.stringify(contenidoRespaldo, null, 2);
+                // Crea un buffer de datos para subirlo directamente, sin archivo temporal
+                const bufferRespaldo = Buffer.from(contenidoJSON, 'utf-8');
+                const streamRespaldo = Readable.from(bufferRespaldo);
+                await client.ensureDir(rutaDirectorioFTP);
+                await client.uploadFrom(streamRespaldo, rutaArchivoFTP);
+
+                resultados.push({
+                    terminal: terminal.nombre,
+                    estado: 'Exitoso',
+                    ruta_ftp: rutaArchivoFTP
+                });
             } catch (error: any) {
-                resultados.push({ terminal: terminal.nombre, estado: 'Error', error: error.message });
+                console.error(`Error procesando terminal ${terminal.nombre}:`, error);
+                resultados.push({
+                    terminal: terminal.nombre,
+                    estado: 'Error',
+                    error: error.message
+                });
             }
         }
-        res.status(200).json({ mensaje: 'Respaldo completo.', resultados });
+        res.status(200).json({ mensaje: 'Respaldo completo subido a FTP.', resultados });
     } catch (error) {
-        res.status(500).json({ error: 'Fallo general al respaldar terminales' });
+        res.status(500).json({ error: 'Fallo general al respaldar terminales o conectar a FTP' });
+    } finally {
+        client.close();
     }
 };
 
