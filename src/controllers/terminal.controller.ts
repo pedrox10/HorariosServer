@@ -211,16 +211,15 @@ export const getTerminalPorIp = async (req: Request, res: Response) => {
 }
 
 export const respaldarTerminales = async (req: Request, res: Response) => {
-    const client = new ftp.Client();
-    client.ftp.verbose = false; // Desactiva el log detallado si lo deseas
     const resultados = [];
     try {
-        await client.access(FTP_CONFIG);
         const terminales = await AppDataSource.manager.find(Terminal, { where: { tieneConexion: true } });
         for (const terminal of terminales) {
+            const client = new ftp.Client();
             const nombreCarpeta = terminal.nombre.replace(/\s+/g, '_');
             const rutaDirectorioFTP = `/respaldos/${nombreCarpeta}`; // Directorio en el FTP
             try {
+                await client.access(FTP_CONFIG);
                 const pyFileMarcaciones = 'src/scriptpy/marcaciones.py';
                 let argsMarcaciones = [terminal.ip, terminal.puerto];
                 argsMarcaciones.unshift(pyFileMarcaciones);
@@ -253,7 +252,6 @@ export const respaldarTerminales = async (req: Request, res: Response) => {
                 const streamRespaldo = Readable.from(bufferRespaldo);
                 await client.ensureDir(rutaDirectorioFTP);
                 await client.uploadFrom(streamRespaldo, rutaArchivoFTP);
-
                 resultados.push({
                     terminal: terminal.nombre,
                     estado: 'Exitoso',
@@ -267,12 +265,13 @@ export const respaldarTerminales = async (req: Request, res: Response) => {
                     error: error.message
                 });
             }
+            finally {
+                client.close();
+            }
         }
         res.status(200).json({ mensaje: 'Respaldo completo subido a FTP.', resultados });
     } catch (error) {
         res.status(500).json({ error: 'Fallo general al respaldar terminales o conectar a FTP' });
-    } finally {
-        client.close();
     }
 };
 
