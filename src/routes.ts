@@ -12,7 +12,7 @@ import {
     asignarGrupo,
     limpiarGrupo,
     getResumenMarcacionesPorCI,
-    infoOrganigram
+    infoOrganigram, clonarUsuario
 } from "./controllers/usuario.controller";
 import {
     agregarGrupo,
@@ -80,6 +80,7 @@ router.get("/usuario/:id/ultMarcacion", getUltMarcacion)
 router.get("/usuario/:ci/info-organigram", infoOrganigram)
 router.get("/asignar-grupo/:id/usuarios/:ids", asignarGrupo)
 router.get("/limpiar-grupo/usuarios/:ids", limpiarGrupo)
+router.get("/usuario/:idUsuario/clonar/origen/:idOrigen/destino/:idDestino", clonarUsuario)
 //router.post('/usuario', agregarUsuario);
 
 // Rutas para operaciones con Horarios

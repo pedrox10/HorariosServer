@@ -124,9 +124,20 @@ export const editarUsuario = async (req: Request, res: Response) => {
         usuario.fechaAlta = fechaAlta;
         usuario.fechaBaja = esVacio(fechaBaja) ? null : fechaBaja;
         usuario.fechaCumpleano = esVacio(fechaCumpleano) ? null : fechaCumpleano;
-        usuario.estado = estado
+        usuario.estado = parseInt(estado)
         usuario.save()
-        res.send(usuario)
+        let jornada = await ultJornadaAsignada(usuario.id);
+        if (jornada) {
+            let dia = moment(jornada.fecha).format("DD");
+            let mes = moment(jornada.fecha).format("MMM");
+            usuario.ultAsignacion = "Hasta " + dia + " " + mes;
+        } else {
+            usuario.ultAsignacion = "Sin Asignar"
+            let t = await Terminal.findOne({
+                where: {id: parseInt(id)}
+            });
+        }
+        res.status(200).json({accion: "editar", usuario: usuario})
     }
 }
 
@@ -233,6 +244,21 @@ export const getResumenMarcacionesPorCI = async (req: Request, res: Response) =>
     res.send(respuesta)
 }
 
+export const clonarUsuario = async (req: Request, res: Response) => {
+    const {idUsuario, idOrigen, idDestino} = req.params;
+    res.status(200).json({accion: "clonar"})
+    //let resumenMarcacion = await getReporteMarcaciones(id, ini, fin);
+    //res.send(resumenMarcacion);
+}
+
+export const editarEnBiometrico = async (req: Request, res: Response) => {
+    const {idUsuario, idOrigen, idDestino} = req.params;
+    res.status(200).json({accion: "editar_en_biometrico"})
+    //let resumenMarcacion = await getReporteMarcaciones(id, ini, fin);
+    //res.send(resumenMarcacion);
+}
+
+//Funciones auxiliares
 async function getJornadaPor(usuario: Usuario, fecha: string) {
     let jornada = await Jornada.findOne({
         where: {usuario: usuario, fecha: moment(fecha).toDate()}, relations: {
