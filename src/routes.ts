@@ -12,7 +12,7 @@ import {
     asignarGrupo,
     limpiarGrupo,
     getResumenMarcacionesPorCI,
-    infoOrganigram, clonarUsuario
+    infoOrganigram
 } from "./controllers/usuario.controller";
 import {
     agregarGrupo,
@@ -38,7 +38,8 @@ import {
     horaActual,
     infoCapacidad,
     infoExtra, reiniciar,
-    sincronizarFecha
+    sincronizarFecha,
+    clonarUsuario
 } from "./controllers/comandos.controller";
 
 const router = Router();
@@ -80,7 +81,6 @@ router.get("/usuario/:id/ultMarcacion", getUltMarcacion)
 router.get("/usuario/:ci/info-organigram", infoOrganigram)
 router.get("/asignar-grupo/:id/usuarios/:ids", asignarGrupo)
 router.get("/limpiar-grupo/usuarios/:ids", limpiarGrupo)
-router.get("/usuario/:idUsuario/clonar/origen/:idOrigen/destino/:idDestino", clonarUsuario)
 //router.post('/usuario', agregarUsuario);
 
 // Rutas para operaciones con Horarios
@@ -106,5 +106,6 @@ router.get("/terminal/:id/borrar-marcaciones", borrarMarcaciones)
 router.get("/terminal/:id/borrar-todo", borrarTodo)
 router.get("/terminal/:id/apagar", apagar)
 router.get("/terminal/:id/reiniciar", reiniciar)
+router.get("/usuario/:idUsuario/clonar/origen/:idOrigen/destino/:idDestino", clonarUsuario)
 
 export default router

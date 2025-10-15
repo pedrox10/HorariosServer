@@ -244,20 +244,6 @@ export const getResumenMarcacionesPorCI = async (req: Request, res: Response) =>
     res.send(respuesta)
 }
 
-export const clonarUsuario = async (req: Request, res: Response) => {
-    const {idUsuario, idOrigen, idDestino} = req.params;
-    res.status(200).json({accion: "clonar"})
-    //let resumenMarcacion = await getReporteMarcaciones(id, ini, fin);
-    //res.send(resumenMarcacion);
-}
-
-export const editarEnBiometrico = async (req: Request, res: Response) => {
-    const {idUsuario, idOrigen, idDestino} = req.params;
-    res.status(200).json({accion: "editar_en_biometrico"})
-    //let resumenMarcacion = await getReporteMarcaciones(id, ini, fin);
-    //res.send(resumenMarcacion);
-}
-
 //Funciones auxiliares
 async function getJornadaPor(usuario: Usuario, fecha: string) {
     let jornada = await Jornada.findOne({
@@ -278,7 +264,6 @@ async function getMarcacionesPor(usuario: Usuario, fecha: string) {
     })
     return marcaciones;
 }
-
 
 function getFeriado(jornada: Jornada, feriados: Asueto[]) {
     let res: Asueto | any = null;
@@ -386,7 +371,6 @@ export async function ultMarcacion(usuario: Usuario, terminal: Terminal) {
     });
     return ultMarcacion;
 }
-
 
 async function getSolicitudesAprobadasPorCI(ci: number) {
     const ACCESS_CODE = "ga8f0051d6ff90ff485359f626060aa0fe38fc2c451c184f337ae146e4cd7eefcb8497011ee63534e4afd7eedf65fc1d9017f67c2385bc85b392b862a7bedfd6g";

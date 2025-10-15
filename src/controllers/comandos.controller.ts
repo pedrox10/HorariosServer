@@ -2,6 +2,7 @@ import {Request, Response} from "express";
 import {Terminal} from "../entity/Terminal";
 import path from "path";
 import moment from "moment";
+import {Usuario} from "../entity/Usuario";
 
 const envPython = path.join(__dirname, "../scriptpy/envpy", "bin", "python3");
 const spawn = require('await-spawn');
@@ -113,4 +114,26 @@ export const reiniciar = async (req: Request, res: Response) => {
         const pyprogReiniciar = await spawn(envPython, args);
         return res.status(200).json(pyprogReiniciar.toString())
     }
+}
+
+export const clonarUsuario = async (req: Request, res: Response) => {
+    const {idUsuario, idOrigen, idDestino} = req.params;
+    const terminalOrigen = await Terminal.findOne({where: {id: parseInt(idOrigen)},});
+    const terminalDestino = await Terminal.findOne({where: {id: parseInt(idDestino)},});
+    const usuario = await Usuario.findOne({where: {id: parseInt(idUsuario)},});
+    const pyClonar = 'src/scriptpy/clonar_usuario.py';
+    if(terminalOrigen && terminalDestino && usuario) {
+        let args = [terminalOrigen.ip, terminalDestino.ip, usuario.uid];
+        args.unshift(pyClonar);
+        const pyprogClonar = await spawn(envPython, args);
+        console.log(pyprogClonar.toString())
+        return res.status(200).json(pyprogClonar.toString())
+    }
+}
+
+export const editarEnBiometrico = async (req: Request, res: Response) => {
+    const {idUsuario, idOrigen, idDestino} = req.params;
+    res.status(200).json({accion: "editar_en_biometrico"})
+    //let resumenMarcacion = await getReporteMarcaciones(id, ini, fin);
+    //res.send(resumenMarcacion);
 }
