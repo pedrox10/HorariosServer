@@ -371,18 +371,23 @@ export const sincronizarTerminal = async (req: Request, res: Response) => {
         } else if (metodo === "POST") {
             usuariosT = JSON.parse(req.body.usuarios);
         }
-
         let usuariosBD = await Usuario.find({ where: { terminal: terminal, estado: Not(EstadoUsuario.eliminado) } });
-
         if (fueSincronizado) {
             // Comparar usuarios del terminal con los de la BD
             for (let usuarioT of usuariosT) {
                 let usuarioBD = await Usuario.findOneBy({ uid: usuarioT.uid, terminal: terminal });
                 if (usuarioBD) {
-                    // Si ya existe, actualizar si hay cambios en el nombre
-                    if (usuarioT.name !== usuarioBD.nombre) {
-                        usuarioBD.nombre = usuarioT.name;
-                        usuariosEditados.push(usuarioBD);
+                    // Verificamos antes CI para saber si el uid fue eliminado y asignado a un nuevo funcionario
+                    if (String(usuarioT.user_id).trim() === String(usuarioBD.ci).trim()) {
+                        // Verificacmos si hubo una edición
+                        if (usuarioT.name !== usuarioBD.nombre) {
+                            usuarioBD.nombre = usuarioT.name;
+                            usuariosEditados.push(usuarioBD);
+                        }
+                    } else {
+                        usuariosEliminados.push(usuarioBD);
+                        let usuario = await getNuevoUsuario(usuarioT, terminal, manager);
+                        usuariosNuevos.push(usuario);
                     }
                 } else {
                     let usuario = await getNuevoUsuario(usuarioT, terminal, manager);

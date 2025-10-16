@@ -127,7 +127,8 @@ export const clonarUsuario = async (req: Request, res: Response) => {
         args.unshift(pyClonar);
         const pyprogClonar = await spawn(envPython, args);
         console.log(pyprogClonar.toString())
-        return res.status(200).json(pyprogClonar.toString())
+        //Ya no devuelvo json porque python ya lo hace
+        return res.status(200).send(pyprogClonar.toString())
     }
 }
 
