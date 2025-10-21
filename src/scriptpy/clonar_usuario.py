@@ -6,8 +6,9 @@ from zk import ZK
 if len(sys.argv) < 4:
     print(json.dumps({
         "accion": "clonar",
-        "success": False,
-        "error": "Formato incorrecto. Uso: copiar_usuario.py <ip_origen> <ip_destino> <uid>"
+        "exito": False,
+        "tipo": "is-warning",
+        "mensaje": "Formato incorrecto. Uso: copiar_usuario.py <ip_origen> <ip_destino> <uid>"
     }))
     sys.exit(1)
 
@@ -15,18 +16,20 @@ ip_origen = sys.argv[1]
 ip_destino = sys.argv[2]
 uid = int(sys.argv[3])
 
+# --- Función para obtener usuario y huellas desde el terminal origen ---
 def obtener_usuario_y_huellas(ip, uid):
     try:
         zk = ZK(ip, port=4370, timeout=10)
         conn = zk.connect()
         if not conn:
-            raise Exception("can't reach device")
+            raise Exception(f"can't reach device origen (ping {ip})")
 
         usuarios = conn.get_users()
         usuario = next((u for u in usuarios if u.uid == uid), None)
         if not usuario:
             raise Exception("user_not_found")
 
+        # Obtener huellas
         huellas = []
         for i in range(10):
             f = conn.get_user_template(uid=uid, temp_id=i)
@@ -36,36 +39,41 @@ def obtener_usuario_y_huellas(ip, uid):
         conn.disconnect()
         return usuario, huellas
     except Exception as e:
-        raise Exception(f"[{ip}] {e}")
+        raise Exception(f"{e}")
 
+# --- Función principal de clonación ---
 def clonar_usuario(origen, destino, uid):
     try:
+        # Conectarse y leer desde origen
         usuario, huellas = obtener_usuario_y_huellas(origen, uid)
 
+        # Conectarse al destino
         zk_dest = ZK(destino, port=4370, timeout=10)
         conn_dest = zk_dest.connect()
         if not conn_dest:
-            raise Exception("can't reach destination")
+            raise Exception(f"can't reach device destino (ping {destino})")
 
         usuarios_dest = conn_dest.get_users()
 
-        # Verificar si ya existe el usuario
+        # Verificar si el usuario ya existe
         if any(u.user_id == usuario.user_id for u in usuarios_dest):
             conn_dest.disconnect()
             return {
                 "accion": "clonar",
-                "success": False,
-                "error": f"El usuario '{usuario.user_id}' ya existe en el terminal destino",
+                "exito": False,
+                "tipo": "is-warning",
+                "mensaje": f"El usuario '{usuario.user_id}' ya existe en el terminal destino",
                 "excepcion": None
             }
 
-        # Verificar huellas
+        # Verificar si tiene huellas
         if not huellas:
             conn_dest.disconnect()
             return {
                 "accion": "clonar",
-                "success": False,
-                "error": f"El usuario '{usuario.user_id}' no tiene huellas registradas en el terminal origen",
+                "exito": False,
+                "tipo": "is-warning",
+                "mensaje": f"El usuario '{usuario.user_id}' no tiene huellas registradas en el terminal origen",
                 "excepcion": None
             }
 
@@ -78,7 +86,7 @@ def clonar_usuario(origen, destino, uid):
             elif uid_usado > uid_libre:
                 break
 
-        # Crear usuario
+        # Crear usuario en destino
         conn_dest.set_user(
             uid=uid_libre,
             name=usuario.name,
@@ -89,10 +97,9 @@ def clonar_usuario(origen, destino, uid):
             card=usuario.card
         )
 
-        # Obtener el usuario recién creado
+        # Buscar el usuario recién creado
         usuarios_actualizados = conn_dest.get_users()
         nuevo_usuario = next((u for u in usuarios_actualizados if u.uid == uid_libre), None)
-
         if not nuevo_usuario:
             raise Exception("user_not_created")
 
@@ -103,41 +110,59 @@ def clonar_usuario(origen, destino, uid):
         conn_dest.disconnect()
         return {
             "accion": "clonar",
-            "success": True,
+            "exito": True,
+            "tipo": "is-success",
             "mensaje": f"Usuario '{usuario.user_id}' copiado correctamente de {origen} a {destino}"
         }
 
     except Exception as e:
         msg = str(e)
-        # Mensajes amigables según tipo de error
-        if "can't reach device" in msg:
-            return {
-                "accion": "clonar",
-                "success": False,
-                "error": f"No se pudo conectar al terminal origen ({origen})",
-                "excepcion": msg
-            }
-        elif "can't reach destination" in msg:
-            return {
-                "accion": "clonar",
-                "success": False,
-                "error": f"No se pudo conectar al terminal destino ({destino})",
-                "excepcion": msg
-            }
-        elif "user_not_found" in msg:
-            return {
-                "accion": "clonar",
-                "success": False,
-                "error": f"El usuario con UID {uid} no existe en el terminal origen",
-                "excepcion": msg
-            }
-        else:
-            return {
-                "accion": "clonar",
-                "success": False,
-                "error": "Ocurrió un error al clonar el usuario",
-                "excepcion": msg
-            }
+        # --- Switch/Match para los tipos de error ---
+        match True:
+            case _ if "can't reach device" in msg and ip_origen in msg:
+                return {
+                    "accion": "clonar",
+                    "exito": False,
+                    "tipo": "is-warning",
+                    "mensaje": f"No se pudo conectar al terminal origen ({origen})",
+                    "excepcion": msg
+                }
+
+            case _ if "can't reach device" in msg and ip_destino in msg:
+                return {
+                    "accion": "clonar",
+                    "exito": False,
+                    "tipo": "is-warning",
+                    "mensaje": f"No se pudo conectar al terminal destino ({destino})",
+                    "excepcion": msg
+                }
+
+            case _ if "user_not_found" in msg:
+                return {
+                    "accion": "clonar",
+                    "exito": False,
+                    "tipo": "is-warning",
+                    "mensaje": f"El usuario con UID {uid} no existe en el terminal origen",
+                    "excepcion": msg
+                }
+
+            case _ if "user_not_created" in msg:
+                return {
+                    "accion": "clonar",
+                    "exito": False,
+                    "tipo": "is-danger",
+                    "mensaje": "No se pudo verificar la creación del usuario en el terminal destino",
+                    "excepcion": msg
+                }
+
+            case _:
+                return {
+                    "accion": "clonar",
+                    "exito": False,
+                    "tipo": "is-danger",
+                    "mensaje": "Ocurrió un error inesperado al clonar el usuario",
+                    "excepcion": msg
+                }
 
 # --- Ejecución principal ---
 try:
@@ -146,7 +171,8 @@ try:
 except Exception as e:
     print(json.dumps({
         "accion": "clonar",
-        "success": False,
-        "error": "Error inesperado en la clonación",
+        "exito": False,
+        "tipo": "is-danger",
+        "mensaje": "Error general en la clonación",
         "excepcion": str(e)
     }))
