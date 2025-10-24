@@ -290,12 +290,20 @@ function getExcepcionCompleta(jornada: Jornada, excepcionesCompletas: Excepcion[
 }
 
 function getExcepcionesTickeo(jornada: Jornada, excepcionesRangoHoras: Excepcion[]) {
-    let res: Excepcion [] =[];
+    const res: Excepcion[] = [];
+    const fechaJornada = moment(jornada.fecha).utc().startOf('day');
+    const fechaJornadaSiguiente = fechaJornada.clone().add(1, 'day');
+
     for (let excepcionTickeo of excepcionesRangoHoras) {
-        const fechaExcepcion = moment(excepcionTickeo.fecha).utc().startOf('day').toDate();
-        const fechaJornada = moment(jornada.fecha).utc().startOf('day').toDate();
-        if (fechaExcepcion.getTime() === fechaJornada.getTime()) { // Comparación con timestamps
-            res.push(excepcionTickeo)
+        const fechaExcepcion = moment(excepcionTickeo.fecha).utc().startOf('day');
+        if (jornada.horario.jornadasDosDias) {
+            if (fechaExcepcion.isSame(fechaJornada, 'day') || fechaExcepcion.isSame(fechaJornadaSiguiente, 'day')) {
+                res.push(excepcionTickeo);
+            }
+        } else {
+            if (fechaExcepcion.isSame(fechaJornada, 'day')) {
+                res.push(excepcionTickeo);
+            }
         }
     }
     return res;
@@ -680,6 +688,7 @@ export async function getReporteMarcaciones(id: string, ini: string, fin: string
                     }
                 }
             }
+            //console.log(excepcionesRangoHoras)
             resumenMarcacion.organigrama = generarInfoOrganigrama(respuesta, rangoValido);
             if (excepcionesCompletas.length > 0)
                 hayExcepcionesCompletas = true
@@ -872,10 +881,12 @@ export async function getReporteMarcaciones(id: string, ini: string, fin: string
                             let segEntExcepcion: any = {existe: false}
                             let segSalExcepcion: any = {existe: false}
                             let numTurnos = jornada.getNumTurnos();
+                            console.log(numTurnos)
 
                             let excepcionesTickeo: Excepcion [] = [];
                             if (hayExcepcionesRangoHoras) {
                                 excepcionesTickeo = getExcepcionesTickeo(jornada, excepcionesRangoHoras)
+                                console.log(excepcionesTickeo)
                                 for (let excepcionTickeo of excepcionesTickeo) {
                                     switch (excepcionTickeo.licencia) {
                                         case "ET":
@@ -914,7 +925,9 @@ export async function getReporteMarcaciones(id: string, ini: string, fin: string
                                         millisecond: 0
                                     });
                                     rangoTickeo = momentExt.range(moment(inicio), moment(fin))
+                                    //console.log(rangoTickeo)
                                     if(numTurnos != 0) {
+                                        console.log("Num turnos distinto " + numTurnos)
                                         let priTurno = jornada.priTurno!
                                         if (!priEntExcepcion.existe) {
                                             let priHoraEntrada = moment(jornada.fecha + " " + priTurno.horaEntrada).format("YYYY-MM-DDTHH:mm:ss[Z]")
@@ -939,6 +952,7 @@ export async function getReporteMarcaciones(id: string, ini: string, fin: string
                                                 priHoraSalida = moment(jornada.fecha + " " + priTurno.horaSalida).add(1, "day").format("YYYY-MM-DDTHH:mm:ss[Z]")
                                             else
                                                 priHoraSalida = moment(jornada.fecha + " " + priTurno.horaSalida).format("YYYY-MM-DDTHH:mm:ss[Z]")
+
                                             if (rangoTickeo.contains(moment(priHoraSalida))) {
                                                 priSalExcepcion = {
                                                     existe: true,
