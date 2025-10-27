@@ -1,0 +1,136 @@
+import * as ftp from 'basic-ftp';
+import moment from 'moment';
+import * as path from 'path';
+import * as fsAsync from 'fs/promises';
+import * as fs from 'fs';
+const archiver = require('archiver');
+// Asume que estas entidades y dependencias están disponibles o importadas
+import { AppDataSource } from "../data-source";
+import { Terminal } from "../entity/Terminal";
+const spawn = require('await-spawn');
+
+// --- Configuración del Servidor FTP ---
+const FTP_CONFIG = {
+    host: 'ftpupload.net',
+    user: 'b7_40121480',
+    password: 'amarse10', // Reemplazar con la contraseña real
+    port: 21,
+    secure: false,
+};
+// Define la ubicación de tu entorno Python (debe ser accesible desde el service)
+const envPython = path.join(__dirname, "../scriptpy/envpy", "bin", "python3");
+// Define la ruta base para todos tus respaldos locales (p. ej., un directorio persistente)
+const RUTA_BASE_RESPALDOS = 'respaldos'; // ¡AJUSTAR ESTA RUTA!
+
+// ----------------------------------------------------
+// 1. FUNCIÓN AUXILIAR DE COMPRESIÓN
+// ----------------------------------------------------
+function comprimirCarpeta(sourceDir: string, outputZip: string): Promise<void> {
+    return new Promise((resolve, reject) => {
+        const output = fs.createWriteStream(outputZip);
+        const archive = archiver('zip', {
+            zlib: { level: 9 }
+        });
+        output.on('close', () => {
+            console.log(`Compresión finalizada. Bytes: ${archive.pointer}`);
+            resolve();
+        });
+        archive.on('error', (err: Error) => reject(err));
+        output.on('error', (err: Error) => reject(err));
+        archive.pipe(output);
+        // El nombre de la carpeta raíz dentro del ZIP será el nombre de la carpeta de origen (la fecha)
+        archive.directory(sourceDir, path.basename(sourceDir));
+        archive.finalize();
+    });
+}
+
+// ----------------------------------------------------
+// 2. FUNCIÓN PRINCIPAL DE RESPALDO (Para ser llamada por CRON)
+// ----------------------------------------------------
+export const ejecutarRespaldoDiario = async () => {
+    const resultados: any[] = [];
+    const FECHA_HOY = moment().format('DD-MM-YYYY');
+    // Rutas locales
+    const DIR_ORIGEN_DIARIO = path.join(RUTA_BASE_RESPALDOS, FECHA_HOY);
+    const ARCHIVO_FINAL_ZIP = path.join(RUTA_BASE_RESPALDOS, `${FECHA_HOY}.zip`);
+    // Ruta FTP
+    const ARCHIVO_FTP_FINAL = `/respaldos/${FECHA_HOY}.zip`;
+    let client: ftp.Client | null = null;
+    let subidaExitosa = false;
+    console.log(`Iniciando respaldo para la fecha: ${FECHA_HOY}`);
+
+    try {
+        // PASO 1: Asegurar que la carpeta de fecha exista (Puede estar creada por terminales sin conexión)
+        await fsAsync.mkdir(DIR_ORIGEN_DIARIO, { recursive: true });
+        // PASO 2: Generar respaldos de terminales con conexión
+        const terminales = await AppDataSource.manager.find(Terminal, { where: { tieneConexion: true } });
+
+        for (const terminal of terminales) {
+            const nombreTerminal = terminal.nombre.replace(/\s+/g, '_');
+            try {
+                // Ejemplo simplificado de obtención y guardado de datos:
+                const pyFileMarcaciones = 'src/scriptpy/marcaciones.py';
+                let argsMarcaciones = [terminal.ip, terminal.puerto];
+                argsMarcaciones.unshift(pyFileMarcaciones);
+                // Ejecuta script Python para obtener datos
+                const pyprogMarcaciones = await spawn(envPython, argsMarcaciones);
+                let respuesta = JSON.parse(pyprogMarcaciones.toString());
+                let horaTerminal = moment(respuesta.hora_terminal);
+                const nombreArchivo = `${nombreTerminal}_${horaTerminal.format('YYYY-MM-DD_HH-mm-ss')}.json`;
+                const rutaArchivoLocal = path.join(DIR_ORIGEN_DIARIO, nombreArchivo);
+                // --- 2. PROCESAMIENTO DE USUARIOS ---
+                let usuariosT: any;
+                const pyFileUsuarios = 'src/scriptpy/usuarios.py';
+                let argsUsuarios = [terminal.ip, terminal.puerto];
+                argsUsuarios.unshift(pyFileUsuarios);
+                const pyprogUsuarios = await spawn(envPython, argsUsuarios);
+                usuariosT = JSON.parse(pyprogUsuarios.toString());
+                // --- 3. CREACIÓN DEL CONTENIDO JSON ---
+                const contenidoRespaldo = {
+                    numero_serie: respuesta.numero_serie,
+                    modelo: respuesta.modelo,
+                    hora_terminal: horaTerminal.format("YYYY-MM-DD[T]HH:mm:ss"),
+                    total_marcaciones: respuesta.total_marcaciones,
+                    usuariosT,
+                    marcaciones: respuesta.marcaciones,
+                };
+                const contenidoJSON = JSON.stringify(contenidoRespaldo, null, 2);
+                await fsAsync.writeFile(rutaArchivoLocal, contenidoJSON, 'utf-8');
+                resultados.push({ terminal: terminal.nombre, estado: 'Local Exitoso', ruta_local: rutaArchivoLocal });
+            } catch (error: any) {
+                console.error(`Error procesando terminal ${terminal.nombre}:`, error);
+                resultados.push({ terminal: terminal.nombre, estado: 'Error Local', error: error.message });
+            }
+        }
+        // PASO 3: COMPRESIÓN ÚNICA
+        console.log(`Comprimiendo carpeta: ${DIR_ORIGEN_DIARIO}`);
+        await comprimirCarpeta(DIR_ORIGEN_DIARIO, ARCHIVO_FINAL_ZIP);
+        // PASO 4: LIMPIEZA DE LA CARPETA DE ORIGEN (Requerimiento: mantener solo el ZIP)
+        await fsAsync.rm(DIR_ORIGEN_DIARIO, { recursive: true, force: true });
+        console.log(`Limpieza exitosa: Carpeta de origen ${DIR_ORIGEN_DIARIO} eliminada.`);
+        // PASO 5: SUBIDA ÚNICA POR FTP
+        client = new ftp.Client();
+        await client.access(FTP_CONFIG);
+        await client.ensureDir(path.dirname(ARCHIVO_FTP_FINAL));
+        // Usar fs (Streams) para la lectura del ZIP
+        const streamRespaldo = fs.createReadStream(ARCHIVO_FINAL_ZIP);
+        await client.uploadFrom(streamRespaldo, ARCHIVO_FTP_FINAL);
+        subidaExitosa = true;
+        console.log(`Subida FTP exitosa: ${ARCHIVO_FTP_FINAL}`);
+    } catch (error) {
+        // Capturará fallos en la conexión FTP, spawn, o errores de I/O
+        console.error('Fallo general en la tarea de respaldo:', error);
+    } finally {
+        // PASO 6: CIERRE DE CONEXIÓN FTP
+        if (client) {
+            client.close();
+        }
+        // Retornar resultados (útil para el log del Cron Job)
+        return {
+            fecha: FECHA_HOY,
+            zip_local: ARCHIVO_FINAL_ZIP,
+            ftp_subido: subidaExitosa,
+            terminal_logs: resultados
+        };
+    }
+};

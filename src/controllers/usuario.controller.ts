@@ -881,12 +881,10 @@ export async function getReporteMarcaciones(id: string, ini: string, fin: string
                             let segEntExcepcion: any = {existe: false}
                             let segSalExcepcion: any = {existe: false}
                             let numTurnos = jornada.getNumTurnos();
-                            console.log(numTurnos)
 
                             let excepcionesTickeo: Excepcion [] = [];
                             if (hayExcepcionesRangoHoras) {
                                 excepcionesTickeo = getExcepcionesTickeo(jornada, excepcionesRangoHoras)
-                                console.log(excepcionesTickeo)
                                 for (let excepcionTickeo of excepcionesTickeo) {
                                     switch (excepcionTickeo.licencia) {
                                         case "ET":
@@ -927,7 +925,6 @@ export async function getReporteMarcaciones(id: string, ini: string, fin: string
                                     rangoTickeo = momentExt.range(moment(inicio), moment(fin))
                                     //console.log(rangoTickeo)
                                     if(numTurnos != 0) {
-                                        console.log("Num turnos distinto " + numTurnos)
                                         let priTurno = jornada.priTurno!
                                         if (!priEntExcepcion.existe) {
                                             let priHoraEntrada = moment(jornada.fecha + " " + priTurno.horaEntrada).format("YYYY-MM-DDTHH:mm:ss[Z]")

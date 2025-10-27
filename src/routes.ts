@@ -41,6 +41,7 @@ import {
     sincronizarFecha,
     clonarUsuario
 } from "./controllers/comandos.controller";
+import {ejecutarRespaldoDiario} from "./controllers/mantenimiento.controller";
 
 const router = Router();
 //Ruta para Login
@@ -107,5 +108,20 @@ router.get("/terminal/:id/borrar-todo", borrarTodo)
 router.get("/terminal/:id/apagar", apagar)
 router.get("/terminal/:id/reiniciar", reiniciar)
 router.get("/usuario/:idUsuario/clonar/origen/:idOrigen/destino/:idDestino", clonarUsuario)
+
+router.post("/admin/ejecutar-respaldo-test", async (req, res) => {
+    try {
+        // Llama a la función de respaldo sin parámetros req/res
+        const resultado = await ejecutarRespaldoDiario();
+        res.status(200).json({
+            mensaje: "Tarea de respaldo manual finalizada. Revisa logs y FTP.",
+            resultado
+        });
+    } catch (error: any) {
+        // Asegura que, si falla, Express envíe una respuesta 500
+        console.error("Error al ejecutar respaldo manual:", error);
+        res.status(500).json({ mensaje: "Error crítico durante el respaldo.", error: error.message });
+    }
+});
 
 export default router
