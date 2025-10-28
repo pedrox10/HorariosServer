@@ -20,8 +20,7 @@ import {
     crearTerminal, editarGrupo,
     editarTerminal, eliminarGrupo, eliminarInterrupcion,
     eliminarTerminal, getFechaPriMarcacion, getGrupos, getInterrupciones, getSincronizaciones, getTerminal,
-    getTerminales, getTerminalPorIp, respaldarTerminales,
-    sincronizarTerminal
+    getTerminales, getTerminalPorIp, sincronizarTerminal
 } from "./controllers/terminal.controller";
 import {
     asignarDiaLibre,
@@ -61,7 +60,7 @@ router.get("/terminal/:id/sincronizaciones", getSincronizaciones);
 router.get("/terminal/:id/interrupciones", getInterrupciones)
 router.post("/terminal/interrupcion/agregar", agregarInterrupcion)
 router.delete("/terminal/interrupcion/:id/eliminar", eliminarInterrupcion)
-router.get("/terminales/respaldar", respaldarTerminales)
+router.get("/terminales/respaldar", ejecutarRespaldoDiario)
 router.get("/terminal/:id/grupos", getGrupos)
 router.post("/terminal/:id/grupos/agregar", agregarGrupo)
 router.put("/terminal/:idTerminal/grupos/editar/:idGrupo", editarGrupo)
@@ -108,20 +107,5 @@ router.get("/terminal/:id/borrar-todo", borrarTodo)
 router.get("/terminal/:id/apagar", apagar)
 router.get("/terminal/:id/reiniciar", reiniciar)
 router.get("/usuario/:idUsuario/clonar/origen/:idOrigen/destino/:idDestino", clonarUsuario)
-
-router.post("/admin/ejecutar-respaldo-test", async (req, res) => {
-    try {
-        // Llama a la función de respaldo sin parámetros req/res
-        const resultado = await ejecutarRespaldoDiario();
-        res.status(200).json({
-            mensaje: "Tarea de respaldo manual finalizada. Revisa logs y FTP.",
-            resultado
-        });
-    } catch (error: any) {
-        // Asegura que, si falla, Express envíe una respuesta 500
-        console.error("Error al ejecutar respaldo manual:", error);
-        res.status(500).json({ mensaje: "Error crítico durante el respaldo.", error: error.message });
-    }
-});
 
 export default router

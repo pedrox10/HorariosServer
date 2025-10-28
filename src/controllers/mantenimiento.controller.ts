@@ -8,6 +8,7 @@ const archiver = require('archiver');
 import { AppDataSource } from "../data-source";
 import { Terminal } from "../entity/Terminal";
 const spawn = require('await-spawn');
+import { Request, Response } from 'express';
 
 // --- Configuración del Servidor FTP ---
 const FTP_CONFIG = {
@@ -47,19 +48,21 @@ function comprimirCarpeta(sourceDir: string, outputZip: string): Promise<void> {
 // ----------------------------------------------------
 // 2. FUNCIÓN PRINCIPAL DE RESPALDO (Para ser llamada por CRON)
 // ----------------------------------------------------
-export const ejecutarRespaldoDiario = async () => {
+export const ejecutarRespaldoDiario = async (req: Request, res: Response) => {
     const resultados: any[] = [];
     const FECHA_HOY = moment().format('DD-MM-YYYY');
-    // Rutas locales
     const DIR_ORIGEN_DIARIO = path.join(RUTA_BASE_RESPALDOS, FECHA_HOY);
     const ARCHIVO_FINAL_ZIP = path.join(RUTA_BASE_RESPALDOS, `${FECHA_HOY}.zip`);
-    // Ruta FTP
     const ARCHIVO_FTP_FINAL = `/respaldos/${FECHA_HOY}.zip`;
     let client: ftp.Client | null = null;
     let subidaExitosa = false;
+    let statusCode = 200; // Por defecto: éxito
+    let finalMessage = 'Respaldo diario finalizado con éxito.';
+    let finalError: string | null = null;
     console.log(`Iniciando respaldo para la fecha: ${FECHA_HOY}`);
 
     try {
+        console.time("RespaldoDiario")
         // PASO 1: Asegurar que la carpeta de fecha exista (Puede estar creada por terminales sin conexión)
         await fsAsync.mkdir(DIR_ORIGEN_DIARIO, { recursive: true });
         // PASO 2: Generar respaldos de terminales con conexión
@@ -118,19 +121,25 @@ export const ejecutarRespaldoDiario = async () => {
         subidaExitosa = true;
         console.log(`Subida FTP exitosa: ${ARCHIVO_FTP_FINAL}`);
     } catch (error) {
-        // Capturará fallos en la conexión FTP, spawn, o errores de I/O
+        statusCode = 500;
+        finalMessage = 'Fallo crítico durante el proceso de respaldo.';
+        finalError = error instanceof Error ? error.message : String(error);
         console.error('Fallo general en la tarea de respaldo:', error);
     } finally {
         // PASO 6: CIERRE DE CONEXIÓN FTP
         if (client) {
             client.close();
         }
-        // Retornar resultados (útil para el log del Cron Job)
-        return {
-            fecha: FECHA_HOY,
-            zip_local: ARCHIVO_FINAL_ZIP,
-            ftp_subido: subidaExitosa,
-            terminal_logs: resultados
-        };
+        res.status(statusCode).json({
+            mensaje: finalMessage,
+            error: finalError,
+            estado: {
+                fecha: FECHA_HOY,
+                zip_local: ARCHIVO_FINAL_ZIP,
+                ftp_subido: subidaExitosa,
+                terminal_logs: resultados
+            }
+        });
+        console.timeEnd("RespaldoDiario")
     }
 };
