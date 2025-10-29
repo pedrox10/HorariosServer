@@ -44,7 +44,6 @@ function comprimirCarpeta(sourceDir: string, outputZip: string): Promise<void> {
         archive.finalize();
     });
 }
-
 // ----------------------------------------------------
 // 2. FUNCIÓN PRINCIPAL DE RESPALDO (Para ser llamada por CRON)
 // ----------------------------------------------------

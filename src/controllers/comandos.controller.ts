@@ -138,3 +138,19 @@ export const editarEnBiometrico = async (req: Request, res: Response) => {
     //let resumenMarcacion = await getReporteMarcaciones(id, ini, fin);
     //res.send(resumenMarcacion);
 }
+
+export const eliminarFuncionarios = async (req: Request, res: Response) => {
+    const { idTerminal , uids } = req.params;
+    const terminal = await Terminal.findOne({where: {id: parseInt(idTerminal)},});
+    const idsUsuarios = uids.split(",");
+    const pyEliminarFuncionarios = 'src/scriptpy/eliminar_usuarios.py';
+    if(terminal) {
+        let args = [terminal.ip, uids];
+        args.unshift(pyEliminarFuncionarios);
+        const pyprogEliminarFuncionarios = await spawn(envPython, args);
+        console.log(pyprogEliminarFuncionarios.toString())
+        //Ya no devuelvo json porque python ya lo hace
+        return res.status(200).send(pyprogEliminarFuncionarios.toString())
+    }
+};
+

@@ -38,7 +38,7 @@ import {
     infoCapacidad,
     infoExtra, reiniciar,
     sincronizarFecha,
-    clonarUsuario
+    clonarUsuario, eliminarFuncionarios
 } from "./controllers/comandos.controller";
 import {ejecutarRespaldoDiario} from "./controllers/mantenimiento.controller";
 
@@ -107,5 +107,6 @@ router.get("/terminal/:id/borrar-todo", borrarTodo)
 router.get("/terminal/:id/apagar", apagar)
 router.get("/terminal/:id/reiniciar", reiniciar)
 router.get("/usuario/:idUsuario/clonar/origen/:idOrigen/destino/:idDestino", clonarUsuario)
+router.get("/terminal/:idTerminal/eliminar-funcionarios/:uids", eliminarFuncionarios)
 
 export default router
