@@ -3,21 +3,22 @@ import sys
 from zk import ZK
 
 # --- Validación de argumentos ---
-if len(sys.argv) < 4:
+if len(sys.argv) < 5:
     print(json.dumps({
         "accion": "clonar",
         "exito": False,
         "tipo": "is-warning",
-        "mensaje": "Formato incorrecto. Uso: copiar_usuario.py <ip_origen> <ip_destino> <uid>"
+        "mensaje": "Comando incorrecto, falla en los parámetros enviados"
     }))
-    sys.exit(1)
+    sys.exit(0)
 
 ip_origen = sys.argv[1]
 ip_destino = sys.argv[2]
 uid = int(sys.argv[3])
+user_id_esperado = sys.argv[4]
 
 # --- Función para obtener usuario y huellas desde el terminal origen ---
-def obtener_usuario_y_huellas(ip, uid):
+def obtener_usuario_y_huellas(ip, uid, user_id_esperado):
     try:
         zk = ZK(ip, port=4370, timeout=10)
         conn = zk.connect()
@@ -29,6 +30,10 @@ def obtener_usuario_y_huellas(ip, uid):
         if not usuario:
             raise Exception("user_not_found")
 
+        # --- Validar si el UID pertenece al funcionario esperado ---
+        if str(usuario.user_id).strip() != str(user_id_esperado).strip():
+            raise Exception(f"uid_reasignado: El UID {uid} pertenece a otro usuario ({usuario.user_id})")
+
         # Obtener huellas
         huellas = []
         for i in range(10):
@@ -38,14 +43,15 @@ def obtener_usuario_y_huellas(ip, uid):
 
         conn.disconnect()
         return usuario, huellas
+
     except Exception as e:
         raise Exception(f"{e}")
 
 # --- Función principal de clonación ---
-def clonar_usuario(origen, destino, uid):
+def clonar_usuario(origen, destino, uid, user_id_esperado):
     try:
         # Conectarse y leer desde origen
-        usuario, huellas = obtener_usuario_y_huellas(origen, uid)
+        usuario, huellas = obtener_usuario_y_huellas(origen, uid, user_id_esperado)
 
         # Conectarse al destino
         zk_dest = ZK(destino, port=4370, timeout=10)
@@ -119,6 +125,15 @@ def clonar_usuario(origen, destino, uid):
         msg = str(e)
         # --- Switch/Match para los tipos de error ---
         match True:
+            case _ if "uid_reasignado" in msg:
+                return {
+                    "accion": "clonar",
+                    "exito": False,
+                    "tipo": "is-warning",
+                    "mensaje": f"El UID {uid} fue reasignado a otro funcionario en el terminal origen",
+                    "excepcion": msg
+                }
+
             case _ if "can't reach device" in msg and ip_origen in msg:
                 return {
                     "accion": "clonar",
@@ -166,7 +181,7 @@ def clonar_usuario(origen, destino, uid):
 
 # --- Ejecución principal ---
 try:
-    resultado = clonar_usuario(ip_origen, ip_destino, uid)
+    resultado = clonar_usuario(ip_origen, ip_destino, uid, user_id_esperado)
     print(json.dumps(resultado))
 except Exception as e:
     print(json.dumps({

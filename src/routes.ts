@@ -106,7 +106,7 @@ router.get("/terminal/:id/borrar-marcaciones", borrarMarcaciones)
 router.get("/terminal/:id/borrar-todo", borrarTodo)
 router.get("/terminal/:id/apagar", apagar)
 router.get("/terminal/:id/reiniciar", reiniciar)
-router.get("/usuario/:idUsuario/clonar/origen/:idOrigen/destino/:idDestino", clonarUsuario)
-router.get("/terminal/:idTerminal/eliminar-funcionarios/:uids", eliminarFuncionarios)
+router.get("/usuario/:idUsuario/ci/:ci/clonar/origen/:idOrigen/destino/:idDestino", clonarUsuario)
+router.get("/terminal/:idTerminal/eliminar-funcionarios/:uids/cis/:cis", eliminarFuncionarios)
 
 export default router

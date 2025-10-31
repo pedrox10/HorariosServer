@@ -117,13 +117,13 @@ export const reiniciar = async (req: Request, res: Response) => {
 }
 
 export const clonarUsuario = async (req: Request, res: Response) => {
-    const {idUsuario, idOrigen, idDestino} = req.params;
+    const {idUsuario, idOrigen, idDestino, ci} = req.params;
     const terminalOrigen = await Terminal.findOne({where: {id: parseInt(idOrigen)},});
     const terminalDestino = await Terminal.findOne({where: {id: parseInt(idDestino)},});
     const usuario = await Usuario.findOne({where: {id: parseInt(idUsuario)},});
     const pyClonar = 'src/scriptpy/clonar_usuario.py';
     if(terminalOrigen && terminalDestino && usuario) {
-        let args = [terminalOrigen.ip, terminalDestino.ip, usuario.uid];
+        let args = [terminalOrigen.ip, terminalDestino.ip, usuario.uid, ci];
         args.unshift(pyClonar);
         const pyprogClonar = await spawn(envPython, args);
         console.log(pyprogClonar.toString())
@@ -140,12 +140,13 @@ export const editarEnBiometrico = async (req: Request, res: Response) => {
 }
 
 export const eliminarFuncionarios = async (req: Request, res: Response) => {
-    const { idTerminal , uids } = req.params;
+    const { idTerminal , uids, cis } = req.params;
     const terminal = await Terminal.findOne({where: {id: parseInt(idTerminal)},});
-    const idsUsuarios = uids.split(",");
+    console.log("terminal: " + idTerminal + " " + uids + " " + cis)
+    //const idsUsuarios = uids.split(",");
     const pyEliminarFuncionarios = 'src/scriptpy/eliminar_usuarios.py';
     if(terminal) {
-        let args = [terminal.ip, uids];
+        let args = [terminal.ip, uids, cis];
         args.unshift(pyEliminarFuncionarios);
         const pyprogEliminarFuncionarios = await spawn(envPython, args);
         console.log(pyprogEliminarFuncionarios.toString())

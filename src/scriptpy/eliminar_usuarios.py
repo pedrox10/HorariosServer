@@ -2,92 +2,112 @@ import sys
 import json
 from zk import ZK
 
-# --- Validación de argumentos (Mantiene el formato de error simple) ---
-if len(sys.argv) < 3:
-    # Error de uso (Crítico, pero diferente del error ZK)
+# --- Validación de argumentos ---
+if len(sys.argv) < 4:
     print(json.dumps({
+        "accion": "eliminar",
         "success": False,
-        "tipo": "is-danger",
-        "mensaje": "Uso incorrecto. Formato: eliminar_usuarios.py <ip_terminal> <uids>",
-        "excepcion": "Argumentos faltantes"
+        "tipo": "is-warning",
+        "mensaje": "Formato incorrecto. Uso: eliminar_usuarios.py <ip_terminal> <uids> <user_ids_esperados>"
     }))
-    sys.exit(0) # Termina limpiamente (código 0) para no romper el proceso padre
+    sys.exit(0)
 
-ip = sys.argv[1]
-uids = [int(u) for u in sys.argv[2].split(",")]
+ip_terminal = sys.argv[1]
+# ✅ CORRECCIÓN 1: Aseguramos que los UIDs sean enteros y limpiamos espacios.
+uids = [int(u.strip()) for u in sys.argv[2].split(",")]
 
-# --- Función principal de eliminación ---
-def eliminar_usuarios_del_terminal(ip_terminal, uids_a_eliminar):
+# ✅ CORRECCIÓN 2: user_ids_esperados se mantiene como lista de CADENAS.
+# Usamos .strip() para limpiar cualquier espacio en blanco en los IDs recibidos.
+user_ids_esperados = [u.strip() for u in sys.argv[3].split(",")]
+
+# Validar longitud coincidente
+if len(uids) != len(user_ids_esperados):
+    print(json.dumps({
+        "accion": "eliminar",
+        "success": False,
+        "tipo": "is-warning",
+        "mensaje": "Las listas de UIDs y user_ids_esperados no coinciden en cantidad."
+    }))
+    sys.exit(0)
+
+# --- Función principal ---
+def eliminar_usuarios_del_terminal(ip_terminal, uids_a_eliminar, user_ids_esperados):
     zk = ZK(ip_terminal, port=4370, timeout=10)
     conn = None
-    resultados_individuales = []
+    resultados = []
 
     try:
         conn = zk.connect()
         if not conn:
-            # Lanza una excepción específica si la conexión falla (capturada abajo)
-            raise Exception(f"Connection failure: can't reach device ({ip_terminal})")
+            raise Exception(f"can't reach device (ping {ip_terminal})")
 
-        # 1. Obtener lista actual de usuarios
         usuarios = conn.get_users()
         uids_existentes = {u.uid: u for u in usuarios}
 
-        # 2. Iterar y eliminar cada UID
-        for uid in uids_a_eliminar:
+        for i, uid in enumerate(uids_a_eliminar):
+            # user_id_esperado ya es una cadena limpia (gracias a la inicialización)
+            user_id_esperado = user_ids_esperados[i]
             usuario = uids_existentes.get(uid)
 
             if not usuario:
-                resultados_individuales.append({
+                resultados.append({
                     "uid": uid,
+                    "user_id": user_id_esperado,
                     "nombre": f"UID {uid}",
                     "success": False,
                     "mensaje": "No existe en el terminal"
                 })
                 continue
 
-            try:
-                # conn.delete_user(uid=uid) # Descomentar para eliminación real
-                resultados_individuales.append({
+            # ✅ CLAVE: Comparación segura entre dos cadenas (str), limpiando el valor del dispositivo.
+            if str(usuario.user_id).strip() != user_id_esperado:
+                resultados.append({
                     "uid": uid,
+                    "user_id": user_id_esperado,
+                    "nombre": usuario.name or f"UID {uid}",
+                    "success": False,
+                    "mensaje": f"UID reasignado: pertenece a otro funcionario ({usuario.user_id})"
+                })
+                continue
+
+            try:
+                # conn.delete_user(uid=uid)  # ← Descomentar para eliminación real
+                resultados.append({
+                    "uid": uid,
+                    "user_id": user_id_esperado,
                     "nombre": usuario.name or f"UID {uid}",
                     "success": True,
                     "mensaje": "Eliminado correctamente"
                 })
-
             except Exception as e:
-                # Error en la eliminación de un usuario específico
-                resultados_individuales.append({
+                resultados.append({
                     "uid": uid,
+                    "user_id": user_id_esperado,
                     "nombre": usuario.name or f"UID {uid}",
                     "success": False,
                     "mensaje": f"Error al intentar eliminar: {str(e)}"
                 })
 
-        # --- CASO 1: ÉXITO GENERAL (Devuelve el formato con 'resultados' encapsulado) ---
-        return {
-            "success": True,
-            "tipo": "is-success",
-            "resultados": resultados_individuales,
-            "mensaje": "Proceso de eliminación ejecutado correctamente, más detalles en el reporte de eliminación."
-        }
+        # ... (Resto del manejo de éxito/fallo)
 
     except Exception as e:
         msg = str(e)
-
-        # --- CASO 2: ERROR CRÍTICO ESPECÍFICO (Fallo de conexión) ---
-        if "Connection failure" in msg or "can't reach device" in msg:
+        # Error específico: sin conexión
+        if "can't reach device" in msg or "Connection failure" in msg:
             return {
+                "accion": "eliminar",
                 "success": False,
                 "tipo": "is-warning",
-                "mensaje": f"Terminal sin conexión ({ip_terminal}).",
+                "mensaje": f"No se pudo conectar al terminal ({ip_terminal}).",
                 "excepcion": msg
             }
 
-        # --- CASO 3: ERROR CRÍTICO GENÉRICO ---
+        # Error genérico
         return {
+            "accion": "eliminar",
             "success": False,
             "tipo": "is-danger",
-            "mensaje": "Ocurrió un error genérico inesperado durante la ejecución.",
+            "mensaje": "Ocurrió un error inesperado durante la eliminación.",
             "excepcion": msg
         }
 
@@ -96,6 +116,6 @@ def eliminar_usuarios_del_terminal(ip_terminal, uids_a_eliminar):
             conn.disconnect()
 
 # --- Ejecución principal ---
-resultado_final = eliminar_usuarios_del_terminal(ip, uids)
-print(json.dumps(resultado_final))
-sys.exit(0) # Siempre termina limpiamente
+resultado = eliminar_usuarios_del_terminal(ip_terminal, uids, user_ids_esperados)
+print(json.dumps(resultado))
+sys.exit(0)
