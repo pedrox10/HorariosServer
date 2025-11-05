@@ -133,17 +133,25 @@ export const clonarUsuario = async (req: Request, res: Response) => {
 }
 
 export const editarEnBiometrico = async (req: Request, res: Response) => {
-    const {idUsuario, idOrigen, idDestino} = req.params;
-    res.status(200).json({accion: "editar_en_biometrico"})
-    //let resumenMarcacion = await getReporteMarcaciones(id, ini, fin);
-    //res.send(resumenMarcacion);
+    const {idTerminal, idUsuario, ci} = req.params;
+    const {nombre, privilegio} = req.body;
+    const terminal = await Terminal.findOne({where: {id: parseInt(idTerminal)},});
+    const usuario = await Usuario.findOne({where: {id: parseInt(idUsuario)},});
+    const pyEditarEnBiometrico = 'src/scriptpy/editar_en_biometrico.py';
+    if(terminal && usuario) {
+        let args = [terminal.ip, usuario.uid, nombre, privilegio, ci];
+        args.unshift(pyEditarEnBiometrico);
+        const pyprogEditarEnBiometrico = await spawn(envPython, args);
+        console.log(pyprogEditarEnBiometrico.toString())
+        //Ya no devuelvo json porque python ya lo hace
+        return res.status(200).send(pyprogEditarEnBiometrico.toString())
+    }
 }
 
 export const eliminarFuncionarios = async (req: Request, res: Response) => {
     const { idTerminal , uids, cis } = req.params;
     const terminal = await Terminal.findOne({where: {id: parseInt(idTerminal)},});
     console.log("terminal: " + idTerminal + " " + uids + " " + cis)
-    //const idsUsuarios = uids.split(",");
     const pyEliminarFuncionarios = 'src/scriptpy/eliminar_usuarios.py';
     if(terminal) {
         let args = [terminal.ip, uids, cis];

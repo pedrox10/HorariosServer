@@ -3,35 +3,22 @@ import json
 from zk import ZK
 
 # --- Validación de argumentos ---
-if len(sys.argv) < 4:
+# Uso: eliminar_usuarios.py <ip_terminal> <uids> [<user_ids>]
+if len(sys.argv) < 3:
     print(json.dumps({
         "accion": "eliminar",
-        "success": False,
-        "tipo": "is-warning",
-        "mensaje": "Formato incorrecto. Uso: eliminar_usuarios.py <ip_terminal> <uids> <user_ids_esperados>"
+        "exito": False,
+        "tipo": "is-danger",
+        "mensaje": "Uso incorrecto. Formato: eliminar_usuarios.py <ip_terminal> <uids> [<user_ids>]",
+        "excepcion": "Argumentos faltantes"
     }))
     sys.exit(0)
 
-ip_terminal = sys.argv[1]
-# ✅ CORRECCIÓN 1: Aseguramos que los UIDs sean enteros y limpiamos espacios.
-uids = [int(u.strip()) for u in sys.argv[2].split(",")]
+ip = sys.argv[1]
+uids = [int(u) for u in sys.argv[2].split(",")]
+user_ids_esperados = sys.argv[3].split(",")
 
-# ✅ CORRECCIÓN 2: user_ids_esperados se mantiene como lista de CADENAS.
-# Usamos .strip() para limpiar cualquier espacio en blanco en los IDs recibidos.
-user_ids_esperados = [u.strip() for u in sys.argv[3].split(",")]
-
-# Validar longitud coincidente
-if len(uids) != len(user_ids_esperados):
-    print(json.dumps({
-        "accion": "eliminar",
-        "success": False,
-        "tipo": "is-warning",
-        "mensaje": "Las listas de UIDs y user_ids_esperados no coinciden en cantidad."
-    }))
-    sys.exit(0)
-
-# --- Función principal ---
-def eliminar_usuarios_del_terminal(ip_terminal, uids_a_eliminar, user_ids_esperados):
+def eliminar_usuarios_del_terminal(ip_terminal, uids_a_eliminar, ids_esperados):
     zk = ZK(ip_terminal, port=4370, timeout=10)
     conn = None
     resultados = []
@@ -39,73 +26,72 @@ def eliminar_usuarios_del_terminal(ip_terminal, uids_a_eliminar, user_ids_espera
     try:
         conn = zk.connect()
         if not conn:
-            raise Exception(f"can't reach device (ping {ip_terminal})")
+            raise Exception(f"Connection failure: can't reach device ({ip_terminal})")
 
         usuarios = conn.get_users()
         uids_existentes = {u.uid: u for u in usuarios}
 
         for i, uid in enumerate(uids_a_eliminar):
-            # user_id_esperado ya es una cadena limpia (gracias a la inicialización)
-            user_id_esperado = user_ids_esperados[i]
+            esperado = ids_esperados[i] if i < len(ids_esperados) else ""
             usuario = uids_existentes.get(uid)
 
             if not usuario:
                 resultados.append({
                     "uid": uid,
-                    "user_id": user_id_esperado,
                     "nombre": f"UID {uid}",
-                    "success": False,
+                    "exito": False,
                     "mensaje": "No existe en el terminal"
                 })
                 continue
 
-            # ✅ CLAVE: Comparación segura entre dos cadenas (str), limpiando el valor del dispositivo.
-            if str(usuario.user_id).strip() != user_id_esperado:
+            # Validar identidad si se envió user_id esperado
+            if esperado and usuario.user_id.strip() != esperado.strip():
                 resultados.append({
                     "uid": uid,
-                    "user_id": user_id_esperado,
                     "nombre": usuario.name or f"UID {uid}",
-                    "success": False,
-                    "mensaje": f"UID reasignado: pertenece a otro funcionario ({usuario.user_id})"
+                    "exito": False,
+                    "mensaje": f"UID {uid} pertenece a otro usuario ({usuario.user_id}), no se eliminó."
                 })
                 continue
 
             try:
-                # conn.delete_user(uid=uid)  # ← Descomentar para eliminación real
+                #conn.delete_user(uid=uid)
                 resultados.append({
                     "uid": uid,
-                    "user_id": user_id_esperado,
                     "nombre": usuario.name or f"UID {uid}",
-                    "success": True,
+                    "exito": True,
                     "mensaje": "Eliminado correctamente"
                 })
             except Exception as e:
                 resultados.append({
                     "uid": uid,
-                    "user_id": user_id_esperado,
                     "nombre": usuario.name or f"UID {uid}",
-                    "success": False,
-                    "mensaje": f"Error al intentar eliminar: {str(e)}"
+                    "exito": False,
+                    "mensaje": f"Error al eliminar: {str(e)}"
                 })
 
-        # ... (Resto del manejo de éxito/fallo)
+        return {
+            "accion": "eliminar",
+            "exito": True,
+            "tipo": "is-success",
+            "mensaje": "Eliminación ejecutada. Revisa los resultados por funcionario.",
+            "resultados": resultados
+        }
 
     except Exception as e:
         msg = str(e)
-        # Error específico: sin conexión
-        if "can't reach device" in msg or "Connection failure" in msg:
+        if "Connection failure" in msg or "can't reach device" in msg:
             return {
                 "accion": "eliminar",
-                "success": False,
+                "exito": False,
                 "tipo": "is-warning",
                 "mensaje": f"No se pudo conectar al terminal ({ip_terminal}).",
                 "excepcion": msg
             }
 
-        # Error genérico
         return {
             "accion": "eliminar",
-            "success": False,
+            "exito": False,
             "tipo": "is-danger",
             "mensaje": "Ocurrió un error inesperado durante la eliminación.",
             "excepcion": msg
@@ -115,7 +101,15 @@ def eliminar_usuarios_del_terminal(ip_terminal, uids_a_eliminar, user_ids_espera
         if conn:
             conn.disconnect()
 
-# --- Ejecución principal ---
-resultado = eliminar_usuarios_del_terminal(ip_terminal, uids, user_ids_esperados)
-print(json.dumps(resultado))
+try:
+    resultado = eliminar_usuarios_del_terminal(ip, uids, user_ids_esperados)
+    print(json.dumps(resultado))
+except Exception as e:
+    print(json.dumps({
+        "accion": "eliminar",
+        "exito": False,
+        "tipo": "is-danger",
+        "mensaje": "Error crítico fuera de la función principal.",
+        "excepcion": str(e)
+    }))
 sys.exit(0)

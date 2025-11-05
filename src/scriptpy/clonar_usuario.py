@@ -3,7 +3,7 @@ import sys
 from zk import ZK
 
 # --- Validación de argumentos ---
-if len(sys.argv) < 5:
+if len(sys.argv) < 4:
     print(json.dumps({
         "accion": "clonar",
         "exito": False,
