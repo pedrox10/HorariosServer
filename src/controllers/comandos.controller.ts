@@ -148,6 +148,21 @@ export const editarEnBiometrico = async (req: Request, res: Response) => {
     }
 }
 
+export const leerEnBiometrico = async (req: Request, res: Response) => {
+    const {idTerminal, idUsuario, ci} = req.params;
+    const terminal = await Terminal.findOne({where: {id: parseInt(idTerminal)},});
+    const usuario = await Usuario.findOne({where: {id: parseInt(idUsuario)},});
+    const pyLeerEnBiometrico = 'src/scriptpy/leer_en_biometrico.py';
+    if(terminal && usuario) {
+        let args = [terminal.ip, usuario.uid, ci];
+        args.unshift(pyLeerEnBiometrico);
+        const pyprogLeerEnBiometrico = await spawn(envPython, args);
+        console.log(pyprogLeerEnBiometrico.toString())
+        //Ya no devuelvo json porque python ya lo hace
+        return res.status(200).send(pyprogLeerEnBiometrico.toString())
+    }
+}
+
 export const eliminarFuncionarios = async (req: Request, res: Response) => {
     const { idTerminal , uids, cis } = req.params;
     const terminal = await Terminal.findOne({where: {id: parseInt(idTerminal)},});

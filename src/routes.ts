@@ -38,7 +38,7 @@ import {
     infoCapacidad,
     infoExtra, reiniciar,
     sincronizarFecha,
-    clonarUsuario, eliminarFuncionarios, editarEnBiometrico
+    clonarUsuario, eliminarFuncionarios, editarEnBiometrico, leerEnBiometrico
 } from "./controllers/comandos.controller";
 import {ejecutarRespaldoDiario} from "./controllers/mantenimiento.controller";
 
@@ -109,5 +109,6 @@ router.get("/terminal/:id/reiniciar", reiniciar)
 router.get("/usuario/:idUsuario/ci/:ci/clonar/origen/:idOrigen/destino/:idDestino", clonarUsuario)
 router.get("/terminal/:idTerminal/eliminar-funcionarios/:uids/cis/:cis", eliminarFuncionarios)
 router.put("/terminal/:idTerminal/editar-en-biometrico/:idUsuario/ci/:ci", editarEnBiometrico)
+router.get("/terminal/:idTerminal/leer-en-biometrico/:idUsuario/ci/:ci", leerEnBiometrico)
 
 export default router

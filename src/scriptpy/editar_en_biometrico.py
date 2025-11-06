@@ -48,7 +48,6 @@ def editar_usuario_en_biometrico(ip_terminal, uid, nuevo_nombre, nuevo_rol, espe
             card=usuario.card
         )
 
-        conn.disconnect()
         return {
             "accion": "editar_en_biometrico",
             "exito": True,
