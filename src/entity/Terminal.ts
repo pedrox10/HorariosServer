@@ -27,6 +27,12 @@ export class  Terminal extends BaseEntity {
     categoria: number
     @Column({ nullable: true })
     tieneConexion: boolean
+    @Column({ type: 'boolean', default: false })
+    porSincronizar: boolean
+    @Column('double', { nullable: true })
+    latitud: number;
+    @Column('double', { nullable: true })
+    longitud: number;
     @OneToMany(() => Usuario, (usuario) => usuario.terminal)
     usuarios: Usuario[]
     @OneToMany(() => Marcacion, (marcacion) => marcacion.terminal)

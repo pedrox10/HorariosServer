@@ -142,9 +142,14 @@ export const editarEnBiometrico = async (req: Request, res: Response) => {
         let args = [terminal.ip, usuario.uid, nombre, privilegio, ci];
         args.unshift(pyEditarEnBiometrico);
         const pyprogEditarEnBiometrico = await spawn(envPython, args);
-        console.log(pyprogEditarEnBiometrico.toString())
+        let respuesta = pyprogEditarEnBiometrico.toString();
+        let respuestaJSON = JSON.parse(respuesta);
+        if(respuestaJSON.exito == true) {
+            terminal.porSincronizar = true;
+            await terminal.save();
+        }
         //Ya no devuelvo json porque python ya lo hace
-        return res.status(200).send(pyprogEditarEnBiometrico.toString())
+        return res.status(200).send(respuesta)
     }
 }
 
@@ -172,9 +177,15 @@ export const eliminarFuncionarios = async (req: Request, res: Response) => {
         let args = [terminal.ip, uids, cis];
         args.unshift(pyEliminarFuncionarios);
         const pyprogEliminarFuncionarios = await spawn(envPython, args);
-        console.log(pyprogEliminarFuncionarios.toString())
-        //Ya no devuelvo json porque python ya lo hace
-        return res.status(200).send(pyprogEliminarFuncionarios.toString())
+        let respuesta = pyprogEliminarFuncionarios.toString();
+        let respuestaJSON = JSON.parse(respuesta);
+        const hayEliminaciones = Array.isArray(respuestaJSON.resultados) ?
+            respuestaJSON.resultados.some((r: any) => r.exito === true) : false;
+        if(hayEliminaciones) {
+            terminal.porSincronizar = true;
+            await terminal.save();
+        }
+        return res.status(200).send(respuesta);
     }
 };
 

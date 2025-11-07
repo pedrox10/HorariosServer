@@ -354,6 +354,7 @@ export const sincronizarTerminal = async (req: Request, res: Response) => {
         terminal.totalMarcaciones = totalMarcaciones;
 
         terminal.ultSincronizacion = moment(horaTerminal, "YYYY-MM-DD[T]HH:mm:ss").toDate();
+        terminal.porSincronizar = false;
         await queryRunner.manager.save(terminal);
         // Si todo sale bien, hacer commit de la transacción
         await queryRunner.commitTransaction();
