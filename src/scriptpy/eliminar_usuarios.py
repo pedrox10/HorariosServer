@@ -55,7 +55,7 @@ def eliminar_usuarios_del_terminal(ip_terminal, uids_a_eliminar, ids_esperados):
                 continue
 
             try:
-                #conn.delete_user(uid=uid)
+                conn.delete_user(uid=uid)
                 resultados.append({
                     "uid": uid,
                     "nombre": usuario.name or f"UID {uid}",
@@ -74,7 +74,7 @@ def eliminar_usuarios_del_terminal(ip_terminal, uids_a_eliminar, ids_esperados):
             "accion": "eliminar",
             "exito": True,
             "tipo": "is-success",
-            "mensaje": "Eliminación ejecutada. Revisa los resultados por funcionario.",
+            "mensaje": "Comando ejecutado correctamente. Revisa los resultados por funcionario.",
             "resultados": resultados
         }
 

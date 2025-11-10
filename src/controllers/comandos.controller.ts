@@ -126,9 +126,14 @@ export const clonarUsuario = async (req: Request, res: Response) => {
         let args = [terminalOrigen.ip, terminalDestino.ip, usuario.uid, ci];
         args.unshift(pyClonar);
         const pyprogClonar = await spawn(envPython, args);
-        console.log(pyprogClonar.toString())
+        let respuesta = pyprogClonar.toString();
+        let respuestaJSON = JSON.parse(respuesta);
+        if(respuestaJSON.exito == true) {
+            terminalDestino.porSincronizar = true;
+            await terminalDestino.save();
+        }
         //Ya no devuelvo json porque python ya lo hace
-        return res.status(200).send(pyprogClonar.toString())
+        return res.status(200).send(respuesta)
     }
 }
 
