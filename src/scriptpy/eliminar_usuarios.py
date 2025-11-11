@@ -38,7 +38,7 @@ def eliminar_usuarios_del_terminal(ip_terminal, uids_a_eliminar, ids_esperados):
             if not usuario:
                 resultados.append({
                     "uid": uid,
-                    "nombre": f"UID {uid}",
+                    "nombre": f"CI: {esperado}",
                     "exito": False,
                     "mensaje": "No existe en el terminal"
                 })
@@ -48,7 +48,7 @@ def eliminar_usuarios_del_terminal(ip_terminal, uids_a_eliminar, ids_esperados):
             if esperado and usuario.user_id.strip() != esperado.strip():
                 resultados.append({
                     "uid": uid,
-                    "nombre": usuario.name or f"UID {uid}",
+                    "nombre": usuario.name or f"CI {esperado}",
                     "exito": False,
                     "mensaje": f"UID {uid} pertenece a otro usuario ({usuario.user_id}), no se eliminó."
                 })
@@ -58,14 +58,14 @@ def eliminar_usuarios_del_terminal(ip_terminal, uids_a_eliminar, ids_esperados):
                 conn.delete_user(uid=uid)
                 resultados.append({
                     "uid": uid,
-                    "nombre": usuario.name or f"UID {uid}",
+                    "nombre": usuario.name or f"CI {esperado}",
                     "exito": True,
                     "mensaje": "Eliminado correctamente"
                 })
             except Exception as e:
                 resultados.append({
                     "uid": uid,
-                    "nombre": usuario.name or f"UID {uid}",
+                    "nombre": usuario.name or f"CI {esperado}",
                     "exito": False,
                     "mensaje": f"Error al eliminar: {str(e)}"
                 })
