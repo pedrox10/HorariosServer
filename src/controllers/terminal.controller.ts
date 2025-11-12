@@ -264,6 +264,26 @@ export const sincronizarTerminal = async (req: Request, res: Response) => {
             modelo = respuesta.modelo;
             horaTerminal = respuesta.hora_terminal;
             totalMarcaciones = respuesta.total_marcaciones;
+
+            let diffMs = moment(horaTerminal).diff(horaServidor);
+            let diffMinAbs = Math.floor(Math.abs(diffMs) / (1000 * 60));
+            const estaAdelantado = diffMs > 0;
+            const direccion = estaAdelantado ? "adelantado" : "retrasado";
+            console.log("HoraTerminal: " + horaTerminal)
+            console.log("HoraServidor: " + horaServidor)
+            if (diffMinAbs > 5) { // tolerancia de 5 minutos
+                // Usamos diffMinAbs para mostrar la magnitud, y direccion para el texto.
+                const minutos = diffMinAbs.toFixed(0);
+                return res.status(400).json({
+                    mensaje: `El reloj del terminal está ${direccion} ${minutos} minutos respecto al servidor.`,
+                    diferencia_minutos: minutos,
+                    desfase: direccion,
+                    advertencia: true,
+                    recomendacion: "Sincronice la hora del biométrico antes de continuar.",
+                    hora_terminal: horaTerminal,
+                    hora_servidor: moment().toISOString(),
+                });
+            }
         } else if (metodo === "POST") {
             console.log("Petición POST recibida");
             info = JSON.parse(req.body.info);
