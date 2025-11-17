@@ -142,3 +142,42 @@ export const ejecutarRespaldoDiario = async (req: Request, res: Response) => {
         console.timeEnd("RespaldoDiario")
     }
 };
+
+export const sincronizarHorasTerminales = async (req: Request, res: Response) => {
+    try {
+        const terminales = await AppDataSource.manager.find(Terminal, { where: { tieneConexion: true } });
+        if (!terminales || terminales.length === 0) {
+            return res.status(200).json({ success: true, mensaje: "No hay terminales conectadas para sincronizar." });
+        }
+        const pySincronizarFecha = 'src/scriptpy/cambiar_fecha.py';
+        const resultados = [];
+
+        for (const terminal of terminales) {
+            try {
+                const horaActualServidor = moment().format("YYYY-MM-DDTHH:mm:ss");
+                let args = [terminal.ip, terminal.puerto];
+                args.push(horaActualServidor);
+                args.unshift(pySincronizarFecha);
+                const pyprogSincronizarFecha = await spawn(envPython, args);
+                const resultadoScript = pyprogSincronizarFecha.toString();
+                resultados.push({
+                    ip: terminal.ip,
+                    resultado: resultadoScript
+                });
+            } catch (e: any) {
+                resultados.push({
+                    ip: terminal.ip,
+                    error: e.message
+                });
+            }
+        }
+        return res.status(200).json({
+            success: true,
+            mensaje: "Sincronización de horas finalizada.",
+            resultados: resultados
+        });
+    } catch (error) {
+        console.error("Error al sincronizar todas las terminales:", error);
+        return res.status(500).json({ success: false, error: "Error interno del servidor durante la sincronización." });
+    }
+};

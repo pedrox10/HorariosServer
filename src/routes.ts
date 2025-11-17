@@ -40,7 +40,7 @@ import {
     sincronizarFecha,
     clonarUsuario, eliminarFuncionarios, editarEnBiometrico, leerEnBiometrico
 } from "./controllers/comandos.controller";
-import {ejecutarRespaldoDiario} from "./controllers/mantenimiento.controller";
+import {ejecutarRespaldoDiario, sincronizarHorasTerminales} from "./controllers/mantenimiento.controller";
 
 const router = Router();
 //Ruta para Login
@@ -66,6 +66,7 @@ router.post("/terminal/:id/grupos/agregar", agregarGrupo)
 router.put("/terminal/:idTerminal/grupos/editar/:idGrupo", editarGrupo)
 router.delete("/terminal/:idTerminal/grupos/eliminar/:idGrupo", eliminarGrupo)
 router.get("/terminal/:id/resincronizar",resincronizar);
+router.get("/terminales/sincronizar-horas", sincronizarHorasTerminales)
 
 // Rutas para operaciones con Usuarios
 router.get("/terminal/:id/usuarios", getUsuarios)
