@@ -384,9 +384,9 @@ export const sincronizarTerminal = async (req: Request, res: Response) => {
                     ...info,
                     usuariosT: usuariosT
                 };
-                let carpeta = terminal.nombre.replace(/\s+/g, '_');
+                let fechaHoy = moment().format('DD-MM-YYYY');
                 const nombreArchivo = `${terminal.nombre.replace(/\s+/g, '_')}_${moment(horaTerminal).format('YYYY-MM-DD_HH-mm-ss')}.json`;
-                const rutaArchivo = path.join(__dirname, '../../respaldos', carpeta, nombreArchivo);
+                const rutaArchivo = path.join(__dirname, '../../respaldos', fechaHoy, nombreArchivo);
                 await fs.mkdir(path.dirname(rutaArchivo), { recursive: true });
                 await fs.writeFile(rutaArchivo, JSON.stringify(jsonParaGuardar, null, 2));
             } catch (fileError: any) {
