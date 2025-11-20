@@ -56,7 +56,7 @@ def leer_usuario_desde_biometrico(ip, uid, esperado=None):
             return {
                 "exito": False,
                 "tipo": "is-danger",
-                "mensaje": f"El funcionario con UID {uid} no existe en el terminal.",
+                "mensaje": f"El funcionario con UID {uid} ya no existe en el terminal.",
                 "excepcion": msg
             }
         elif "uid_reutilizado" in msg:

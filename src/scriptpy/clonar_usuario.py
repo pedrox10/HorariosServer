@@ -118,7 +118,7 @@ def clonar_usuario(origen, destino, uid, user_id_esperado):
             "accion": "clonar",
             "exito": True,
             "tipo": "is-success",
-            "mensaje": f"Usuario '{usuario.user_id}' copiado correctamente de {origen} a {destino}"
+            "mensaje": f"Usuario '{usuario.user_id}' clonado correctamente en destino"
         }
 
     except Exception as e:

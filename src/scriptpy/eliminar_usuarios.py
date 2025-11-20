@@ -40,7 +40,7 @@ def eliminar_usuarios_del_terminal(ip_terminal, uids_a_eliminar, ids_esperados):
                     "uid": uid,
                     "nombre": f"CI: {esperado}",
                     "exito": False,
-                    "mensaje": "No existe en el terminal"
+                    "mensaje": "Ya no existe en el terminal"
                 })
                 continue
 

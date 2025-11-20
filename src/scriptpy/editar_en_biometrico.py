@@ -52,7 +52,7 @@ def editar_usuario_en_biometrico(ip_terminal, uid, nuevo_nombre, nuevo_rol, espe
             "accion": "editar_en_biometrico",
             "exito": True,
             "tipo": "is-success",
-            "mensaje": f"Funcionario '{usuario.user_id}' actualizado correctamente en el biométrico ({ip_terminal})."
+            "mensaje": f"Funcionario '{usuario.user_id}' actualizado correctamente en el biométrico."
         }
 
     except Exception as e:
@@ -78,7 +78,7 @@ def editar_usuario_en_biometrico(ip_terminal, uid, nuevo_nombre, nuevo_rol, espe
                 "accion": "editar_en_biometrico",
                 "exito": False,
                 "tipo": "is-warning",
-                "mensaje": f"El usuario con UID {uid} no existe en el terminal.",
+                "mensaje": f"El usuario con UID {uid} ya no existe en el terminal.",
                 "excepcion": msg
             }
 
