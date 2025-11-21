@@ -9,6 +9,7 @@ export class Excepcion {
     licencia: string
     turno?: string
     esInterrupcion?: boolean
+    esCumpleano?: boolean
     motivo?: string
 
     constructor() {

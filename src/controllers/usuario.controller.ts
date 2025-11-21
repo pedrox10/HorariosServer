@@ -513,6 +513,8 @@ function getLicencia(excepcion: Excepcion): string {
             res = "Excepción de Tickeo"; break;
         case "TO":
             res = "Tolerancia"; break;
+        case "CU":
+            res = "Cumpleaño"; break;
         case "VA":
             res = "Vacación"; break;
         case "BM":
@@ -642,7 +644,7 @@ export async function getReporteMarcaciones(id: string, ini: string, fin: string
             if(respuesta.success) {
                 const solicitudesAprobadas = respuesta.solicitudes ?? [];
                 for (const solicitud of solicitudesAprobadas) {
-                    if (solicitud.tipo === "ET" || solicitud.tipo === "TO") {
+                    if (solicitud.tipo === "ET" || solicitud.tipo === "TO" || solicitud.tipo === "CU") {
                         let fechaInicio = moment(solicitud.fecha_inicio, "YYYY-MM-DD");
                         if (fechaInicio.isSameOrAfter(rangoValido.start) && fechaInicio.isSameOrBefore(rangoValido.end)) {
                             let excepcion = new Excepcion();
@@ -652,6 +654,8 @@ export async function getReporteMarcaciones(id: string, ini: string, fin: string
                             excepcion.licencia = solicitud.tipo;
                             excepcion.horaIni = solicitud.hora_inicio;
                             excepcion.horaFin = solicitud.hora_fin;
+                            if(solicitud.tipo === "CU")
+                                excepcion.esCumpleano = true;
                             excepcionesRangoHoras.push(excepcion);
                         }
                     } else {
@@ -940,6 +944,9 @@ export async function getReporteMarcaciones(id: string, ini: string, fin: string
                                                 if(excepcionTickeo.esInterrupcion) {
                                                     priEntExcepcion.esInterrupcion = excepcionTickeo.esInterrupcion
                                                     priEntExcepcion.motivo = excepcionTickeo.motivo
+                                                } else {
+                                                    if(excepcionTickeo.esCumpleano)
+                                                        priEntExcepcion.esCumpleano = excepcionTickeo.esCumpleano
                                                 }
                                             }
                                         }
@@ -962,6 +969,9 @@ export async function getReporteMarcaciones(id: string, ini: string, fin: string
                                                 if(excepcionTickeo.esInterrupcion) {
                                                     priSalExcepcion.esInterrupcion = excepcionTickeo.esInterrupcion
                                                     priSalExcepcion.motivo = excepcionTickeo.motivo
+                                                } else {
+                                                    if(excepcionTickeo.esCumpleano)
+                                                        priSalExcepcion.esCumpleano = excepcionTickeo.esCumpleano
                                                 }
                                             }
                                         }
@@ -982,6 +992,9 @@ export async function getReporteMarcaciones(id: string, ini: string, fin: string
                                                 if(excepcionTickeo.esInterrupcion) {
                                                     segEntExcepcion.esInterrupcion = excepcionTickeo.esInterrupcion
                                                     segEntExcepcion.motivo = excepcionTickeo.motivo
+                                                } else {
+                                                    if(excepcionTickeo.esCumpleano)
+                                                        segEntExcepcion.esCumpleano = excepcionTickeo.esCumpleano
                                                 }
                                             }
                                         }
@@ -999,6 +1012,9 @@ export async function getReporteMarcaciones(id: string, ini: string, fin: string
                                                 if(excepcionTickeo.esInterrupcion) {
                                                     segSalExcepcion.esInterrupcion = excepcionTickeo.esInterrupcion
                                                     segSalExcepcion.motivo = excepcionTickeo.motivo
+                                                } else {
+                                                    if(excepcionTickeo.esCumpleano)
+                                                        segSalExcepcion.esCumpleano = excepcionTickeo.esCumpleano
                                                 }
                                             }
                                         }
