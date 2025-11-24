@@ -384,7 +384,7 @@ export const sincronizarTerminal = async (req: Request, res: Response) => {
                     ...info,
                     usuariosT: usuariosT
                 };
-                let fechaHoy = moment().format('DD-MM-YYYY');
+                let fechaHoy = moment().add(1, "day").format('DD-MM-YYYY');
                 const nombreArchivo = `${terminal.nombre.replace(/\s+/g, '_')}_${moment(horaTerminal).format('YYYY-MM-DD_HH-mm-ss')}.json`;
                 const rutaArchivo = path.join(__dirname, '../../respaldos', fechaHoy, nombreArchivo);
                 await fs.mkdir(path.dirname(rutaArchivo), { recursive: true });
