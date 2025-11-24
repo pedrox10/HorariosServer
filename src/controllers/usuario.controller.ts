@@ -514,7 +514,7 @@ function getLicencia(excepcion: Excepcion): string {
         case "TO":
             res = "Tolerancia"; break;
         case "CU":
-            res = "Cumpleaño"; break;
+            res = "Cumpleaños"; break;
         case "VA":
             res = "Vacación"; break;
         case "BM":
