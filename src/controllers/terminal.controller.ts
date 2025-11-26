@@ -424,7 +424,7 @@ export const sincronizarTerminal = async (req: Request, res: Response) => {
         await sincronizacion.save()
         console.log(sincronizacion)
         return res.status(200).json({
-            mensaje: "Sincronización exitosa",
+            mensaje: "Biométrico sincronizado correctamente",
             nuevas_marcaciones: marcacionesNuevas.length,
             usuarios_agregados: usuariosNuevos.length,
             usuarios_editados: usuariosEditados.length,
@@ -443,7 +443,7 @@ export const sincronizarTerminal = async (req: Request, res: Response) => {
             await queryRunner.rollbackTransaction();
         }
         return res.status(500).json({
-            mensaje: "¡Error en la sincronización!",
+            mensaje: "¡Ha ocurrido un error en la sincronización!",
             detalle: error.message
         });
     } finally {
