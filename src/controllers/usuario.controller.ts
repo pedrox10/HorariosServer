@@ -425,7 +425,18 @@ async function getSolicitudesAprobadasPorCI(ci: number) {
                 solicitudesAprobadas.push(solicitud)
             }
         }
-        return {success: true, solicitudes: solicitudesAprobadas, alta: fechaAlta, baja: fechaBaja, rotacion: fechaRotacion}
+
+        const { data: contenidos} = await axios.get(`${BASE_URL}/contenido`, HEADERS);
+        const mapaContenidos = new Map(
+            contenidos.map((c: any) => [c._id.toString(), c.denominacion])
+        );
+        const solicitudesEnriquecidas = solicitudesAprobadas.map((s) => {
+            const tipo = s.id_contenido ? mapaContenidos.get(s.id_contenido.toString()) : null;
+            const { id_contenido, ...resto } = s;
+            return { ...resto, tipo };
+        });
+
+        return {success: true, solicitudes: solicitudesEnriquecidas, alta: fechaAlta, baja: fechaBaja, rotacion: fechaRotacion}
 
     } catch (error: any) {
         console.error("Error al obtener solicitudes aprobadas:", error.response?.data || error.message);
