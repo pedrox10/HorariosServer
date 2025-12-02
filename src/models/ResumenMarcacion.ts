@@ -23,6 +23,7 @@ export class ResumenMarcacion{
     totalVacaciones: number;
     totalBajas: number;
     totalPermisosSG: number;
+    totalPermisosCG: number;
     totalPermisos: number;
     totalLicencias: number;
     totalCapacitaciones: number;

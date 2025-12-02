@@ -17,7 +17,8 @@ export enum EstadoJornada {
     sin_registros,
     ausencia,
     teletrabajo,
-    capacitacion
+    capacitacion,
+    permiso_cg
 }
 
 @Entity()

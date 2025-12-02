@@ -722,6 +722,7 @@ export async function getReporteMarcaciones(id: string, ini: string, fin: string
             let totalExcTickeos: number = 0
             let totalInterrupciones: number = 0
             let totalPermisosSG: number = 0
+            let totalPermisosCG: number = 0
             let totalVacaciones: number = 0
             let totalBajas: number = 0
             let totalTolerancias: number = 0
@@ -828,7 +829,9 @@ export async function getReporteMarcaciones(id: string, ini: string, fin: string
                                     case "BM":
                                         jornada.estado = EstadoJornada.baja_medica; break;
                                     case "SG":
-                                        jornada.estado = EstadoJornada.permiso_sg; break;
+                                        jornada.estado = EstadoJornada.permiso_sg; break
+                                    case "CG":
+                                        jornada.estado = EstadoJornada.permiso_cg; break;
                                     case "PO":
                                         jornada.estado = EstadoJornada.permiso; break;
                                     case "LI":
@@ -867,6 +870,12 @@ export async function getReporteMarcaciones(id: string, ini: string, fin: string
                                         infoMarcacion.horario.nombre = "PermisoSG"
                                         infoMarcacion.estado = EstadoJornada.permiso_sg
                                         totalPermisosSG++;
+                                        break;
+                                    case EstadoJornada.permiso_cg:
+                                        infoMarcacion.horario.color = "#a7c454";
+                                        infoMarcacion.horario.nombre = "PermisoCG"
+                                        infoMarcacion.estado = EstadoJornada.permiso_cg
+                                        totalPermisosCG++;
                                         break;
                                     case EstadoJornada.permiso:
                                         infoMarcacion.horario.color = "#939393";
@@ -914,6 +923,8 @@ export async function getReporteMarcaciones(id: string, ini: string, fin: string
                                             totalBajas = totalBajas + 0.5; break;
                                         case "SG":
                                             totalPermisosSG = totalPermisosSG + 0.5; break;
+                                        case "CG":
+                                            totalPermisosCG = totalPermisosCG + 0.5; break;
                                         case "PO":
                                             totalPermisos = totalPermisos + 0.5; break;
                                         case "LI":
@@ -1362,10 +1373,11 @@ export async function getReporteMarcaciones(id: string, ini: string, fin: string
             resumenMarcacion.totalVacaciones = totalVacaciones
             resumenMarcacion.totalBajas = totalBajas
             resumenMarcacion.totalPermisosSG = totalPermisosSG
+            resumenMarcacion.totalPermisosCG = totalPermisosCG
             resumenMarcacion.totalPermisos = totalPermisos
             resumenMarcacion.totalLicencias = totalLicencias
             resumenMarcacion.totalCapacitaciones = totalCapacitaciones
-            resumenMarcacion.totalOtros = totalPermisos + totalLicencias + totalCapacitaciones;
+            resumenMarcacion.totalOtros = totalPermisos + totalLicencias + totalCapacitaciones + totalPermisosCG;
             return resumenMarcacion;
         }
     }
