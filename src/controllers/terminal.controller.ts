@@ -1,4 +1,3 @@
-
 import {Request, Response} from "express"
 import {Terminal} from "../entity/Terminal";
 import {AppDataSource} from "../data-source";
@@ -8,14 +7,12 @@ import {EstadoUsuario, Usuario} from "../entity/Usuario";
 import moment from 'moment';
 import {Turno} from "../entity/Turno";
 import {Jornada} from "../entity/Jornada";
-import {Between, EntityManager, MoreThanOrEqual, Not, QueryRunner} from "typeorm";
+import {EntityManager, MoreThanOrEqual, Not, QueryRunner} from "typeorm";
 import {Sincronizacion} from "../entity/Sincronizacion";
 import {Interrupcion} from "../entity/Interrupcion";
-import { promises as fs } from 'fs';
+import {promises as fs} from 'fs';
 import logger from "../logger/logger";
 import {Grupo} from "../entity/Grupo";
-import * as ftp from 'basic-ftp';
-import { Readable } from 'stream';
 
 const envPython = path.join(__dirname, "../scriptpy/envpy", "bin", "python3");
 const spawn = require('await-spawn');
@@ -193,6 +190,9 @@ export const getTerminalPorIp = async (req: Request, res: Response) => {
         if (!terminal) {
             return res.status(404).json({ exito: false, respuesta: "Terminal no encontrado en el servidor.\nSe debe agregar antes"});
         }
+        terminal.usuarios = terminal.usuarios.filter(
+            u => u.estado !== EstadoUsuario.eliminado
+        );
         //console.log(terminal)
         return res.status(200).json({ exito: true, respuesta: terminal});
     } catch (error) {
