@@ -15,6 +15,31 @@ import {Excepcion} from "../models/Excepcion";
 import axios from "axios";
 import {Interrupcion} from "../entity/Interrupcion";
 import {Grupo} from "../entity/Grupo";
+import dns from 'node:dns';
+import http from 'http';
+
+// --- CONFIGURACIÓN GLOBAL (Hacer una sola vez fuera de la función) ---
+// 1. Forzar IPv4 para evitar el timeout de 1s de IPv6
+if (dns.setDefaultResultOrder) {
+    dns.setDefaultResultOrder('ipv4first');
+}
+// 2. Crear un Agente HTTP para reutilizar conexiones (Keep-Alive)
+const organigramaAgent = new http.Agent({
+    keepAlive: true,
+    maxSockets: 100,      // Aprovechando tus 16 núcleos
+    maxFreeSockets: 10,
+    timeout: 60000,
+    keepAliveMsecs: 1000
+});
+// Configuración base de Axios
+const apiOrganigrama = axios.create({
+    baseURL: "http://190.181.22.148:3310",
+    httpAgent: organigramaAgent,
+    timeout: 5000, // Aumentado a 5s porque 500ms es muy arriesgado para red interna
+    headers: {
+        "X-Access-Code": "ga8f0051d6ff90ff485359f626060aa0fe38fc2c451c184f337ae146e4cd7eefcb8497011ee63534e4afd7eedf65fc1d9017f67c2385bc85b392b862a7bedfd6g"
+    }
+});
 
 const momentExt = extendMoment(MomentExt);
 
@@ -381,66 +406,60 @@ export async function ultMarcacion(usuario: Usuario, terminal: Terminal) {
 }
 
 async function getSolicitudesAprobadasPorCI(ci: number) {
-    const ACCESS_CODE = "ga8f0051d6ff90ff485359f626060aa0fe38fc2c451c184f337ae146e4cd7eefcb8497011ee63534e4afd7eedf65fc1d9017f67c2385bc85b392b862a7bedfd6g";
-    const BASE_URL = "http://190.181.22.148:3310";
-    const HEADERS = { headers: { "X-Access-Code": ACCESS_CODE}, timeout: 500 };
-    let solicitudesAprobadas = [];
-    let fechaAlta: string;
-    let fechaBaja: string;
+    let fechaAlta: string = "";
+    let fechaBaja: string = "";
     let fechaRotacion: string = "";
 
     try {
-        // 1. Busqueda del funcionario por CI
-        const { data: funcionarios } = await axios.get(`${BASE_URL}/funcionario/filtro/ci/${ci}`, HEADERS);
+        const { data: funcionarios } = await apiOrganigrama.get(`/funcionario/filtro/ci/${ci}`);
         const funcionario = funcionarios?.[0];
-        if (!funcionario) {
-            return {success: false, error: "Número de CI no encontrado en Organigrama"}
-        }
-        // 2. Buscar todos los registros del funcionario sea activo o no
-        const { data: registros } = await axios.get(`${BASE_URL}/registro/filtro/id_funcionario/${funcionario._id}`, HEADERS);
-        if (!registros.length) {
-            return {success: false, error: "El funcionario no tiene registros"}
-        }
-        // 3. Obtengo el registro mas reciente y determinar si es activo o no
-        const registroMasReciente = registros.reduce((prev: any, curr: any) => {
-            return moment(curr.fecha_conclusion).isAfter(prev.fecha_conclusion) ? curr : prev;
-        });
-        if(registroMasReciente.estado) {
+        if (!funcionario) return { success: false, error: "Número de CI no encontrado" };
+
+        // Llamadas en paralelo para ahorrar tiempo
+        const [regRes, contRes] = await Promise.all([
+            apiOrganigrama.get(`/registro/filtro/id_funcionario/${funcionario._id}`),
+            apiOrganigrama.get(`/contenido`)
+        ]);
+        const registros = regRes.data;
+        const contenidos = contRes.data;
+        if (!registros.length) return { success: false, error: "El funcionario no tiene registros" };
+
+        const registroMasReciente = registros.reduce((prev: any, curr: any) =>
+            moment(curr.fecha_conclusion).isAfter(prev.fecha_conclusion) ? curr : prev
+        );
+        if (registroMasReciente.estado) {
             fechaAlta = moment(registroMasReciente.fecha_ingreso).format("DD/MM/YYYY");
-            fechaBaja = "";
-            // Buscar rotaciones activas del registro
-            const { data: rotaciones } = await axios.get(`${BASE_URL}/rotacion/filtro/id_registro/${registroMasReciente._id}`, HEADERS);
-            const rotacionActivo = rotaciones.find((r: any) => registroMasReciente?.id_funcionario && r.estado === true);
-            if (rotacionActivo)
-                fechaRotacion = moment(rotacionActivo.fecha_ingreso).format("DD/MM/YYYY");
+            const { data: rotaciones } = await apiOrganigrama.get(`/rotacion/filtro/id_registro/${registroMasReciente._id}`);
+            const rotacionActiva = rotaciones.find((r: any) => r.estado === true);
+            if (rotacionActiva) fechaRotacion = moment(rotacionActiva.fecha_ingreso).format("DD/MM/YYYY");
         } else {
             fechaAlta = moment(registroMasReciente.fecha_ingreso).format("DD/MM/YYYY");
             fechaBaja = moment(registroMasReciente.fecha_conclusion).format("DD/MM/YYYY");
         }
-        // 4. Iteración por cada registro para obtener solicitudes, los registros obtenidos son tanto de alta como de baja, esto con el objetivo de obtener los registros si un funcionario cambio durante el mes de cargo y asi obtener ambos registros
-        for (const registro of registros) {
-            const { data: solicitudes } = await axios.get(`${BASE_URL}/solicitud/filtro/id_registro/${registro._id}`, HEADERS);
-            const aprobadas = solicitudes.filter((s: any) => s.estado === 'APROBADO');
-            for(let solicitud of aprobadas) {
-                solicitudesAprobadas.push(solicitud)
-            }
-        }
-
-        const { data: contenidos} = await axios.get(`${BASE_URL}/contenido`, HEADERS);
-        const mapaContenidos = new Map(
-            contenidos.map((c: any) => [c._id.toString(), c.denominacion])
+        // Paralelismo total en las solicitudes de todos los registros
+        const solicitudesResultados = await Promise.all(
+            registros.map((reg: any) => apiOrganigrama.get(`/solicitud/filtro/id_registro/${reg._id}`))
         );
-        const solicitudesEnriquecidas = solicitudesAprobadas.map((s) => {
-            const tipo = s.id_contenido ? mapaContenidos.get(s.id_contenido.toString()) : null;
-            const { id_contenido, ...resto } = s;
-            return { ...resto, tipo };
-        });
+        const solicitudesAprobadas = solicitudesResultados
+            .flatMap(res => res.data)
+            .filter((s: any) => s.estado === 'APROBADO');
 
-        return {success: true, solicitudes: solicitudesEnriquecidas, alta: fechaAlta, baja: fechaBaja, rotacion: fechaRotacion}
-
+        const mapaContenidos = new Map(contenidos.map((c: any) => [c._id.toString(), c.denominacion]));
+        const solicitudesEnriquecidas = solicitudesAprobadas.map((s) => ({
+            ...s,
+            tipo: s.id_contenido ? mapaContenidos.get(s.id_contenido.toString()) : null,
+            id_contenido: undefined
+        }));
+        return {
+            success: true,
+            solicitudes: solicitudesEnriquecidas,
+            alta: fechaAlta,
+            baja: fechaBaja,
+            rotacion: fechaRotacion
+        };
     } catch (error: any) {
-        console.error("Error al obtener solicitudes aprobadas:", error.response?.data || error.message);
-        return {success: false, error: "No hay conexión a Organigrama"}
+        console.error("Error en Organigrama:", error.message);
+        return { success: false, error: "Error de comunicación con el servidor de Organigrama" };
     }
 }
 
@@ -651,7 +670,7 @@ export async function getReporteMarcaciones(id: string, ini: string, fin: string
             console.timeEnd("FeriadosInterrupciones")
             console.time("Organigram")
             let respuesta = await getSolicitudesAprobadasPorCI(usuario.ci)
-            console.log(respuesta)
+            //console.log(respuesta)
             if(respuesta.success) {
                 const solicitudesAprobadas = respuesta.solicitudes ?? [];
                 for (const solicitud of solicitudesAprobadas) {
@@ -1405,8 +1424,8 @@ export function generarInfoOrganigrama(respuesta: RespuestaOrganigrama, rangoVal
     const tieneRotacion = !!respuesta.rotacion;
 
     const altaEnRango = tieneAlta && rangoValido.contains( moment(respuesta.alta, "DD/MM/YYYY").toDate(),
-            { excludeStart: false, excludeEnd: false }
-        );
+        { excludeStart: false, excludeEnd: false }
+    );
 
     if (tieneBaja) {
         if (altaEnRango) {
