@@ -173,11 +173,12 @@ export const getInterrupciones = async (req: Request, res: Response) => {
 };
 
 export const getFechaPriMarcacion = async (req: Request, res: Response) => {
-    const {id} = req.params;
-    const terminal = await Terminal.findOne({where: {id: parseInt(id)}, relations: {marcaciones: true}});
-    console.log(terminal?.marcaciones[0].fecha)
-    res.send(JSON.stringify(terminal?.marcaciones[0].fecha))
-}
+    const id = parseInt(req.params.id);
+    const marcacion = await AppDataSource.getRepository(Marcacion).createQueryBuilder("m")
+        .select("m.fecha").where("m.terminalId = :id", { id })
+        .orderBy("m.fecha", "ASC").limit(1).getOne();
+    res.json(marcacion?.fecha ?? null);
+};
 
 export const getTerminalPorIp = async (req: Request, res: Response) => {
     const {ip} = req.params;
@@ -508,7 +509,7 @@ async function eliminarUsuario(usuario: Usuario, terminal: Terminal, queryRunner
     // Eliminar turnos si hay alguno
     if (turnosBorrar.length > 0) {
         await queryRunner.manager.remove(Turno, turnosBorrar);
-     }
+    }
     //Borramos las jornadas restantes
     logger.info(`Usuario eliminado: ${usuario.nombre} (CI: ${usuario.ci}) desde terminal "${terminal.nombre}"`);
     await queryRunner.manager.delete(Usuario, { id: usuario.id });

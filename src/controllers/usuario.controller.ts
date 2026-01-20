@@ -33,7 +33,7 @@ const organigramaAgent = new http.Agent({
 });
 // Configuración base de Axios
 const apiOrganigrama = axios.create({
-    baseURL: "http://190.181.22.148:3310",
+    baseURL: "http://10.0.38.77:3310",
     httpAgent: organigramaAgent,
     timeout: 5000, // Aumentado a 5s porque 500ms es muy arriesgado para red interna
     headers: {
@@ -60,29 +60,33 @@ export interface SolicitudAprobada {
 }
 
 export const getUsuarios = async (req: Request, res: Response) => {
-    const {id} = req.params;
-    const terminal = await Terminal.findOne({
-        where: {id: parseInt(id)}
-    });
-    let usuarios = await Usuario.find({ where: {terminal: terminal!}, relations: {grupo: true}} )
+    const { id } = req.params;
 
-    if (usuarios) {
-        for (const usuario of usuarios) {
-            let jornada = await ultJornadaAsignada(usuario.id);
-            if (jornada) {
-                let dia = moment(jornada.fecha).format("DD");
-                let mes = moment(jornada.fecha).format("MMM");
-                usuario.ultAsignacion = "Hasta " + dia + " " + mes;
-            } else {
-                usuario.ultAsignacion = "Sin Asignar"
-                let t = await Terminal.findOne({
-                    where: {id: parseInt(id)}
-                });
-            }
-        }
-        res.send(usuarios)
-    }
-}
+    const usuarios = await Usuario.createQueryBuilder("u")
+        .leftJoinAndSelect("u.grupo", "g")
+        .leftJoin(
+            subQuery => {
+                return subQuery
+                    .select("j.usuarioId", "usuarioId")
+                    .addSelect("MAX(j.fecha)", "fecha")
+                    .from(Jornada, "j")
+                    .groupBy("j.usuarioId");
+            },
+            "ult",
+            "ult.usuarioId = u.id"
+        )
+        .where("u.terminalId = :id", { id })
+        .getRawAndEntities();
+
+    usuarios.entities.forEach((u, i) => {
+        const fecha = usuarios.raw[i]?.ult_fecha;
+        u.ultAsignacion = fecha
+            ? `Hasta ${moment(fecha).format("DD MMM")}`
+            : "Sin Asignar";
+    });
+
+    res.json(usuarios.entities);
+};
 
 export const infoOrganigram = async (req: Request, res: Response) => {
     const {ci} = req.params;
@@ -406,48 +410,79 @@ export async function ultMarcacion(usuario: Usuario, terminal: Terminal) {
 }
 
 async function getSolicitudesAprobadasPorCI(ci: number) {
-    let fechaAlta: string = "";
-    let fechaBaja: string = "";
-    let fechaRotacion: string = "";
-
     try {
         const { data: funcionarios } = await apiOrganigrama.get(`/funcionario/filtro/ci/${ci}`);
         const funcionario = funcionarios?.[0];
-        if (!funcionario) return { success: false, error: "Número de CI no encontrado" };
-
-        // Llamadas en paralelo para ahorrar tiempo
+        if (!funcionario) {
+            return { success: false, error: "Número de CI no encontrado" };
+        }
+        // 🔹 Llamadas paralelas principales
         const [regRes, contRes] = await Promise.all([
             apiOrganigrama.get(`/registro/filtro/id_funcionario/${funcionario._id}`),
             apiOrganigrama.get(`/contenido`)
         ]);
         const registros = regRes.data;
-        const contenidos = contRes.data;
-        if (!registros.length) return { success: false, error: "El funcionario no tiene registros" };
-
-        const registroMasReciente = registros.reduce((prev: any, curr: any) =>
-            moment(curr.fecha_conclusion).isAfter(prev.fecha_conclusion) ? curr : prev
-        );
-        if (registroMasReciente.estado) {
-            fechaAlta = moment(registroMasReciente.fecha_ingreso).format("DD/MM/YYYY");
-            const { data: rotaciones } = await apiOrganigrama.get(`/rotacion/filtro/id_registro/${registroMasReciente._id}`);
-            const rotacionActiva = rotaciones.find((r: any) => r.estado === true);
-            if (rotacionActiva) fechaRotacion = moment(rotacionActiva.fecha_ingreso).format("DD/MM/YYYY");
-        } else {
-            fechaAlta = moment(registroMasReciente.fecha_ingreso).format("DD/MM/YYYY");
-            fechaBaja = moment(registroMasReciente.fecha_conclusion).format("DD/MM/YYYY");
+        if (!registros.length) {
+            return { success: false, error: "El funcionario no tiene registros" };
         }
-        // Paralelismo total en las solicitudes de todos los registros
-        const solicitudesResultados = await Promise.all(
-            registros.map((reg: any) => apiOrganigrama.get(`/solicitud/filtro/id_registro/${reg._id}`))
-        );
-        const solicitudesAprobadas = solicitudesResultados
-            .flatMap(res => res.data)
-            .filter((s: any) => s.estado === 'APROBADO');
+        // 🔹 Precalcular timestamps UNA VEZ
+        let registroMasReciente = registros[0];
+        let tsMasReciente = moment(registroMasReciente.fecha_conclusion).valueOf();
+        for (let i = 1; i < registros.length; i++) {
+            const tsActual = moment(registros[i].fecha_conclusion).valueOf();
+            if (tsActual > tsMasReciente) {
+                tsMasReciente = tsActual;
+                registroMasReciente = registros[i];
+            }
+        }
+        let fechaAlta = "";
+        let fechaBaja = "";
+        let fechaRotacion = "";
+        // 🔹 Fechas base (una sola vez)
+        const fechaIngresoTS = moment(registroMasReciente.fecha_ingreso);
+        const fechaConclusionTS = registroMasReciente.fecha_conclusion
+            ? moment(registroMasReciente.fecha_conclusion)
+            : null;
+        if (registroMasReciente.estado) {
+            fechaAlta = fechaIngresoTS.format("DD/MM/YYYY");
 
-        const mapaContenidos = new Map(contenidos.map((c: any) => [c._id.toString(), c.denominacion]));
-        const solicitudesEnriquecidas = solicitudesAprobadas.map((s) => ({
+            const { data: rotaciones } = await apiOrganigrama.get(
+                `/rotacion/filtro/id_registro/${registroMasReciente._id}`
+            );
+            const rotacionActiva = rotaciones.find((r: any) => r.estado === true);
+            if (rotacionActiva) {
+                fechaRotacion = moment(rotacionActiva.fecha_ingreso).format("DD/MM/YYYY");
+            }
+        } else {
+            fechaAlta = fechaIngresoTS.format("DD/MM/YYYY");
+            if (fechaConclusionTS) {
+                fechaBaja = fechaConclusionTS.format("DD/MM/YYYY");
+            }
+        }
+        // 🔹 Solicitudes en paralelo
+        const solicitudesResultados = await Promise.all(
+            registros.map((reg: any) =>
+                apiOrganigrama.get(`/solicitud/filtro/id_registro/${reg._id}`)
+            )
+        );
+        const solicitudesAprobadas = [];
+        for (const res of solicitudesResultados) {
+            for (const s of res.data) {
+                if (s.estado === 'APROBADO') {
+                    solicitudesAprobadas.push(s);
+                }
+            }
+        }
+        // 🔹 Map de contenidos (O(1))
+        const mapaContenidos = new Map<string, string>();
+        for (const c of contRes.data) {
+            mapaContenidos.set(c._id.toString(), c.denominacion);
+        }
+        const solicitudesEnriquecidas = solicitudesAprobadas.map((s: any) => ({
             ...s,
-            tipo: s.id_contenido ? mapaContenidos.get(s.id_contenido.toString()) : null,
+            tipo: s.id_contenido
+                ? mapaContenidos.get(s.id_contenido.toString()) ?? null
+                : null,
             id_contenido: undefined
         }));
         return {
@@ -457,9 +492,10 @@ async function getSolicitudesAprobadasPorCI(ci: number) {
             baja: fechaBaja,
             rotacion: fechaRotacion
         };
+
     } catch (error: any) {
         console.error("Error en Organigrama:", error.message);
-        return { success: false, error: "Error de comunicación con el servidor de Organigrama" };
+        return { success: false, error: "No hay conexión a Organigrama" };
     }
 }
 
@@ -670,7 +706,7 @@ export async function getReporteMarcaciones(id: string, ini: string, fin: string
             console.timeEnd("FeriadosInterrupciones")
             console.time("Organigram")
             let respuesta = await getSolicitudesAprobadasPorCI(usuario.ci)
-            //console.log(respuesta)
+            console.log(respuesta)
             if(respuesta.success) {
                 const solicitudesAprobadas = respuesta.solicitudes ?? [];
                 for (const solicitud of solicitudesAprobadas) {
@@ -1426,14 +1462,12 @@ export function generarInfoOrganigrama(respuesta: RespuestaOrganigrama, rangoVal
     const altaEnRango = tieneAlta && rangoValido.contains( moment(respuesta.alta, "DD/MM/YYYY").toDate(),
         { excludeStart: false, excludeEnd: false }
     );
-
     if (tieneBaja) {
         if (altaEnRango) {
             return { alta: respuesta.alta, baja: respuesta.baja };
         }
         return { baja: respuesta.baja };
     }
-
     if (tieneRotacion) {
         const info: any = { rotacion: respuesta.rotacion };
         if (altaEnRango)
