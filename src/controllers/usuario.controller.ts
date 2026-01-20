@@ -33,7 +33,7 @@ const organigramaAgent = new http.Agent({
 });
 // Configuración base de Axios
 const apiOrganigrama = axios.create({
-    baseURL: "http://10.0.38.77:3310",
+    baseURL: "http://190.181.22.148:3395",
     httpAgent: organigramaAgent,
     timeout: 5000, // Aumentado a 5s porque 500ms es muy arriesgado para red interna
     headers: {
@@ -61,30 +61,30 @@ export interface SolicitudAprobada {
 
 export const getUsuarios = async (req: Request, res: Response) => {
     const { id } = req.params;
-
     const usuarios = await Usuario.createQueryBuilder("u")
         .leftJoinAndSelect("u.grupo", "g")
         .leftJoin(
             subQuery => {
                 return subQuery
                     .select("j.usuarioId", "usuarioId")
-                    .addSelect("MAX(j.fecha)", "fecha")
+                    .addSelect("MAX(j.fecha)", "ultFecha")
                     .from(Jornada, "j")
                     .groupBy("j.usuarioId");
             },
             "ult",
             "ult.usuarioId = u.id"
         )
+        .addSelect("ult.ultFecha", "ultFecha")
         .where("u.terminalId = :id", { id })
         .getRawAndEntities();
 
     usuarios.entities.forEach((u, i) => {
-        const fecha = usuarios.raw[i]?.ult_fecha;
+        const fecha = usuarios.raw[i]?.ultFecha;
         u.ultAsignacion = fecha
             ? `Hasta ${moment(fecha).format("DD MMM")}`
             : "Sin Asignar";
     });
-
+    //console.log(usuarios.entities)
     res.json(usuarios.entities);
 };
 
