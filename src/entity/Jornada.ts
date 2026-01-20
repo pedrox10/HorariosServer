@@ -1,4 +1,4 @@
-import {Entity, Column, PrimaryGeneratedColumn, ManyToOne, OneToOne, JoinColumn, BaseEntity} from "typeorm"
+import {Entity, Column, PrimaryGeneratedColumn, ManyToOne, OneToOne, JoinColumn, BaseEntity, Index} from "typeorm"
 import {Horario} from "./Horario";
 import {EstadoUsuario, Usuario} from "./Usuario";
 import {Turno} from "./Turno";
@@ -22,6 +22,7 @@ export enum EstadoJornada {
 }
 
 @Entity()
+@Index(["usuario", "fecha"])
 export class Jornada extends BaseEntity {
     @PrimaryGeneratedColumn()
     id: number;

@@ -4,7 +4,7 @@ import {
     PrimaryGeneratedColumn,
     OneToMany,
     BaseEntity,
-    ManyToOne,
+    ManyToOne, Index,
 } from "typeorm"
 import {Terminal} from "./Terminal";
 import {Jornada} from "./Jornada";
@@ -17,6 +17,7 @@ export enum EstadoUsuario {
 }
 
 @Entity()
+@Index(["terminal"])
 export class Usuario extends BaseEntity{
     @PrimaryGeneratedColumn()
     id:number;

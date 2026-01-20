@@ -1,7 +1,8 @@
-import {BaseEntity, Column, Entity, ManyToOne, PrimaryGeneratedColumn} from "typeorm";
+import {BaseEntity, Column, Entity, Index, ManyToOne, PrimaryGeneratedColumn} from "typeorm";
 import {Terminal} from "./Terminal";
 
 @Entity()
+@Index(["terminal", "fecha"])
 export class Marcacion extends BaseEntity {
     @PrimaryGeneratedColumn()
     id: number;
