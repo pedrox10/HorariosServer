@@ -16,7 +16,7 @@ try:
     data = {
         "success": True,
         "mensaje": "Asistencias borradas correctamente",
-        "marcaciones_restantes": len(records)
+        "num_marcaciones": len(records)
     }
     print(json.dumps(data))
     conn.disconnect()

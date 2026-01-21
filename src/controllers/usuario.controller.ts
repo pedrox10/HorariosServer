@@ -706,7 +706,7 @@ export async function getReporteMarcaciones(id: string, ini: string, fin: string
             console.timeEnd("FeriadosInterrupciones")
             console.time("Organigram")
             let respuesta = await getSolicitudesAprobadasPorCI(usuario.ci)
-            console.log(respuesta)
+            //console.log(respuesta)
             if(respuesta.success) {
                 const solicitudesAprobadas = respuesta.solicitudes ?? [];
                 for (const solicitud of solicitudesAprobadas) {

@@ -22,4 +22,6 @@ export class Asueto extends BaseEntity{
     tipo:TipoAsueto
     @Column({nullable: true})
     descripcion:string
+    @Column()
+    gestion:number
 }

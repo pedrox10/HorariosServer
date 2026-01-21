@@ -76,7 +76,14 @@ export const borrarMarcaciones = async (req: Request, res: Response) => {
         let args = [terminal.ip, terminal.puerto];
         args.unshift(pyBorrarMarcaciones);
         const pyprogBorrarMarcaciones = await spawn(envPython, args);
-        return res.status(200).json(pyprogBorrarMarcaciones.toString())
+        let respuesta = pyprogBorrarMarcaciones.toString();
+        let respuestaJSON = JSON.parse(respuesta);
+        if(respuestaJSON.success == true) {
+            terminal.totalMarcaciones = parseInt(respuestaJSON.num_marcaciones);
+            await terminal.save();
+        }
+        //Ya no devuelvo json porque python ya lo hace
+        return res.status(200).json(respuesta)
     }
 }
 
