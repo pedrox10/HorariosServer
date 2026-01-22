@@ -52,9 +52,9 @@ export const ejecutarRespaldoDiario = async (req: Request, res: Response) => {
     const FECHA_HOY = moment().format('DD-MM-YYYY');
     const DIR_ORIGEN_DIARIO = path.join(RUTA_BASE_RESPALDOS, FECHA_HOY);
     const ARCHIVO_FINAL_ZIP = path.join(RUTA_BASE_RESPALDOS, `${FECHA_HOY}.zip`);
-    const ARCHIVO_FTP_FINAL = `/respaldos/${FECHA_HOY}.zip`;
+    /*const ARCHIVO_FTP_FINAL = `/respaldos/${FECHA_HOY}.zip`;
     let client: ftp.Client | null = null;
-    let subidaExitosa = false;
+    let subidaExitosa = false;*/
     let statusCode = 200; // Por defecto: éxito
     let finalMessage = 'Respaldo diario finalizado con éxito.';
     let finalError: string | null = null;
@@ -111,14 +111,14 @@ export const ejecutarRespaldoDiario = async (req: Request, res: Response) => {
         await fsAsync.rm(DIR_ORIGEN_DIARIO, { recursive: true, force: true });
         console.log(`Limpieza exitosa: Carpeta de origen ${DIR_ORIGEN_DIARIO} eliminada.`);
         // PASO 5: SUBIDA ÚNICA POR FTP
-        client = new ftp.Client();
+        /*client = new ftp.Client();
         await client.access(FTP_CONFIG);
         await client.ensureDir(path.dirname(ARCHIVO_FTP_FINAL));
         // Usar fs (Streams) para la lectura del ZIP
         const streamRespaldo = fs.createReadStream(ARCHIVO_FINAL_ZIP);
         await client.uploadFrom(streamRespaldo, ARCHIVO_FTP_FINAL);
         subidaExitosa = true;
-        console.log(`Subida FTP exitosa: ${ARCHIVO_FTP_FINAL}`);
+        console.log(`Subida FTP exitosa: ${ARCHIVO_FTP_FINAL}`);*/
     } catch (error) {
         statusCode = 500;
         finalMessage = 'Fallo crítico durante el proceso de respaldo.';
@@ -126,16 +126,16 @@ export const ejecutarRespaldoDiario = async (req: Request, res: Response) => {
         console.error('Fallo general en la tarea de respaldo:', error);
     } finally {
         // PASO 6: CIERRE DE CONEXIÓN FTP
-        if (client) {
+        /*if (client) {
             client.close();
-        }
+        }*/
         res.status(statusCode).json({
             mensaje: finalMessage,
             error: finalError,
             estado: {
                 fecha: FECHA_HOY,
                 zip_local: ARCHIVO_FINAL_ZIP,
-                ftp_subido: subidaExitosa,
+                //ftp_subido: subidaExitosa,
                 terminal_logs: resultados
             }
         });
