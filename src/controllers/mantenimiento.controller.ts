@@ -9,6 +9,7 @@ import { AppDataSource } from "../data-source";
 import { Terminal } from "../entity/Terminal";
 const spawn = require('await-spawn');
 import { Request, Response } from 'express';
+import {sincronizarTerminal} from "./terminal.controller";
 
 // --- Configuración del Servidor FTP ---
 const FTP_CONFIG = {
@@ -181,3 +182,47 @@ export const sincronizarHorasTerminales = async (req: Request, res: Response) =>
         return res.status(500).json({ success: false, error: "Error interno del servidor durante la sincronización." });
     }
 };
+
+export const sincronizarTerminales = async (req: Request, res: Response) => {
+    const resultados: any[] = [];
+    const terminales = await Terminal.find({
+        where: { tieneConexion: true }
+    });
+    for (const terminal of terminales) {
+        try {
+            // 🔁 Llamada directa, sin HTTP
+            await sincronizarTerminalInterno(terminal.id);
+            resultados.push({
+                terminal: terminal.nombre,
+                estado: 'OK'
+            });
+        } catch (error: any) {
+            resultados.push({
+                terminal: terminal.nombre,
+                estado: 'ERROR',
+                detalle: error.message
+            });
+        }
+    }
+    return res.json({
+        mensaje: 'Sincronización nocturna finalizada',
+        total: terminales.length,
+        resultados
+    });
+};
+
+export const generarNotificaciones = async (req: Request, res: Response) => {
+
+}
+
+async function sincronizarTerminalInterno(terminalId: number) {
+    const fakeReq = {
+        params: { id: terminalId.toString() },
+        method: 'GET'
+    } as any;
+    const fakeRes = {
+        status: () => fakeRes,
+        json: () => null
+    } as any;
+    await sincronizarTerminal(fakeReq, fakeRes);
+}

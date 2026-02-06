@@ -40,7 +40,11 @@ import {
     sincronizarFecha,
     clonarUsuario, eliminarFuncionarios, editarEnBiometrico, leerEnBiometrico
 } from "./controllers/comandos.controller";
-import {ejecutarRespaldoDiario, sincronizarHorasTerminales} from "./controllers/mantenimiento.controller";
+import {
+    ejecutarRespaldoDiario,
+    sincronizarHorasTerminales,
+    sincronizarTerminales
+} from "./controllers/mantenimiento.controller";
 
 const router = Router();
 //Ruta para Login
@@ -60,13 +64,11 @@ router.get("/terminal/:id/sincronizaciones", getSincronizaciones);
 router.get("/terminal/:id/interrupciones", getInterrupciones)
 router.post("/terminal/interrupcion/agregar", agregarInterrupcion)
 router.delete("/terminal/interrupcion/:id/eliminar", eliminarInterrupcion)
-router.get("/terminales/respaldar", ejecutarRespaldoDiario)
 router.get("/terminal/:id/grupos", getGrupos)
 router.post("/terminal/:id/grupos/agregar", agregarGrupo)
 router.put("/terminal/:idTerminal/grupos/editar/:idGrupo", editarGrupo)
 router.delete("/terminal/:idTerminal/grupos/eliminar/:idGrupo", eliminarGrupo)
 router.get("/terminal/:id/resincronizar",resincronizar);
-router.get("/terminales/sincronizar-horas", sincronizarHorasTerminales)
 
 // Rutas para operaciones con Usuarios
 router.get("/terminal/:id/usuarios", getUsuarios)
@@ -111,5 +113,10 @@ router.get("/usuario/:idUsuario/ci/:ci/clonar/origen/:idOrigen/destino/:idDestin
 router.get("/terminal/:idTerminal/eliminar-funcionarios/:uids/cis/:cis", eliminarFuncionarios)
 router.put("/terminal/:idTerminal/editar-en-biometrico/:idUsuario/ci/:ci", editarEnBiometrico)
 router.get("/terminal/:idTerminal/leer-en-biometrico/:idUsuario/ci/:ci", leerEnBiometrico)
+
+//Ejecutar tareas de mantenimiento cron
+router.get("/terminales/respaldar", ejecutarRespaldoDiario)
+router.get("/terminales/sincronizar-horas", sincronizarHorasTerminales)
+router.get("/terminales/sincronizar-terminales", sincronizarTerminales)
 
 export default router
