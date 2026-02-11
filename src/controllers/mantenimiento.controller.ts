@@ -1,5 +1,4 @@
 import * as ftp from 'basic-ftp';
-import moment from 'moment';
 import * as path from 'path';
 import * as fsAsync from 'fs/promises';
 import * as fs from 'fs';
@@ -10,6 +9,14 @@ import { Terminal } from "../entity/Terminal";
 const spawn = require('await-spawn');
 import { Request, Response } from 'express';
 import {sincronizarTerminal} from "./terminal.controller";
+import {EstadoUsuario, Usuario} from "../entity/Usuario";
+import {Jornada} from "../entity/Jornada";
+import {Marcacion} from "../entity/Marcacion";
+import {Notificacion} from "../entity/Notificacion";
+import moment, * as MomentExt from 'moment';
+import {DateRange, extendMoment} from "moment-range";
+import {getSolicitudesAprobadasPorCI} from "./usuario.controller";
+import {Excepcion} from "../models/Excepcion";
 
 // --- Configuración del Servidor FTP ---
 const FTP_CONFIG = {
@@ -19,6 +26,7 @@ const FTP_CONFIG = {
     port: 21,
     secure: false,
 };
+const momentExt = extendMoment(MomentExt);
 // Define la ubicación de tu entorno Python (debe ser accesible desde el service)
 const envPython = path.join(__dirname, "../scriptpy/envpy", "bin", "python3");
 // Define la ruta base para todos tus respaldos locales (p. ej., un directorio persistente)
@@ -211,8 +219,102 @@ export const sincronizarTerminales = async (req: Request, res: Response) => {
     });
 };
 
-export const generarNotificaciones = async (req: Request, res: Response) => {
 
+export const generarNotificaciones = async (req: Request, res: Response) => {
+    generarNotificacionesCron()
+};
+
+export async function generarNotificacionesCron() {
+    console.log('⏰ Iniciando generación de notificaciones');
+    // 0️⃣ Limpiar tabla
+    //await Notificacion.clear();
+    const hoy = moment();
+    const semanaActualISO = `${hoy.isoWeekYear()}-W${hoy.isoWeek()}`;
+    const semanaAnteriorISO = `${hoy.clone().subtract(1, 'week').isoWeekYear()}-W${hoy.clone().subtract(1, 'week').isoWeek()}`;
+    console.log(semanaActualISO)
+    console.log(semanaAnteriorISO)
+    // 1️⃣ Obtener terminales
+    const terminales = await Terminal.find({
+        where: { tieneConexion: true }
+    });
+    for (const terminal of terminales) {
+        if (!terminal.ultSincronizacion) continue;
+        // 2️⃣ Fecha hasta evaluada (regla clave)
+        const fechaHastaEvaluada = moment(terminal.ultSincronizacion)
+            .subtract(1, 'day')
+            .endOf('day');
+        // Muy vieja → no genera nada
+        if (fechaHastaEvaluada.isBefore(
+            hoy.clone().subtract(2, 'weeks').startOf('isoWeek')
+        )) {
+            continue;
+        }
+        // Semana de la última sync
+        const semanaSyncISO =
+            `${fechaHastaEvaluada.isoWeekYear()}-W${fechaHastaEvaluada.isoWeek()}`;
+        // 3️⃣ Decidir semanas a generar
+        const semanas: Array<'actual' | 'anterior'> = [];
+        if (semanaSyncISO === semanaActualISO) {
+            semanas.push('actual', 'anterior');
+        } else if (semanaSyncISO === semanaAnteriorISO) {
+            semanas.push('anterior');
+        } else {
+            continue;
+        }
+        // 4️⃣ Usuarios del terminal
+        const usuarios = await Usuario.find({ where: {
+                terminal: { id: terminal.id },
+                estado: 1 // activo
+            }
+        });
+        // 5️⃣ Procesar semanas
+        for (const tipoSemana of semanas) {
+            const base = tipoSemana === 'actual' ? hoy : hoy.clone().subtract(1, 'week');
+            let inicio = base.clone().startOf('isoWeek');
+            let fin = base.clone().endOf('isoWeek');
+            // recorte por fechaHastaEvaluada
+            if (fechaHastaEvaluada.isBefore(fin)) {
+                fin = fechaHastaEvaluada.clone();
+            }
+            if (fin.isBefore(inicio)) continue;
+            const rango = momentExt.range(inicio, fin);
+            // 6️⃣ Procesar usuarios
+            for (const usuario of usuarios) {
+                //console.log(usuario.nombre)
+                let diasSinMarcacion = 0;
+                let diasSinAsignacion = 0;
+                let excepcionesCompletas = await getExcepcionesCompletasPorCI(usuario.ci, rango)
+                if (excepcionesCompletas.length > 0) {
+                    console.log(
+                        `${usuario.nombre} tiene ${excepcionesCompletas.length} excepciones completas`,
+                        excepcionesCompletas
+                    );
+                }
+                for (const dia of rango.by('day')) {
+                    console.log(dia.toISOString())
+                    /*const tieneJornada = true;
+                    const tieneMarcacion = false;
+                    if (!tieneJornada) {
+                        diasSinAsignacion++;
+                    } else if (!tieneMarcacion) {
+                        diasSinMarcacion++;
+                    }*/
+                }
+                if (diasSinMarcacion === 0 && diasSinAsignacion === 0) continue;
+                await Notificacion.save({
+                    usuario,
+                    terminal,
+                    diasSinMarcacion,
+                    diasSinAsignacion,
+                    semanaISO: tipoSemana === 'actual' ? semanaActualISO : semanaAnteriorISO,
+                    tipoSemana,
+                    fechaHastaEvaluada: fechaHastaEvaluada.toDate(),
+                    fechaActualizacion: new Date()
+                });
+            }
+        }
+    }
+    console.log('✅ Notificaciones generadas correctamente');
 }
 
 async function sincronizarTerminalInterno(terminalId: number) {
@@ -225,4 +327,44 @@ async function sincronizarTerminalInterno(terminalId: number) {
         json: () => null
     } as any;
     await sincronizarTerminal(fakeReq, fakeRes);
+}
+
+async function getExcepcionesCompletasPorCI(
+    ci: number,
+    rangoValido: DateRange
+): Promise<Excepcion[]> {
+
+    const excepciones: Excepcion[] = [];
+    const respuesta = await getSolicitudesAprobadasPorCI(ci);
+    if (!respuesta.success) return excepciones;
+
+    const solicitudes = respuesta.solicitudes ?? [];
+
+    for (const solicitud of solicitudes) {
+        if ( solicitud.tipo === 'ET' || solicitud.tipo === 'TO' || solicitud.tipo === 'CU') {
+            continue;
+        }
+        if (!solicitud.dias || solicitud.dias.length === 0) continue;
+        for (const diaObj of solicitud.dias) {
+            // ✔ solo jornada completa
+            if (diaObj.jornada !== 'completa') continue;
+            const fechaDia = moment(diaObj.fecha, 'YYYY-MM-DD');
+            // ✔ solo días dentro del rango evaluado
+            if (!rangoValido.contains(fechaDia)) {
+                continue;
+            }
+            const excepcion = new Excepcion();
+            excepcion.fecha = fechaDia.toDate();
+            excepcion.jornada = 'completa';
+            excepcion.detalle = capitalizar(solicitud.detalle);
+            excepcion.licencia = solicitud.tipo;
+            excepciones.push(excepcion);
+        }
+    }
+    return excepciones;
+}
+
+function capitalizar(cadena: string): string {
+    if (!cadena) return "";
+    return cadena.charAt(0).toUpperCase() + cadena.slice(1).toLowerCase();
 }

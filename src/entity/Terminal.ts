@@ -6,7 +6,7 @@ import {Interrupcion} from "./Interrupcion";
 import {Grupo} from "./Grupo";
 
 @Entity()
-export class  Terminal extends BaseEntity {
+export class Terminal extends BaseEntity {
     @PrimaryGeneratedColumn()
     id: number;
     @Column()

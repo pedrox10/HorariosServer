@@ -409,7 +409,7 @@ export async function ultMarcacion(usuario: Usuario, terminal: Terminal) {
     return ultMarcacion;
 }
 
-async function getSolicitudesAprobadasPorCI(ci: number) {
+export async function getSolicitudesAprobadasPorCI(ci: number) {
     try {
         const { data: funcionarios } = await apiOrganigrama.get(`/funcionario/filtro/ci/${ci}`);
         const funcionario = funcionarios?.[0];
