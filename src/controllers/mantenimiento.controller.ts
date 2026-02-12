@@ -1,22 +1,24 @@
-import * as ftp from 'basic-ftp';
 import * as path from 'path';
 import * as fsAsync from 'fs/promises';
 import * as fs from 'fs';
-const archiver = require('archiver');
 // Asume que estas entidades y dependencias están disponibles o importadas
-import { AppDataSource } from "../data-source";
-import { Terminal } from "../entity/Terminal";
-const spawn = require('await-spawn');
-import { Request, Response } from 'express';
+import {AppDataSource} from "../data-source";
+import {Terminal} from "../entity/Terminal";
+import {Request, Response} from 'express';
 import {sincronizarTerminal} from "./terminal.controller";
-import {EstadoUsuario, Usuario} from "../entity/Usuario";
-import {Jornada} from "../entity/Jornada";
-import {Marcacion} from "../entity/Marcacion";
+import {Usuario} from "../entity/Usuario";
+import {EstadoJornada, Jornada} from "../entity/Jornada";
 import {Notificacion} from "../entity/Notificacion";
 import moment, * as MomentExt from 'moment';
 import {DateRange, extendMoment} from "moment-range";
 import {getSolicitudesAprobadasPorCI} from "./usuario.controller";
 import {Excepcion} from "../models/Excepcion";
+import {Asueto, TipoAsueto} from "../entity/Asueto";
+import {Between} from "typeorm";
+import {Marcacion} from "../entity/Marcacion";
+
+const archiver = require('archiver');
+const spawn = require('await-spawn');
 
 // --- Configuración del Servidor FTP ---
 const FTP_CONFIG = {
@@ -226,86 +228,128 @@ export const generarNotificaciones = async (req: Request, res: Response) => {
 
 export async function generarNotificacionesCron() {
     console.log('⏰ Iniciando generación de notificaciones');
-    // 0️⃣ Limpiar tabla
-    //await Notificacion.clear();
+
+    await Notificacion.clear();
+
     const hoy = moment();
     const semanaActualISO = `${hoy.isoWeekYear()}-W${hoy.isoWeek()}`;
     const semanaAnteriorISO = `${hoy.clone().subtract(1, 'week').isoWeekYear()}-W${hoy.clone().subtract(1, 'week').isoWeek()}`;
-    console.log(semanaActualISO)
-    console.log(semanaAnteriorISO)
-    // 1️⃣ Obtener terminales
+
+    // 🔹 Feriados (solo una vez)
+    const feriados = await Asueto.findBy({
+        fecha: Between(
+            hoy.clone().subtract(1, 'week').startOf('isoWeek').toDate(),
+            hoy.clone().endOf('isoWeek').toDate()
+        ),
+        tipo: TipoAsueto.todos
+    });
+
+    const feriadosSet = new Set(
+        feriados.map(f => moment(f.fecha).format('YYYY-MM-DD'))
+    );
+
     const terminales = await Terminal.find({
         where: { tieneConexion: true }
     });
+
     for (const terminal of terminales) {
         if (!terminal.ultSincronizacion) continue;
-        // 2️⃣ Fecha hasta evaluada (regla clave)
+
         const fechaHastaEvaluada = moment(terminal.ultSincronizacion)
             .subtract(1, 'day')
             .endOf('day');
-        // Muy vieja → no genera nada
+
         if (fechaHastaEvaluada.isBefore(
             hoy.clone().subtract(2, 'weeks').startOf('isoWeek')
-        )) {
-            continue;
-        }
-        // Semana de la última sync
-        const semanaSyncISO =
-            `${fechaHastaEvaluada.isoWeekYear()}-W${fechaHastaEvaluada.isoWeek()}`;
-        // 3️⃣ Decidir semanas a generar
-        const semanas: Array<'actual' | 'anterior'> = [];
-        if (semanaSyncISO === semanaActualISO) {
-            semanas.push('actual', 'anterior');
-        } else if (semanaSyncISO === semanaAnteriorISO) {
-            semanas.push('anterior');
-        } else {
-            continue;
-        }
-        // 4️⃣ Usuarios del terminal
-        const usuarios = await Usuario.find({ where: {
+        )) continue;
+
+        const rangoInicio = hoy.clone().subtract(1, 'week').startOf('isoWeek');
+        const rangoFin = moment.min(
+            hoy.clone().endOf('isoWeek'),
+            fechaHastaEvaluada
+        );
+
+        const rango = momentExt.range(rangoInicio, rangoFin);
+
+        const usuarios = await Usuario.find({
+            where: {
                 terminal: { id: terminal.id },
-                estado: 1 // activo
+                estado: 1
             }
         });
-        // 5️⃣ Procesar semanas
-        for (const tipoSemana of semanas) {
-            const base = tipoSemana === 'actual' ? hoy : hoy.clone().subtract(1, 'week');
-            let inicio = base.clone().startOf('isoWeek');
-            let fin = base.clone().endOf('isoWeek');
-            // recorte por fechaHastaEvaluada
-            if (fechaHastaEvaluada.isBefore(fin)) {
-                fin = fechaHastaEvaluada.clone();
+
+        for (const usuario of usuarios) {
+
+            const contadores = {
+                actual: { sinMarcacion: 0, sinAsignacion: 0 },
+                anterior: { sinMarcacion: 0, sinAsignacion: 0 }
+            };
+
+            const excepciones = await getExcepcionesCompletasPorCI(usuario.ci, rango);
+            const fechasExcepcion = new Set(
+                excepciones.map(e => moment(e.fecha).format('YYYY-MM-DD'))
+            );
+
+            const marcaciones = await Marcacion.find({
+                where: {
+                    ci: usuario.ci,
+                    terminal: usuario.terminal,
+                    fecha: Between(rangoInicio.toDate(), rangoFin.toDate())
+                }
+            });
+
+            const marcacionesPorDia = new Set(
+                marcaciones.map(m => moment(m.fecha).format('YYYY-MM-DD'))
+            );
+
+            for (const dia of rango.by('day')) {
+                const diaStr = dia.format('YYYY-MM-DD');
+                if (fechasExcepcion.has(diaStr)) continue;
+
+                const semanaDiaISO = `${dia.isoWeekYear()}-W${dia.isoWeek()}`;
+                const bucket =
+                    semanaDiaISO === semanaActualISO
+                        ? contadores.actual
+                        : semanaDiaISO === semanaAnteriorISO
+                            ? contadores.anterior
+                            : null;
+
+                if (!bucket) continue;
+
+                const jornada = await Jornada.findOne({
+                    where: { usuario: { id: usuario.id }, fecha: dia.toDate() },
+                    relations: { horario: true }
+                });
+
+                if (!jornada) {
+                    bucket.sinAsignacion++;
+                    continue;
+                }
+
+                if (
+                    jornada.estado === EstadoJornada.dia_libre ||
+                    jornada.horario.esTeleTrabajo
+                ) continue;
+
+                if (
+                    !jornada.horario.incluyeFeriados &&
+                    feriadosSet.has(diaStr)
+                ) continue;
+
+                if (!marcacionesPorDia.has(diaStr)) {
+                    bucket.sinMarcacion++;
+                }
             }
-            if (fin.isBefore(inicio)) continue;
-            const rango = momentExt.range(inicio, fin);
-            // 6️⃣ Procesar usuarios
-            for (const usuario of usuarios) {
-                //console.log(usuario.nombre)
-                let diasSinMarcacion = 0;
-                let diasSinAsignacion = 0;
-                let excepcionesCompletas = await getExcepcionesCompletasPorCI(usuario.ci, rango)
-                if (excepcionesCompletas.length > 0) {
-                    console.log(
-                        `${usuario.nombre} tiene ${excepcionesCompletas.length} excepciones completas`,
-                        excepcionesCompletas
-                    );
-                }
-                for (const dia of rango.by('day')) {
-                    console.log(dia.toISOString())
-                    /*const tieneJornada = true;
-                    const tieneMarcacion = false;
-                    if (!tieneJornada) {
-                        diasSinAsignacion++;
-                    } else if (!tieneMarcacion) {
-                        diasSinMarcacion++;
-                    }*/
-                }
-                if (diasSinMarcacion === 0 && diasSinAsignacion === 0) continue;
+
+            for (const tipoSemana of ['actual', 'anterior'] as const) {
+                const data = contadores[tipoSemana];
+                if (data.sinMarcacion === 0 && data.sinAsignacion === 0) continue;
+
                 await Notificacion.save({
                     usuario,
                     terminal,
-                    diasSinMarcacion,
-                    diasSinAsignacion,
+                    diasSinMarcacion: data.sinMarcacion,
+                    diasSinAsignacion: data.sinAsignacion,
                     semanaISO: tipoSemana === 'actual' ? semanaActualISO : semanaAnteriorISO,
                     tipoSemana,
                     fechaHastaEvaluada: fechaHastaEvaluada.toDate(),
@@ -314,6 +358,7 @@ export async function generarNotificacionesCron() {
             }
         }
     }
+
     console.log('✅ Notificaciones generadas correctamente');
 }
 
