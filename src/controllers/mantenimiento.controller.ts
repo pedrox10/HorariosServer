@@ -231,135 +231,264 @@ export async function generarNotificacionesCron() {
 
     await Notificacion.clear();
 
+    const fechaActualizacion = moment().toDate();
+    const notificacionesBuffer: Partial<Notificacion>[] = [];
+
     const hoy = moment();
     const semanaActualISO = `${hoy.isoWeekYear()}-W${hoy.isoWeek()}`;
     const semanaAnteriorISO = `${hoy.clone().subtract(1, 'week').isoWeekYear()}-W${hoy.clone().subtract(1, 'week').isoWeek()}`;
+    // 🔹 Feriados (máximo 2 semanas)
+    const inicioFeriados = hoy.clone().subtract(1, 'week').startOf('isoWeek');
+    const finFeriados = hoy.clone().endOf('isoWeek');
 
-    // 🔹 Feriados (solo una vez)
     const feriados = await Asueto.findBy({
-        fecha: Between(
-            hoy.clone().subtract(1, 'week').startOf('isoWeek').toDate(),
-            hoy.clone().endOf('isoWeek').toDate()
-        ),
+        fecha: Between(inicioFeriados.toDate(), finFeriados.toDate()),
         tipo: TipoAsueto.todos
     });
-
     const feriadosSet = new Set(
         feriados.map(f => moment(f.fecha).format('YYYY-MM-DD'))
     );
-
     const terminales = await Terminal.find({
         where: { tieneConexion: true }
     });
-
     for (const terminal of terminales) {
         if (!terminal.ultSincronizacion) continue;
-
+        // 🔹 fechaHastaEvaluada por terminal
         const fechaHastaEvaluada = moment(terminal.ultSincronizacion)
             .subtract(1, 'day')
             .endOf('day');
 
-        if (fechaHastaEvaluada.isBefore(
-            hoy.clone().subtract(2, 'weeks').startOf('isoWeek')
-        )) continue;
-
-        const rangoInicio = hoy.clone().subtract(1, 'week').startOf('isoWeek');
-        const rangoFin = moment.min(
+        // Muy viejo → no se evalúa
+        if (
+            fechaHastaEvaluada.isBefore(
+                hoy.clone().subtract(2, 'weeks').startOf('isoWeek')
+            )
+        ) {
+            continue;
+        }
+        // 🔹 Rango global POR TERMINAL
+        const inicioGlobal = hoy.clone().subtract(1, 'week').startOf('isoWeek');
+        const finGlobalTerminal = moment.min(
             hoy.clone().endOf('isoWeek'),
             fechaHastaEvaluada
         );
-
-        const rango = momentExt.range(rangoInicio, rangoFin);
-
+        if (finGlobalTerminal.isBefore(inicioGlobal)) continue;
+        // 🔹 Determinar semanas a generar
+        const semanaSyncISO =
+            `${fechaHastaEvaluada.isoWeekYear()}-W${fechaHastaEvaluada.isoWeek()}`;
+        const semanas: Array<{
+            tipo: 'actual' | 'anterior';
+            iso: string;
+            inicio: moment.Moment;
+            fin: moment.Moment;
+        }> = [];
+        if (semanaSyncISO === semanaActualISO) {
+            semanas.push(
+                {
+                    tipo: 'actual',
+                    iso: semanaActualISO,
+                    inicio: hoy.clone().startOf('isoWeek'),
+                    fin: hoy.clone().endOf('isoWeek')
+                },
+                {
+                    tipo: 'anterior',
+                    iso: semanaAnteriorISO,
+                    inicio: hoy.clone().subtract(1, 'week').startOf('isoWeek'),
+                    fin: hoy.clone().subtract(1, 'week').endOf('isoWeek')
+                }
+            );
+        } else if (semanaSyncISO === semanaAnteriorISO) {
+            semanas.push({
+                tipo: 'anterior',
+                iso: semanaAnteriorISO,
+                inicio: hoy.clone().subtract(1, 'week').startOf('isoWeek'),
+                fin: hoy.clone().subtract(1, 'week').endOf('isoWeek')
+            });
+        } else {
+            continue;
+        }
+        // 🔹 Usuarios del terminal
         const usuarios = await Usuario.find({
             where: {
                 terminal: { id: terminal.id },
                 estado: 1
             }
         });
-
         for (const usuario of usuarios) {
-
-            const contadores = {
-                actual: { sinMarcacion: 0, sinAsignacion: 0 },
-                anterior: { sinMarcacion: 0, sinAsignacion: 0 }
-            };
-
-            const excepciones = await getExcepcionesCompletasPorCI(usuario.ci, rango);
-            const fechasExcepcion = new Set(
-                excepciones.map(e => moment(e.fecha).format('YYYY-MM-DD'))
-            );
-
+            // 🔹 Marcaciones
             const marcaciones = await Marcacion.find({
                 where: {
                     ci: usuario.ci,
-                    terminal: usuario.terminal,
-                    fecha: Between(rangoInicio.toDate(), rangoFin.toDate())
+                    terminal: terminal,
+                    fecha: Between(
+                        inicioGlobal.toDate(),
+                        finGlobalTerminal.toDate()
+                    )
                 }
             });
-
             const marcacionesPorDia = new Set(
                 marcaciones.map(m => moment(m.fecha).format('YYYY-MM-DD'))
             );
+            // 🔹 Jornadas
+            const jornadas = await Jornada.find({
+                where: {
+                    usuario: { id: usuario.id },
+                    fecha: Between(
+                        inicioGlobal.toDate(),
+                        finGlobalTerminal.toDate()
+                    )
+                },
+                relations: { horario: true }
+            });
+            const jornadasMap = new Map(
+                jornadas.map(j => [
+                    moment(j.fecha).format('YYYY-MM-DD'),
+                    j
+                ])
+            );
+            // 🔹 Excepciones completas
+            const excepciones = await getExcepcionesCompletasPorCI(
+                usuario.ci,
+                momentExt.range(inicioGlobal, finGlobalTerminal)
+            );
+            const excepcionesSet = new Set(
+                excepciones.map(e => moment(e.fecha).format('YYYY-MM-DD'))
+            );
+            // 🔹 Procesar semanas
+            for (const semana of semanas) {
+                let diasSinMarcacion = 0;
+                let diasSinAsignacion = 0;
+                const finSemanaReal = moment.min(
+                    semana.fin,
+                    finGlobalTerminal
+                );
+                if (finSemanaReal.isBefore(semana.inicio)) continue;
 
-            for (const dia of rango.by('day')) {
-                const diaStr = dia.format('YYYY-MM-DD');
-                if (fechasExcepcion.has(diaStr)) continue;
+                const rangoSemana = momentExt.range(
+                    semana.inicio,
+                    finSemanaReal
+                );
+                for (const dia of rangoSemana.by('day')) {
+                    const key = dia.format('YYYY-MM-DD');
+                    // 1️⃣ Fuera de vigencia del usuario
+                    if (dia.isBefore(moment(usuario.fechaAlta))) continue;
+                    if (usuario.fechaBaja && dia.isAfter(moment(usuario.fechaBaja))) continue;
+                    // 2️⃣ Excepción de jornada completa
+                    if (excepcionesSet.has(key)) continue;
 
-                const semanaDiaISO = `${dia.isoWeekYear()}-W${dia.isoWeek()}`;
-                const bucket =
-                    semanaDiaISO === semanaActualISO
-                        ? contadores.actual
-                        : semanaDiaISO === semanaAnteriorISO
-                            ? contadores.anterior
-                            : null;
-
-                if (!bucket) continue;
-
-                const jornada = await Jornada.findOne({
-                    where: { usuario: { id: usuario.id }, fecha: dia.toDate() },
-                    relations: { horario: true }
-                });
-
-                if (!jornada) {
-                    bucket.sinAsignacion++;
-                    continue;
+                    const jornada = jornadasMap.get(key);
+                    if (!jornada) {
+                        diasSinAsignacion++;
+                        continue;
+                    }
+                    if (
+                        jornada.estado === EstadoJornada.dia_libre ||
+                        jornada.horario?.esTeleTrabajo
+                    ) {
+                        continue;
+                    }
+                    if (
+                        !jornada.horario?.incluyeFeriados &&
+                        feriadosSet.has(key)
+                    ) {
+                        continue;
+                    }
+                    if (!marcacionesPorDia.has(key)) {
+                        diasSinMarcacion++;
+                    }
                 }
-
-                if (
-                    jornada.estado === EstadoJornada.dia_libre ||
-                    jornada.horario.esTeleTrabajo
-                ) continue;
-
-                if (
-                    !jornada.horario.incluyeFeriados &&
-                    feriadosSet.has(diaStr)
-                ) continue;
-
-                if (!marcacionesPorDia.has(diaStr)) {
-                    bucket.sinMarcacion++;
-                }
-            }
-
-            for (const tipoSemana of ['actual', 'anterior'] as const) {
-                const data = contadores[tipoSemana];
-                if (data.sinMarcacion === 0 && data.sinAsignacion === 0) continue;
-
-                await Notificacion.save({
+                if (diasSinMarcacion === 0 && diasSinAsignacion === 0) continue;
+                notificacionesBuffer.push({
                     usuario,
                     terminal,
-                    diasSinMarcacion: data.sinMarcacion,
-                    diasSinAsignacion: data.sinAsignacion,
-                    semanaISO: tipoSemana === 'actual' ? semanaActualISO : semanaAnteriorISO,
-                    tipoSemana,
+                    diasSinMarcacion,
+                    diasSinAsignacion,
+                    semanaISO: semana.iso,
+                    tipoSemana: semana.tipo,
                     fechaHastaEvaluada: fechaHastaEvaluada.toDate(),
-                    fechaActualizacion: new Date()
+                    fechaActualizacion
                 });
             }
         }
     }
-
+    // 🔹 Bulk insert
+    if (notificacionesBuffer.length > 0) {
+        await Notificacion
+            .createQueryBuilder()
+            .insert()
+            .values(notificacionesBuffer)
+            .execute();
+    }
     console.log('✅ Notificaciones generadas correctamente');
+}
+
+export async function getNotificaciones(req: Request, res: Response) {
+    try {
+        const notificaciones = await Notificacion.find({
+            relations: {
+                usuario: true,
+                terminal: true
+            },
+            order: {
+                terminal: { nombre: 'ASC' },
+                usuario: { nombre: 'ASC' }
+            }
+        });
+        const resultado = {
+            semana_actual: { terminales: [] as any[] },
+            semana_anterior: { terminales: [] as any[] },
+            ultimaActualizacion: null as Date | null
+        };
+        if (notificaciones.length === 0) {
+            return res.json(resultado);
+        }
+        // 👉 Todas las filas comparten la misma fecha
+        resultado.ultimaActualizacion = notificaciones[0].fechaActualizacion;
+        const terminalMap = new Map<string, any>();
+        for (const n of notificaciones) {
+            const key = `${n.tipoSemana}-${n.terminal.id}`;
+            if (!terminalMap.has(key)) {
+                const terminalObj = {
+                    id: n.terminal.id,
+                    nombre: n.terminal.nombre,
+                    fechaHastaEvaluada: n.fechaHastaEvaluada,
+                    totalNotificaciones: 0,
+                    usuarios: [] as any[]
+                };
+                terminalMap.set(key, terminalObj);
+
+                if (n.tipoSemana === 'actual') {
+                    resultado.semana_actual.terminales.push(terminalObj);
+                } else {
+                    resultado.semana_anterior.terminales.push(terminalObj);
+                }
+            }
+            const terminalRef = terminalMap.get(key);
+            terminalRef.usuarios.push({
+                id: n.usuario.id,
+                nombre: n.usuario.nombre,
+                diasSinMarcacion: n.diasSinMarcacion,
+                diasSinAsignacion: n.diasSinAsignacion
+            });
+
+            terminalRef.totalNotificaciones++;
+        }
+        // 🔽 ORDENAR USUARIOS (más críticos primero)
+        for (const semana of ['semana_actual', 'semana_anterior'] as const) {
+            for (const terminal of resultado[semana].terminales) {
+                terminal.usuarios.sort((a: any, b: any) => {
+                    if (b.diasSinMarcacion !== a.diasSinMarcacion) {
+                        return b.diasSinMarcacion - a.diasSinMarcacion;
+                    }
+                    return b.diasSinAsignacion - a.diasSinAsignacion;
+                });
+            }
+        }
+        return res.json(resultado);
+    } catch (error) {
+        console.error('Error obteniendo notificaciones:', error);
+        return res.status(500).json({ error: 'Error interno' });
+    }
 }
 
 async function sincronizarTerminalInterno(terminalId: number) {

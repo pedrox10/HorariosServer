@@ -41,7 +41,7 @@ import {
     clonarUsuario, eliminarFuncionarios, editarEnBiometrico, leerEnBiometrico
 } from "./controllers/comandos.controller";
 import {
-    ejecutarRespaldoDiario, generarNotificaciones,
+    ejecutarRespaldoDiario, generarNotificaciones, getNotificaciones,
     sincronizarHorasTerminales,
     sincronizarTerminales
 } from "./controllers/mantenimiento.controller";
@@ -119,5 +119,6 @@ router.get("/terminales/respaldar", ejecutarRespaldoDiario)
 router.get("/terminales/sincronizar-horas", sincronizarHorasTerminales)
 router.get("/terminales/sincronizar-terminales", sincronizarTerminales)
 router.get("/terminales/crear-notificaciones", generarNotificaciones)
+router.get("/terminales/notificaciones", getNotificaciones)
 
 export default router
