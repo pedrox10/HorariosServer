@@ -381,16 +381,10 @@ export async function generarNotificacionesCron() {
                         diasSinAsignacion++;
                         continue;
                     }
-                    if (
-                        jornada.estado === EstadoJornada.dia_libre ||
-                        jornada.horario?.esTeleTrabajo
-                    ) {
+                    if (jornada.estado === EstadoJornada.dia_libre || jornada.horario?.esTeleTrabajo) {
                         continue;
                     }
-                    if (
-                        !jornada.horario?.incluyeFeriados &&
-                        feriadosSet.has(key)
-                    ) {
+                    if (!jornada.horario?.incluyeFeriados && feriadosSet.has(key)) {
                         continue;
                     }
                     if (!marcacionesPorDia.has(key)) {
@@ -464,13 +458,16 @@ export async function getNotificaciones(req: Request, res: Response) {
                 }
             }
             const terminalRef = terminalMap.get(key);
+            const inicioSemana = moment(n.semanaISO, 'GGGG-[W]WW').startOf('isoWeek');
+            const finSemana = moment(n.semanaISO, 'GGGG-[W]WW').endOf('isoWeek');
             terminalRef.usuarios.push({
                 id: n.usuario.id,
                 nombre: n.usuario.nombre,
                 diasSinMarcacion: n.diasSinMarcacion,
-                diasSinAsignacion: n.diasSinAsignacion
+                diasSinAsignacion: n.diasSinAsignacion,
+                fechaInicio: inicioSemana,
+                fechaFin: finSemana
             });
-
             terminalRef.totalNotificaciones++;
         }
         // 🔽 ORDENAR USUARIOS (más críticos primero)
