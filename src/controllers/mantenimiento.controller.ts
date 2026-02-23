@@ -257,13 +257,8 @@ export async function generarNotificacionesCron() {
         const fechaHastaEvaluada = moment(terminal.ultSincronizacion)
             .subtract(1, 'day')
             .endOf('day');
-
         // Muy viejo → no se evalúa
-        if (
-            fechaHastaEvaluada.isBefore(
-                hoy.clone().subtract(2, 'weeks').startOf('isoWeek')
-            )
-        ) {
+        if (fechaHastaEvaluada.isBefore(hoy.clone().subtract(2, 'weeks').startOf('isoWeek'))) {
             continue;
         }
         // 🔹 Rango global POR TERMINAL
@@ -326,9 +321,7 @@ export async function generarNotificacionesCron() {
                     )
                 }
             });
-            const marcacionesPorDia = new Set(
-                marcaciones.map(m => moment(m.fecha).format('YYYY-MM-DD'))
-            );
+            const marcacionesPorDia = new Set(marcaciones.map(m => moment(m.fecha).format('YYYY-MM-DD')));
             // 🔹 Jornadas
             const jornadas = await Jornada.find({
                 where: {
@@ -487,6 +480,30 @@ export async function getNotificaciones(req: Request, res: Response) {
         return res.status(500).json({ error: 'Error interno' });
     }
 }
+
+export const busquedaGlobal = async (req: Request, res: Response) => {
+    const q = (req.query.q as string)?.trim();
+    const repo = AppDataSource.getRepository(Usuario);
+    const usuarios = await repo
+        .createQueryBuilder('u')
+        .leftJoinAndSelect('u.terminal', 't')
+        .leftJoinAndSelect('u.grupo', 'g')
+        .where('LOWER(u.nombre) LIKE :q', { q: `%${q.toLowerCase()}%` })
+        .orWhere('u.ci LIKE :qci', { qci: `%${q}%` })
+        .orderBy('u.nombre', 'ASC')
+        .getMany();
+    const resultado = usuarios.map(u => ({
+        usuarioId: u.id,
+        uid: u.uid,
+        ci: u.ci,
+        nombre: u.nombre,
+        estado: u.estado,
+        terminalId: u.terminal?.id,
+        terminalNombre: u.terminal?.nombre,
+        grupo: u.grupo?.nombre ?? 'Sin grupo'
+    }));
+    res.json(resultado);
+};
 
 async function sincronizarTerminalInterno(terminalId: number) {
     const fakeReq = {

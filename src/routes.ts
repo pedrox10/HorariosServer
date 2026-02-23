@@ -41,6 +41,7 @@ import {
     clonarUsuario, eliminarFuncionarios, editarEnBiometrico, leerEnBiometrico
 } from "./controllers/comandos.controller";
 import {
+    busquedaGlobal,
     ejecutarRespaldoDiario, generarNotificaciones, getNotificaciones,
     sincronizarHorasTerminales,
     sincronizarTerminales
@@ -120,5 +121,6 @@ router.get("/terminales/sincronizar-horas", sincronizarHorasTerminales)
 router.get("/terminales/sincronizar-terminales", sincronizarTerminales)
 router.get("/terminales/crear-notificaciones", generarNotificaciones)
 router.get("/terminales/notificaciones", getNotificaciones)
+router.get("/terminales/busqueda-global", busquedaGlobal)
 
 export default router
