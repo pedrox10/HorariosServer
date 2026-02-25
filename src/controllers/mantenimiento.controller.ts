@@ -223,17 +223,19 @@ export const sincronizarTerminales = async (req: Request, res: Response) => {
 
 
 export const generarNotificaciones = async (req: Request, res: Response) => {
-    generarNotificacionesCron()
+    try {
+        await generarNotificacionesCron()
+        return res.json( { exito: true, mensaje: "Notificaciones generadas", fechaActualizacion: moment().toDate()})
+    } catch (e) {
+        return res.status(500).json( { exito: false, mensaje: "Error al generar notificaciones"})
+    }
 };
 
 export async function generarNotificacionesCron() {
     console.log('⏰ Iniciando generación de notificaciones');
-
     await Notificacion.clear();
-
     const fechaActualizacion = moment().toDate();
     const notificacionesBuffer: Partial<Notificacion>[] = [];
-
     const hoy = moment();
     const semanaActualISO = `${hoy.isoWeekYear()}-W${hoy.isoWeek()}`;
     const semanaAnteriorISO = `${hoy.clone().subtract(1, 'week').isoWeekYear()}-W${hoy.clone().subtract(1, 'week').isoWeek()}`;
