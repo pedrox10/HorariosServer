@@ -33,7 +33,7 @@ const organigramaAgent = new http.Agent({
 });
 // Configuración base de Axios
 const apiOrganigrama = axios.create({
-    baseURL: "http://190.181.22.148:3395",
+    baseURL: "http://10.0.38.77:3395",
     httpAgent: organigramaAgent,
     timeout: 5000, // Aumentado a 5s porque 500ms es muy arriesgado para red interna
     headers: {
@@ -91,7 +91,7 @@ export const getUsuarios = async (req: Request, res: Response) => {
 export const infoOrganigram = async (req: Request, res: Response) => {
     const {ci} = req.params;
     const ACCESS_CODE = "ga8f0051d6ff90ff485359f626060aa0fe38fc2c451c184f337ae146e4cd7eefcb8497011ee63534e4afd7eedf65fc1d9017f67c2385bc85b392b862a7bedfd6g";
-    const BASE_URL = "http://190.181.22.148:3395";
+    const BASE_URL = "http://10.0.38.77:3395";
     const HEADERS = { headers: { "X-Access-Code": ACCESS_CODE}, timeout: 500 };
     try {
         const { data: funcionarios } = await axios.get(

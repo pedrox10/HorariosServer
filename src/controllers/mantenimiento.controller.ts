@@ -63,6 +63,7 @@ export const ejecutarRespaldoDiario = async (req: Request, res: Response) => {
     const FECHA_HOY = moment().format('DD-MM-YYYY');
     const DIR_ORIGEN_DIARIO = path.join(RUTA_BASE_RESPALDOS, FECHA_HOY);
     const ARCHIVO_FINAL_ZIP = path.join(RUTA_BASE_RESPALDOS, `${FECHA_HOY}.zip`);
+    const RUTA_BASE_RED = '/mnt/respaldo_gobierno_electronico/respaldos_biometricos';
     /*const ARCHIVO_FTP_FINAL = `/respaldos/${FECHA_HOY}.zip`;
     let client: ftp.Client | null = null;
     let subidaExitosa = false;*/
@@ -76,7 +77,7 @@ export const ejecutarRespaldoDiario = async (req: Request, res: Response) => {
         // PASO 1: Asegurar que la carpeta de fecha exista (Puede estar creada por terminales sin conexión)
         await fsAsync.mkdir(DIR_ORIGEN_DIARIO, { recursive: true });
         // PASO 2: Generar respaldos de terminales con conexión
-        const terminales = await AppDataSource.manager.find(Terminal, { where: { tieneConexion: true } });
+        const terminales = await AppDataSource.manager.find(Terminal, { where: { tieneConexion: true, categoria: 0 } });
 
         for (const terminal of terminales) {
             const nombreTerminal = terminal.nombre.replace(/\s+/g, '_');
@@ -121,6 +122,12 @@ export const ejecutarRespaldoDiario = async (req: Request, res: Response) => {
         // PASO 4: LIMPIEZA DE LA CARPETA DE ORIGEN (Requerimiento: mantener solo el ZIP)
         await fsAsync.rm(DIR_ORIGEN_DIARIO, { recursive: true, force: true });
         console.log(`Limpieza exitosa: Carpeta de origen ${DIR_ORIGEN_DIARIO} eliminada.`);
+
+        const destinoZip = path.join(
+            RUTA_BASE_RED,
+            `${FECHA_HOY}.zip`
+        );
+        await fsAsync.copyFile(ARCHIVO_FINAL_ZIP, destinoZip);
         // PASO 5: SUBIDA ÚNICA POR FTP
         /*client = new ftp.Client();
         await client.access(FTP_CONFIG);
@@ -195,8 +202,9 @@ export const sincronizarHorasTerminales = async (req: Request, res: Response) =>
 
 export const sincronizarTerminales = async (req: Request, res: Response) => {
     const resultados: any[] = [];
+    let notificacionesGeneradas = false;
     const terminales = await Terminal.find({
-        where: { tieneConexion: true }
+        where: { tieneConexion: true, categoria: 0 }
     });
     for (const terminal of terminales) {
         try {
@@ -214,9 +222,16 @@ export const sincronizarTerminales = async (req: Request, res: Response) => {
             });
         }
     }
+    try {
+        await generarNotificacionesCron()
+        notificacionesGeneradas = true;
+    } catch (e) {
+        console.log("Error generando notificaciones")
+    }
     return res.json({
         mensaje: 'Sincronización nocturna finalizada',
         total: terminales.length,
+        notificacionesOk: notificacionesGeneradas,
         resultados
     });
 };
