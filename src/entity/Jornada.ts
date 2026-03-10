@@ -18,7 +18,10 @@ export enum EstadoJornada {
     ausencia,
     teletrabajo,
     capacitacion,
-    permiso_cg
+    permiso_cg,
+    licencia_paternidad,
+    licencia_matrimonio,
+    licencia_defuncion
 }
 
 @Entity()

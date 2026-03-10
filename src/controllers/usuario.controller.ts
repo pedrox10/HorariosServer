@@ -59,6 +59,21 @@ export interface SolicitudAprobada {
     }>;
 }
 
+const LICENCIAS: Record<string, string> = {
+    ET: "Excepción de Tickeo",
+    TO: "Tolerancia",
+    CU: "Cumpleaños",
+    VA: "Vacación",
+    BM: "Baja Médica",
+    SG: "PermisoSG",
+    PO: "Permiso",
+    LI: "Licencia",
+    LP: "Licencia por Paternidad",
+    LM: "Licencia por Matrimonio",
+    LD: "Licencia por Defunción",
+    CA: "Capacitación"
+};
+
 export const getUsuarios = async (req: Request, res: Response) => {
     const { id } = req.params;
     const usuarios = await Usuario.createQueryBuilder("u")
@@ -573,30 +588,7 @@ function capitalizar(cadena: string): string {
 }
 
 function getLicencia(excepcion: Excepcion): string {
-    let res: string;
-    switch (excepcion.licencia) {
-        case "ET":
-            res = "Excepción de Tickeo"; break;
-        case "TO":
-            res = "Tolerancia"; break;
-        case "CU":
-            res = "Cumpleaños"; break;
-        case "VA":
-            res = "Vacación"; break;
-        case "BM":
-            res = "Baja Médica"; break;
-        case "SG":
-            res = "PermisoSG"; break;
-        case "PO":
-            res = "Permiso"; break;
-        case "LI":
-            res = "Licencia"; break;
-        case "CA":
-            res = "Capacitación"; break;
-        default:
-            res = "Otros"
-    }
-    return res;
+    return LICENCIAS[excepcion.licencia] || "Otros";
 }
 
 function getMultaRetrasos(min: number): number {
@@ -706,7 +698,7 @@ export async function getReporteMarcaciones(id: string, ini: string, fin: string
             console.timeEnd("FeriadosInterrupciones")
             console.time("Organigram")
             let respuesta = await getSolicitudesAprobadasPorCI(usuario.ci)
-            //console.log(respuesta)
+            console.log(respuesta)
             if(respuesta.success) {
                 const solicitudesAprobadas = respuesta.solicitudes ?? [];
                 for (const solicitud of solicitudesAprobadas) {
@@ -891,6 +883,12 @@ export async function getReporteMarcaciones(id: string, ini: string, fin: string
                                         jornada.estado = EstadoJornada.permiso; break;
                                     case "LI":
                                         jornada.estado = EstadoJornada.licencia; break;
+                                    case "LP":
+                                        jornada.estado = EstadoJornada.licencia_paternidad; break;
+                                    case "LM":
+                                        jornada.estado = EstadoJornada.licencia_matrimonio; break;
+                                    case "LD":
+                                        jornada.estado = EstadoJornada.licencia_defuncion; break;
                                     case "CA":
                                         jornada.estado = EstadoJornada.capacitacion; break;
                                     default :
@@ -943,6 +941,21 @@ export async function getReporteMarcaciones(id: string, ini: string, fin: string
                                         infoMarcacion.horario.nombre = "Licencia"
                                         infoMarcacion.estado = EstadoJornada.licencia
                                         totalLicencias++
+                                        break;
+                                    case EstadoJornada.licencia_paternidad:
+                                        infoMarcacion.horario.color = "#939393";
+                                        infoMarcacion.horario.nombre = "Paternidad"
+                                        infoMarcacion.estado = EstadoJornada.licencia_paternidad
+                                        break;
+                                    case EstadoJornada.licencia_matrimonio:
+                                        infoMarcacion.horario.color = "#939393";
+                                        infoMarcacion.horario.nombre = "Matrimonio"
+                                        infoMarcacion.estado = EstadoJornada.licencia_matrimonio
+                                        break;
+                                    case EstadoJornada.licencia_defuncion:
+                                        infoMarcacion.horario.color = "#939393";
+                                        infoMarcacion.horario.nombre = "Defunción"
+                                        infoMarcacion.estado = EstadoJornada.licencia_defuncion
                                         break;
                                     case EstadoJornada.capacitacion:
                                         infoMarcacion.horario.color = "#939393";
