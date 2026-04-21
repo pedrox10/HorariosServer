@@ -20,14 +20,6 @@ import {Marcacion} from "../entity/Marcacion";
 const archiver = require('archiver');
 const spawn = require('await-spawn');
 
-// --- Configuración del Servidor FTP ---
-const FTP_CONFIG = {
-    host: 'ftpupload.net',
-    user: 'b7_40121480',
-    password: 'amarse10', // Reemplazar con la contraseña real
-    port: 21,
-    secure: false,
-};
 const momentExt = extendMoment(MomentExt);
 // Define la ubicación de tu entorno Python (debe ser accesible desde el service)
 const envPython = path.join(__dirname, "../scriptpy/envpy", "bin", "python3");
@@ -64,9 +56,7 @@ export const ejecutarRespaldoDiario = async (req: Request, res: Response) => {
     const DIR_ORIGEN_DIARIO = path.join(RUTA_BASE_RESPALDOS, FECHA_HOY);
     const ARCHIVO_FINAL_ZIP = path.join(RUTA_BASE_RESPALDOS, `${FECHA_HOY}.zip`);
     const RUTA_BASE_RED = '/mnt/respaldo_gobierno_electronico/respaldos_biometricos';
-    /*const ARCHIVO_FTP_FINAL = `/respaldos/${FECHA_HOY}.zip`;
-    let client: ftp.Client | null = null;
-    let subidaExitosa = false;*/
+
     let statusCode = 200; // Por defecto: éxito
     let finalMessage = 'Respaldo diario finalizado con éxito.';
     let finalError: string | null = null;
@@ -128,25 +118,13 @@ export const ejecutarRespaldoDiario = async (req: Request, res: Response) => {
             `${FECHA_HOY}.zip`
         );
         await fsAsync.copyFile(ARCHIVO_FINAL_ZIP, destinoZip);
-        // PASO 5: SUBIDA ÚNICA POR FTP
-        /*client = new ftp.Client();
-        await client.access(FTP_CONFIG);
-        await client.ensureDir(path.dirname(ARCHIVO_FTP_FINAL));
-        // Usar fs (Streams) para la lectura del ZIP
-        const streamRespaldo = fs.createReadStream(ARCHIVO_FINAL_ZIP);
-        await client.uploadFrom(streamRespaldo, ARCHIVO_FTP_FINAL);
-        subidaExitosa = true;
-        console.log(`Subida FTP exitosa: ${ARCHIVO_FTP_FINAL}`);*/
+
     } catch (error) {
         statusCode = 500;
         finalMessage = 'Fallo crítico durante el proceso de respaldo.';
         finalError = error instanceof Error ? error.message : String(error);
         console.error('Fallo general en la tarea de respaldo:', error);
     } finally {
-        // PASO 6: CIERRE DE CONEXIÓN FTP
-        /*if (client) {
-            client.close();
-        }*/
         res.status(statusCode).json({
             mensaje: finalMessage,
             error: finalError,
@@ -204,7 +182,7 @@ export const sincronizarTerminales = async (req: Request, res: Response) => {
     const resultados: any[] = [];
     let notificacionesGeneradas = false;
     const terminales = await Terminal.find({
-        where: { tieneConexion: true, categoria: 0 }
+        where: { tieneConexion: true }
     });
     for (const terminal of terminales) {
         try {

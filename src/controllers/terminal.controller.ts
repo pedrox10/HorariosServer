@@ -320,37 +320,47 @@ export const sincronizarTerminal = async (req: Request, res: Response) => {
         }
         let usuariosBD = await Usuario.find({ where: { terminal: terminal, estado: Not(EstadoUsuario.eliminado) } });
         if (fueSincronizado) {
-            // Comparar usuarios del terminal con los de la BD
+            // ── Índice por CI para O(1) en vez de N queries a BD ──────────────
+            const mapaBD = new Map(
+                usuariosBD.map(u => [String(u.ci).trim(), u])
+            );
+            // ── Recorrer usuarios del terminal ────────────────────────────────
             for (let usuarioT of usuariosT) {
-                let usuarioBD = await Usuario
-                    .findOneBy({ uid: usuarioT.uid, terminal: terminal, estado: Not(EstadoUsuario.eliminado) });
-                if (usuarioBD) {
-                    // Verificamos antes CI para saber si el uid fué eliminado y asignado a un nuevo funcionario
-                    if (String(usuarioT.user_id).trim() === String(usuarioBD.ci).trim()) {
-                        // Verificacmos si hubo una edición
-                        if (usuarioT.name !== usuarioBD.nombre) {
-                            usuarioBD.nombre = usuarioT.name;
-                            usuariosEditados.push(usuarioBD);
-                        }
-                    } else {
-                        usuariosEliminados.push(usuarioBD);
-                        let usuario = await getNuevoUsuario(usuarioT, terminal, manager);
-                        usuariosNuevos.push(usuario);
-                    }
+                const ci = String(usuarioT.user_id).trim();
+                const usuarioBD = mapaBD.get(ci);
+                if (!usuarioBD) {
+                    // CI no existe en BD → funcionario nuevo
+                    let nuevo = await getNuevoUsuario(usuarioT, terminal, manager);
+                    usuariosNuevos.push(nuevo);
                 } else {
-                    let usuario = await getNuevoUsuario(usuarioT, terminal, manager);
-                    usuariosNuevos.push(usuario);
+                    // CI conocido → verificar si cambió nombre o UID
+                    let huboEdicion = false;
+                    if (usuarioT.name !== usuarioBD.nombre) {
+                        usuarioBD.nombre = usuarioT.name;
+                        huboEdicion = true;
+                    }
+                    // UID puede cambiar al reemplazar terminal (se actualiza
+                    // silenciosamente sin marcar al funcionario como eliminado)
+                    if (usuarioT.uid !== usuarioBD.uid) {
+                        usuarioBD.uid = usuarioT.uid;
+                        huboEdicion = true;
+                    }
+                    if (huboEdicion) {
+                        usuariosEditados.push(usuarioBD);
+                    }
                 }
             }
+            // ── Detectar eliminados: CI en BD que ya no están en el terminal ──
+            const cisTerminal = new Set(
+                usuariosT.map((u: any) => String(u.user_id).trim())
+            );
             for (let usuario of usuariosBD) {
-                if (!buscarUsuarioEn(usuario, usuariosT)) {
+                if (!cisTerminal.has(String(usuario.ci).trim())) {
                     usuariosEliminados.push(usuario);
                 }
             }
-            if(terminal.numSerie !== numeroSerie)
-                terminal.numSerie = numeroSerie
-            if(terminal.modelo !== modelo)
-                terminal.modelo = modelo;
+            if (terminal.numSerie !== numeroSerie) terminal.numSerie = numeroSerie;
+            if (terminal.modelo !== modelo) terminal.modelo = modelo;
         } else {
             // Si es la primera sincronización, agregar todos los usuarios nuevos
             for (let usuarioT of usuariosT) {
@@ -462,17 +472,6 @@ async function conectar(ip: string, puerto: number) {
     const pyprogConectar = await spawn(envPython, args);
     let respuesta = JSON.parse(pyprogConectar.toString());
     res = respuesta.conectado === true ? true : false;
-    return res;
-}
-
-function buscarUsuarioEn(usuario: Usuario, datos: any[]) {
-    let res = false;
-    datos.forEach(value => {
-        if (usuario.uid === value.uid) {
-            res = true;
-            return
-        }
-    })
     return res;
 }
 

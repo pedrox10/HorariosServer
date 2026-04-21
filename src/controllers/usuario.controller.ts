@@ -514,74 +514,6 @@ export async function getSolicitudesAprobadasPorCI(ci: number) {
     }
 }
 
-export async function obtenerSolicitudesAprobadasPorCI(ci: number) {
-    const ACCESS_CODE =
-        "ga8f0051d6ff90ff485359f626060aa0fe38fc2c451c184f337ae146e4cd7eefcb8497011ee63534e4afd7eedf65fc1d9017f67c2385bc85b392b862a7bedfd6g";
-    const BASE_URL = "http://190.181.22.149:3310";
-    const HEADERS = {
-        headers: {
-            "X-Access-Code": ACCESS_CODE,
-        },
-    };
-
-    try {
-        // 1. Buscar funcionario por CI
-        const {data: funcionarios} = await axios.get(
-            `${BASE_URL}/funcionario/filtro/ci/${ci}`,
-            HEADERS
-        );
-        const funcionario = funcionarios?.[0];
-        if (!funcionario) {
-            return {success: false, error: "Número de CI no encontrado en Organigrama"}
-        }
-        if (!funcionario.estado) {
-            const {data: registros} = await axios.get(
-                `${BASE_URL}/registro/filtro/id_funcionario/${funcionario._id}`,
-                HEADERS
-            );
-            const inactivos = registros.filter((r: any)  => r.estado === false);
-            if (inactivos.length === 0) {
-                return { success: false, error: 'No hay registros inactivos' };
-            }
-            if (inactivos.length === 1) {
-                if(inactivos[0].fecha_ingreso === undefined)
-                    return {success: false, error: "Funcionario aún no tiene un cargo asignado"}
-            }
-            const registroMasReciente = inactivos.reduce((prev: any, curr: any) => {
-                return moment(curr.fecha_conclusion).isAfter(prev.fecha_conclusion) ? curr : prev;
-            });
-            return {
-                success: false,
-                error: `Funcionario dado de baja en Organigrama el: ${moment(registroMasReciente.fecha_conclusion).format("DD/MM/YYYY")}`
-            };
-        }
-        // 2. Buscar registros del funcionario
-        const {data: registros} = await axios.get(
-            `${BASE_URL}/registro/filtro/id_funcionario/${funcionario._id}`,
-            HEADERS
-        );
-        const registroActivo = registros.find((r: { estado: boolean }) => r.estado === true);
-        //console.log(registroActivo)
-        if (!registroActivo) {
-            console.log("No se encontró un registro activo");
-            return {success: false, error: "Funcionario aún no tiene un cargo asignado"}
-        }
-        const {data: solicitudes} = await axios.get<SolicitudAprobada[]>(
-            `${BASE_URL}/solicitud/filtro/id_registro/${registroActivo._id}`,
-            HEADERS
-        );
-        // 3) Filtra por estado y devuelve todas las propiedades:
-        let solicitudesAprobadas = solicitudes.filter(s => s.estado === 'APROBADO');
-        return {success: true, solicitudes: solicitudesAprobadas}
-    } catch (error: any) {
-        console.error(
-            "Error al obtener solicitudes aprobadas:",
-            error.response?.data || error.message
-        );
-        return {success: false, error: "No hay conexión a Organigrama"}
-    }
-}
-
 function capitalizar(cadena: string): string {
     if (!cadena) return "";
     return cadena.charAt(0).toUpperCase() + cadena.slice(1).toLowerCase();
@@ -1360,7 +1292,8 @@ export async function getReporteMarcaciones(id: string, ini: string, fin: string
                                             })
                                             infoMarcacion.priSalidas = priSalidas
                                             let ultimo = priSalidasM.length -1
-                                            if(priSalidasM.at(ultimo)?.isBefore(moment(jornada.fecha + " " + priTurno.horaSalida))) {
+                                            let priHoraSalida = jornada.horario.jornadasDosDias ? moment(jornada.fecha + " " + priTurno.horaSalida).add(1, "day") : moment(jornada.fecha + " " + priTurno.horaSalida);
+                                            if(priSalidasM.at(ultimo)?.isBefore(priHoraSalida)) {
                                                 cantSalAntes++
                                                 totalSalAntes++
                                                 hayPriAntes = true
