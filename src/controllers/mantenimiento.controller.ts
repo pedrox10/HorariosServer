@@ -67,7 +67,7 @@ export const ejecutarRespaldoDiario = async (req: Request, res: Response) => {
         // PASO 1: Asegurar que la carpeta de fecha exista (Puede estar creada por terminales sin conexión)
         await fsAsync.mkdir(DIR_ORIGEN_DIARIO, { recursive: true });
         // PASO 2: Generar respaldos de terminales con conexión
-        const terminales = await AppDataSource.manager.find(Terminal, { where: { tieneConexion: true, categoria: 0 } });
+        const terminales = await AppDataSource.manager.find(Terminal, { where: { tieneConexion: true} });
 
         for (const terminal of terminales) {
             const nombreTerminal = terminal.nombre.replace(/\s+/g, '_');
@@ -181,34 +181,50 @@ export const sincronizarHorasTerminales = async (req: Request, res: Response) =>
 export const sincronizarTerminales = async (req: Request, res: Response) => {
     const resultados: any[] = [];
     let notificacionesGeneradas = false;
+
+    const horaInicio = moment(); // ← AQUÍ, antes de todo
+
     const terminales = await Terminal.find({
         where: { tieneConexion: true }
     });
+
     for (const terminal of terminales) {
+        const inicio = moment();
         try {
-            // 🔁 Llamada directa, sin HTTP
             await sincronizarTerminalInterno(terminal.id);
             resultados.push({
                 terminal: terminal.nombre,
-                estado: 'OK'
+                estado: 'OK',
+                hora: moment().format('HH:mm:ss'),
+                duracion_seg: moment().diff(inicio, 'seconds')
             });
         } catch (error: any) {
             resultados.push({
                 terminal: terminal.nombre,
                 estado: 'ERROR',
-                detalle: error.message
+                detalle: error.message,
+                hora: moment().format('HH:mm:ss'),
+                duracion_seg: moment().diff(inicio, 'seconds')
             });
         }
     }
+
     try {
-        await generarNotificacionesCron()
+        await generarNotificacionesCron();
         notificacionesGeneradas = true;
     } catch (e) {
-        console.log("Error generando notificaciones")
+        console.log("Error generando notificaciones");
     }
+
     return res.json({
         mensaje: 'Sincronización nocturna finalizada',
+        fecha: horaInicio.format('YYYY-MM-DD'),
+        hora_inicio: horaInicio.format('HH:mm:ss'), // ← usa la variable capturada
+        hora_fin: moment().format('HH:mm:ss'),       // ← este sí va aquí
+        duracion_total_seg: moment().diff(horaInicio, 'seconds'),
         total: terminales.length,
+        exitosos: resultados.filter(r => r.estado === 'OK').length,
+        fallidos: resultados.filter(r => r.estado === 'ERROR').length,
         notificacionesOk: notificacionesGeneradas,
         resultados
     });
@@ -501,15 +517,31 @@ export const busquedaGlobal = async (req: Request, res: Response) => {
 };
 
 async function sincronizarTerminalInterno(terminalId: number) {
-    const fakeReq = {
-        params: { id: terminalId.toString() },
-        method: 'GET'
-    } as any;
-    const fakeRes = {
-        status: () => fakeRes,
-        json: () => null
-    } as any;
-    await sincronizarTerminal(fakeReq, fakeRes);
+    return new Promise<void>(async (resolve, reject) => {
+        const fakeReq = {
+            params: { id: terminalId.toString() },
+            method: 'GET'
+        } as any;
+
+        let statusCode = 200;
+
+        const fakeRes = {
+            status: (code: number) => {
+                statusCode = code;
+                return fakeRes;
+            },
+            json: (body: any) => {
+                if (statusCode >= 400) {
+                    // Ahora el error es visible en sincronizarTerminales
+                    reject(new Error(body?.mensaje || `Error HTTP ${statusCode}`));
+                } else {
+                    resolve();
+                }
+                return null;
+            }
+        } as any;
+        await sincronizarTerminal(fakeReq, fakeRes);
+    });
 }
 
 async function getExcepcionesCompletasPorCI(

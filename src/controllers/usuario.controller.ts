@@ -276,7 +276,7 @@ export const getResumenMarcacionesPorCI = async (req: Request, res: Response) =>
                     fechaFin: moment(fin).format('YYYY-MM-DD')
                 })
                 .groupBy("marcacion.terminalId");
-        }, "sub", "usuario.terminalId = sub.terminalId")
+        }, "sub", "usuario.terminalId = sub.terminalId AND usuario.estado != 2")
         .where("usuario.ci = :ci", { ci: parseInt(ci) })
         .getMany();
     let respuesta: ResumenMarcacion[] = [];

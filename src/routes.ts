@@ -46,6 +46,7 @@ import {
     sincronizarHorasTerminales,
     sincronizarTerminales
 } from "./controllers/mantenimiento.controller";
+import {reporteHorasTecnicos} from "./controllers/horastecnicos.controller";
 
 const router = Router();
 //Ruta para Login
@@ -122,5 +123,6 @@ router.get("/terminales/sincronizar-terminales", sincronizarTerminales)
 router.get("/terminales/crear-notificaciones", generarNotificaciones)
 router.get("/terminales/notificaciones", getNotificaciones)
 router.get("/terminales/busqueda-global", busquedaGlobal)
+router.post("/reporte-horas-tecnicos", reporteHorasTecnicos);
 
 export default router
