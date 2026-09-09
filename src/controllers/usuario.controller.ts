@@ -66,12 +66,12 @@ const LICENCIAS: Record<string, string> = {
     VA: "Vacación",
     BM: "Baja Médica",
     SG: "PermisoSG",
+    CG: "PermisoCG",
     PO: "Permiso",
     LI: "Licencia",
     LP: "Licencia por Paternidad",
     LM: "Licencia por Matrimonio",
-    LD: "Licencia por Defunción",
-    CA: "Capacitación"
+    LD: "Licencia por Defunción"
 };
 
 export const getUsuarios = async (req: Request, res: Response) => {
@@ -119,7 +119,7 @@ export const infoOrganigram = async (req: Request, res: Response) => {
         }
         // 2. Buscar registros del funcionario
         const { data: registros } = await axios.get(
-            `${BASE_URL}/registro/filtro/id_funcionario/${funcionario._id}`,
+                        `${BASE_URL}/registro/filtro/id_funcionario/${funcionario._id}`,
             HEADERS
         );
         const registroActivo = registros.find((r: any) => r.estado === true);
@@ -631,10 +631,11 @@ export async function getReporteMarcaciones(id: string, ini: string, fin: string
             console.time("Organigram")
             let respuesta = await getSolicitudesAprobadasPorCI(usuario.ci)
             console.log(respuesta)
+            const TIPOS_RANGO = ['ET', 'TO', 'CU', 'CG'] as const;
             if(respuesta.success) {
                 const solicitudesAprobadas = respuesta.solicitudes ?? [];
                 for (const solicitud of solicitudesAprobadas) {
-                    if (solicitud.tipo === "ET" || solicitud.tipo === "TO" || solicitud.tipo === "CU") {
+                    if (TIPOS_RANGO.includes(solicitud.tipo)) {
                         let fechaInicio = moment(solicitud.fecha_inicio, "YYYY-MM-DD");
                         if (fechaInicio.isSameOrAfter(rangoValido.start) && fechaInicio.isSameOrBefore(rangoValido.end)) {
                             let excepcion = new Excepcion();
@@ -698,7 +699,7 @@ export async function getReporteMarcaciones(id: string, ini: string, fin: string
             let totalSalAntes: number = 0
             let totalAusencias: number = 0
             //Contadores de Excepciones
-            let totalExcTickeos: number = 0
+            let totalExcTickeos: number = 0 
             let totalInterrupciones: number = 0
             let totalPermisosSG: number = 0
             let totalPermisosCG: number = 0
@@ -707,7 +708,6 @@ export async function getReporteMarcaciones(id: string, ini: string, fin: string
             let totalTolerancias: number = 0
             let totalPermisos: number = 0
             let totalLicencias: number = 0
-            let totalCapacitaciones: number = 0
             let diasComputados: number = 0
             let sinAsignar: number = 0
 
@@ -809,8 +809,6 @@ export async function getReporteMarcaciones(id: string, ini: string, fin: string
                                         jornada.estado = EstadoJornada.baja_medica; break;
                                     case "SG":
                                         jornada.estado = EstadoJornada.permiso_sg; break
-                                    case "CG":
-                                        jornada.estado = EstadoJornada.permiso_cg; break;
                                     case "PO":
                                         jornada.estado = EstadoJornada.permiso; break;
                                     case "LI":
@@ -821,8 +819,6 @@ export async function getReporteMarcaciones(id: string, ini: string, fin: string
                                         jornada.estado = EstadoJornada.licencia_matrimonio; break;
                                     case "LD":
                                         jornada.estado = EstadoJornada.licencia_defuncion; break;
-                                    case "CA":
-                                        jornada.estado = EstadoJornada.capacitacion; break;
                                     default :
                                 }
                             }
@@ -856,12 +852,6 @@ export async function getReporteMarcaciones(id: string, ini: string, fin: string
                                         infoMarcacion.estado = EstadoJornada.permiso_sg
                                         totalPermisosSG++;
                                         break;
-                                    case EstadoJornada.permiso_cg:
-                                        infoMarcacion.horario.color = "#a7c454";
-                                        infoMarcacion.horario.nombre = "PermisoCG"
-                                        infoMarcacion.estado = EstadoJornada.permiso_cg
-                                        totalPermisosCG++;
-                                        break;
                                     case EstadoJornada.permiso:
                                         infoMarcacion.horario.color = "#939393";
                                         infoMarcacion.horario.nombre = "Permiso"
@@ -889,12 +879,6 @@ export async function getReporteMarcaciones(id: string, ini: string, fin: string
                                         infoMarcacion.horario.nombre = "Defunción"
                                         infoMarcacion.estado = EstadoJornada.licencia_defuncion
                                         break;
-                                    case EstadoJornada.capacitacion:
-                                        infoMarcacion.horario.color = "#939393";
-                                        infoMarcacion.horario.nombre = "Capacitación"
-                                        infoMarcacion.estado = EstadoJornada.capacitacion
-                                        totalCapacitaciones++
-                                        break;
                                     default:
                                 }
                             }
@@ -917,20 +901,18 @@ export async function getReporteMarcaciones(id: string, ini: string, fin: string
                                             totalTolerancias++; break;
                                         case "IT":
                                             totalInterrupciones++; break;
+                                        case "CG":
+                                            totalPermisosCG = totalPermisosCG +0.5; break;
                                         case "VA":
                                             totalVacaciones = totalVacaciones + 0.5; break;
                                         case "BM":
                                             totalBajas = totalBajas + 0.5; break;
                                         case "SG":
                                             totalPermisosSG = totalPermisosSG + 0.5; break;
-                                        case "CG":
-                                            totalPermisosCG = totalPermisosCG + 0.5; break;
                                         case "PO":
                                             totalPermisos = totalPermisos + 0.5; break;
                                         case "LI":
                                             totalLicencias = totalLicencias + 0.5; break;
-                                        case "CA":
-                                            totalCapacitaciones = totalCapacitaciones + 0.5; break;
                                         default:
                                     }
                                     let rangoTickeo: DateRange;
@@ -957,7 +939,7 @@ export async function getReporteMarcaciones(id: string, ini: string, fin: string
                                             if (rangoTickeo.contains(moment(priHoraEntrada))) {
                                                 priEntExcepcion = {
                                                     existe: true,
-                                                    licencia: getLicencia(excepcionTickeo),
+                                                    licencia: excepcionTickeo.licencia,
                                                     jornada: capitalizar(excepcionTickeo.jornada),
                                                     horaIni: excepcionTickeo.horaIni,
                                                     horaFin: excepcionTickeo.horaFin,
@@ -982,7 +964,7 @@ export async function getReporteMarcaciones(id: string, ini: string, fin: string
                                             if (rangoTickeo.contains(moment(priHoraSalida))) {
                                                 priSalExcepcion = {
                                                     existe: true,
-                                                    licencia: getLicencia(excepcionTickeo),
+                                                    licencia: excepcionTickeo.licencia,
                                                     jornada: capitalizar(excepcionTickeo.jornada),
                                                     horaIni: excepcionTickeo.horaIni,
                                                     horaFin: excepcionTickeo.horaFin,
@@ -1005,7 +987,7 @@ export async function getReporteMarcaciones(id: string, ini: string, fin: string
                                             if (rangoTickeo.contains(moment(segHoraEntrada))) {
                                                 segEntExcepcion = {
                                                     existe: true,
-                                                    licencia: getLicencia(excepcionTickeo),
+                                                    licencia: excepcionTickeo.licencia,
                                                     jornada: capitalizar(excepcionTickeo.jornada),
                                                     horaIni: excepcionTickeo.horaIni,
                                                     horaFin: excepcionTickeo.horaFin,
@@ -1025,7 +1007,7 @@ export async function getReporteMarcaciones(id: string, ini: string, fin: string
                                             if (rangoTickeo.contains(moment(segHoraSalida))) {
                                                 segSalExcepcion = {
                                                     existe: true,
-                                                    licencia: getLicencia(excepcionTickeo),
+                                                    licencia: excepcionTickeo.licencia                              ,
                                                     jornada: capitalizar(excepcionTickeo.jornada),
                                                     horaIni: excepcionTickeo.horaIni,
                                                     horaFin: excepcionTickeo.horaFin,
@@ -1157,7 +1139,7 @@ export async function getReporteMarcaciones(id: string, ini: string, fin: string
                                                 totalMinRetrasos = totalMinRetrasos + retraso
                                                 haySegRetraso = true
                                             }
-                                        }
+                                            }
                                     } else {
                                         sinMarcar++
                                         sinMarcarEntradas++
@@ -1370,15 +1352,14 @@ export async function getReporteMarcaciones(id: string, ini: string, fin: string
             resumenMarcacion.totalExcTickeos = totalExcTickeos
             resumenMarcacion.totalTolerancias = totalTolerancias
             resumenMarcacion.totalInterrupciones = totalInterrupciones
-            resumenMarcacion.totalExcepciones = totalExcTickeos + totalTolerancias + totalInterrupciones
             resumenMarcacion.totalVacaciones = totalVacaciones
             resumenMarcacion.totalBajas = totalBajas
             resumenMarcacion.totalPermisosSG = totalPermisosSG
             resumenMarcacion.totalPermisosCG = totalPermisosCG
+            resumenMarcacion.totalExcepciones = totalExcTickeos + totalTolerancias + totalInterrupciones + totalPermisosCG
             resumenMarcacion.totalPermisos = totalPermisos
             resumenMarcacion.totalLicencias = totalLicencias
-            resumenMarcacion.totalCapacitaciones = totalCapacitaciones
-            resumenMarcacion.totalOtros = totalPermisos + totalLicencias + totalCapacitaciones + totalPermisosCG;
+            resumenMarcacion.totalOtros = totalPermisos + totalLicencias;
             return resumenMarcacion;
         }
     }

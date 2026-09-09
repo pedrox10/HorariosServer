@@ -4,7 +4,7 @@ import {EstadoUsuario, Usuario} from "./Usuario";
 import {Turno} from "./Turno";
 import {InfoExtraJornada} from "../models/InfoExtraJornada";
 
-export enum EstadoJornada {
+export enum         EstadoJornada {
     dia_libre,
     activa,
     feriado,
